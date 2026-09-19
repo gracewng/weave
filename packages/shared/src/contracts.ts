@@ -68,11 +68,15 @@ export interface ShoppingResult {
   priceCents: number | null;
   merchant: string | null;
   url: string | null;
+  /** true when the thumbnail looks product-only (flat/white background, no person). Heuristic; null = unknown. */
+  productOnly: boolean | null;
 }
 
 export interface SerpClient {
-  /** Google Shopping results — used for "Pick from store" (Mystery) and clean product images (capture). */
+  /** Google Shopping results — text query → candidate products (Identify the item, Mystery "pick from store"). */
   shoppingResults(query: string, opts?: { limit?: number }): Promise<ShoppingResult[]>;
+  /** Google Lens reverse image search — garment photo → visually matching products. */
+  lens(imageUrl: string, opts?: { limit?: number }): Promise<ShoppingResult[]>;
 }
 
 export interface TtsResult {

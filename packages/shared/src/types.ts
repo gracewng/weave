@@ -3,6 +3,7 @@
 export type Category = 'top' | 'bottom' | 'dress' | 'outerwear' | 'shoes' | 'accessory' | 'intimates' | 'other';
 export type Slot = 'top' | 'bottom' | 'one_piece' | 'outer' | 'shoes' | 'accessory';
 export type ItemSource = 'email' | 'receipt' | 'tag' | 'photo' | 'quick_add' | 'mystery' | 'search';
+export type ImageSource = 'email' | 'shopping' | 'lens' | 'user_photo' | 'cutout';
 export type ItemStatus = 'owned' | 'returning' | 'returned' | 'sold' | 'donated';
 export type VoicePersona = 'bestie' | 'stylist' | 'cfo';
 export type LoanStatus = 'requested' | 'accepted' | 'declined' | 'out' | 'returned';
@@ -34,6 +35,7 @@ export interface Item {
   purchase_date: string | null;
   retailer: string | null;
   image_url: string | null;
+  image_source: ImageSource | null;
   receipt_url: string | null;
   source: ItemSource;
   return_by: string | null;

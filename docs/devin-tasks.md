@@ -65,7 +65,11 @@ Export `getClients(): Clients` from `/packages/clients/src/index.ts` (scaffold e
   `soldMedianCents(query)` — use the Browse API's best available sold/price signal or a documented approximation,
   and say which in a comment. Verify the current endpoint docs before coding.
 - `serp.ts` + `serp.mock.ts`: SerpAPI `engine=google_shopping` (`SERPAPI_KEY`) → `ShoppingResult[]`
-  (title, imageUrl, priceCents, merchant, url).
+  (title, imageUrl, priceCents, merchant, url, productOnly). Also `lens(imageUrl)` using `engine=google_lens`
+  (verify current params in SerpAPI docs) returning visual matches in the same shape. Set `productOnly` with a cheap
+  heuristic on the thumbnail (e.g. sample the four corners; near-white or uniform → true) — document it; null when
+  the image can't be fetched. Mock: ≥5 queries incl. "uniqlo black crew neck t-shirt", "levi's 501 jeans",
+  "black slip dress"; lens mock returns the same fixtures keyed by a fake image hash.
 - `tts.ts` + `tts.mock.ts`: ElevenLabs text-to-speech (verify current endpoint + model id in their docs). Voice per
   persona from `ELEVENLABS_VOICE_BESTIE|STYLIST|CFO`. **Cache** by `sha256(text + voiceId)`: the client takes an
   injectable `store` interface `{ get(hash): Promise<string|null>; put(hash, bytes, chars): Promise<string> }` so the

@@ -28,6 +28,7 @@ create table public.items (
   purchase_date date,
   retailer text,
   image_url text,
+  image_source text check (image_source in ('email','shopping','lens','user_photo','cutout')),
   receipt_url text,                 -- photo of the paper receipt (proof for returns)
   source text not null check (source in ('email','receipt','tag','photo','quick_add','mystery','search')),
   return_by date,

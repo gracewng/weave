@@ -70,7 +70,14 @@ list; confirm official rules before submitting.)
 10. **Statement.** One monthly receipt: **Money Kept** hero, **Money Recovered** separately, a chronological
     intervention timeline, then spent / envelope / not spent / borrowed / secondhand / returns / % worn / best and
     worst cost-per-wear. `/stats` shows dollars kept per dollar of AI spend.
-11. **Voice (low priority).** ElevenLabs reads the statement or a verdict in a persona (Bestie/Stylist/CFO).
+11. **Identify the item** (shared pipeline, three entry points). A receipt photo, a typed description ("black
+    Uniqlo crewneck, M, $29"), or an email line item all resolve to *the specific product* with a clean,
+    product-only image: extract line items (Muse Spark, multimodal for photos) → build a query (brand + name +
+    color + retailer) → SerpAPI Google Shopping (text) or Google Lens (garment photo) → rank candidates
+    deterministically (brand match, name similarity, retailer match) → prefer product-only images (flat background,
+    no face) → show a strip of 4–6 candidates the user taps → fallback: user's photo through `rembg`. Every item
+    records `image_source` (email / shopping / lens / user_photo / cutout). No item is invented from a charge alone.
+12. **Voice (low priority).** ElevenLabs reads the statement or a verdict in a persona (Bestie/Stylist/CFO).
 
 ## The intervention experience
 
@@ -279,7 +286,7 @@ first, variable `input` last; `cached_tokens` logged. zod → `json_schema` stri
 `.optional()`). `GET /api/llm/health` pings both providers.
 
 ## Data model (see `/supabase/migrations`)
-`profiles` · `items` (embedding, `receipt_url`, `shareable`, `lendable`, `return_by`, `status` incl. `returning`,
+`profiles` · `items` (embedding, `receipt_url`, `image_source`, `shareable`, `lendable`, `return_by`, `status` incl. `returning`,
 `return_initiated_at`, `refund_cents`, `refunded_at`, `est_resale_cents`) · `friendships` · `loans` · `transactions`
 (match_status, decision keep/returning/not_clothes) · `wears` · `budgets` · `holds` (Ghost Rack: intended
 price/source, verdict, status, `outcome_confirmed_at`, `actual_paid_cents`, `loan_id`, `wore_item_id`,
@@ -395,14 +402,15 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       capture), profile trigger + invite code, nav, `DEMO_MODE`, LLM router + logging, `/api/llm/health`,
       `.env.example`, docs, `contracts.ts`. **Done:** Supabase project + migrations, Google provider, `.env.local`. **Manual:** LLM keys in `.env.local`,
       Gmail scope + test users on the Google consent screen, Vercel (root `apps/web`).
-- [ ] **Phase 2 — Gmail receipt backfill** (3h). Query + allowlist → strip/truncate → `extract_email` → images to
-      Storage → dedupe → `return_by`. SSE progress "Scanned 214 emails · found 47 items · 9¢ in tokens".
+- [ ] **Phase 2 — Gmail receipt backfill** (3.5h). Query + allowlist → strip/truncate → `extract_email` → email
+      image if present, else Identify-the-item lookup for a clean product image → Storage → dedupe → `return_by`. SSE progress "Scanned 214 emails · found 47 items · 9¢ in tokens".
       Accept: a teammate's real inbox → wardrobe with images, prices, return dates in < 2 min.
 - [ ] **Phase 3 — Tagging, embeddings, Wardrobe UI** (3h). `tag_items` batches; embed once. Grid + item page (mini
       receipt, cost-per-wear, #30wears ring, wore today, Autopsy expansion). Accept: `match_items` returns sensible
       neighbors; cost-per-wear updates after "wore today".
-- [ ] **Phase 4 — Card transactions + Charges** (3h). Plaid sandbox/mock; matcher; push "Snap the receipt" +
-      keep/returning/not-clothes; capture with `read_capture` + SerpAPI image; Mystery Purchases stack with Closet
+- [ ] **Phase 4 — Card transactions + Charges** (3.5h). Plaid sandbox/mock; matcher; push "Snap the receipt" +
+      keep/returning/not-clothes; capture page with three inputs (receipt photo / garment photo / typed description)
+      → Identify the item (`read_capture` + Shopping/Lens + candidate strip + `rembg` fallback); Mystery Purchases stack with Closet
       Coverage fraction; `POST /api/demo/charge`; demo panel. Accept: mock charge → notification < 5s → snapped
       receipt → item < 15s; resolving one mystery changes coverage from data.
 - [ ] **Phase 5 — Budget** (2h). Envelope, live spend, projection, alternatives, over-budget state.
@@ -448,6 +456,7 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - 2026-09-19 re-plan: removed crew/outfit/intervention shapes; added `MarketplaceLink`, `MoneyAlternative`,
   `BudgetInputs`/`BudgetSummary`; `VerdictInputs.outfitsUnlocked` → `budgetRemainingCents`; fixtures gained
   `parse_query` and `search_note`, lost `crew_fits`.
+- 2026-09-19 identify: `SerpClient.lens(imageUrl)` added; `ShoppingResult.productOnly` heuristic flag; `items.image_source`.
 - 2026-09-19 accounting: added `KeptInputs`/`KeptSummary`, `CoverageInputs`/`CoverageSummary`; fixture holds must
   include confirmed outcomes with `actual_paid_cents`; seed includes one confirmed refund.
 ### Open Devin tasks
