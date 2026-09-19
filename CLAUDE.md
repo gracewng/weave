@@ -286,11 +286,12 @@ first, variable `input` last; `cached_tokens` logged. zod → `json_schema` stri
 `.optional()`). `GET /api/llm/health` pings both providers.
 
 ## Data model (see `/supabase/migrations`)
-`profiles` · `items` (embedding, `receipt_url`, `image_source`, `shareable`, `lendable`, `return_by`, `status` incl. `returning`,
+`profiles` · `items` (embedding, `receipt_url`, `image_source`, `line_index`, `shareable`, `lendable`, `return_by`, `status` incl. `returning`,
 `return_initiated_at`, `refund_cents`, `refunded_at`, `est_resale_cents`) · `friendships` · `loans` · `transactions`
 (match_status, decision keep/returning/not_clothes) · `wears` · `budgets` · `holds` (Ghost Rack: intended
 price/source, verdict, status, `outcome_confirmed_at`, `actual_paid_cents`, `loan_id`, `wore_item_id`,
-`kept_cents`, `release_at`) · `llm_calls` · `gmail_tokens` (service role) · `push_subscriptions` · `audio_cache`.
+`kept_cents`, `release_at`) · `llm_calls` · `gmail_tokens` (service role) · `push_subscriptions` · `audio_cache` · `email_records` (per processed message: subject, retailer, items found,
+cost; never the body).
 RLS everywhere. View `friend_items` (no money fields). Functions: `match_items`, `match_friend_items`
 (size-filtered), `accept_invite`, `is_friend`, `handle_new_user`, `items_privacy_defaults`.
 Dedupe: unique `(user_id, retailer, lower(name), size, purchase_date)` where source='email'.
@@ -447,7 +448,10 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 ### Done
 - Phase 1 code (see checklist), re-planned 2026-09-19; accounting/coverage schema fields added 2026-09-19.
 ### Mocked / not yet live
-- `@weave/data` and `@weave/clients` are stubs (Devin tasks 1–2). `fixtures/` is a README (Devin task 3).
+- `@weave/data` and `@weave/clients` are stubs (Devin tasks 1–2). `fixtures/index.ts` exports `null` (Devin task 3).
+- Stopgaps Claude owns until Devin's PRs land: `apps/web/lib/ingest/retailers-fallback.ts` (35 retailers +
+  return windows) and `apps/web/lib/ingest/sample-emails.ts` (5 demo emails). `prefilter.ts` switches to
+  `@weave/data` automatically once it has retailers; `pipeline.ts` prefers `fixtures.emails` when present.
 - Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). No Vercel deployment yet.
 ### Known issues
 - Meta `cached_tokens` field location unverified in a real response — `extractUsage()` accepts both

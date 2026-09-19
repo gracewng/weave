@@ -31,6 +31,7 @@ create table public.items (
   image_source text check (image_source in ('email','shopping','lens','user_photo','cutout')),
   receipt_url text,                 -- photo of the paper receipt (proof for returns)
   source text not null check (source in ('email','receipt','tag','photo','quick_add','mystery','search')),
+  line_index smallint not null default 0,   -- n-th unit of a multi-quantity line item (you own two of the same tee)
   return_by date,
   status text not null default 'owned' check (status in ('owned','returning','returned','sold','donated')),
   return_initiated_at timestamptz,          -- Return Pending
@@ -46,7 +47,7 @@ create table public.items (
 create index items_user_idx on public.items (user_id);
 create index items_return_by_idx on public.items (return_by) where return_by is not null;
 -- Dedupe key for email ingestion: (retailer, lower(name), size, purchase_date)
-create unique index items_dedupe_idx on public.items (user_id, coalesce(retailer,''), lower(name), coalesce(size,''), coalesce(purchase_date, '1970-01-01'))
+create unique index items_dedupe_idx on public.items (user_id, coalesce(retailer,''), lower(name), coalesce(size,''), coalesce(purchase_date, '1970-01-01'), line_index)
   where source = 'email';
 -- ANN index (ivfflat needs rows; fine to create now, rebuild later if needed)
 create index items_embedding_idx on public.items using hnsw (embedding vector_cosine_ops);
