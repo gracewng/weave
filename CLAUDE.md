@@ -274,6 +274,7 @@ every couple of hours. Commit messages `phase-N: <what>` or `devin: <task>`.
 | `extract_email` | Meta `muse-spark-1.3` | `reasoning_effort: minimal`, strict JSON |
 | `tag_items` | Meta | `minimal`, strict JSON, batch 20 |
 | `read_capture` | Meta | `low`, image input, strict JSON |
+| `judge_images` | Meta → OpenAI | `minimal`, low-detail images, strict JSON (Identify the item) |
 | `parse_query` | Meta | `minimal`, strict JSON |
 | `borrow_message` | Meta | `minimal` |
 | `search_note` | OpenAI `gpt-5.6-luna` | one line above search results |
@@ -459,6 +460,10 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   `@weave/data` automatically once it has retailers; `pipeline.ts` prefers `fixtures.emails` when present.
 - Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). No Vercel deployment yet.
 ### Known issues
+- `judge_images` can be refused by the model for intimates imagery (lingerie thumbnails); the lookup then
+  falls back to the unjudged ranking, which may pick a model shot. Intimates are private anyway. Regular garments judge fine.
+- SerpAPI fresh searches take ~20–25s; identical queries are served from SerpAPI's cache instantly and free.
+  Free plan: 250 searches/month. Our DB cache means each distinct query costs one search, ever.
 - **Similarity thresholds need calibration.** With `text-embedding-3-small`, a near-exact owned match scores
   ~0.66 and a category match ~0.43, so the spec's 0.88 / 0.85 verdict thresholds would never fire. Phase 7 sets
   the constants from real data (start: skip ≥ 0.60, borrow ≥ 0.55) and embeds the parsed query in the same

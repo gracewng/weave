@@ -80,6 +80,21 @@ export type ReadCaptureResult = z.infer<typeof ReadCaptureSchema>;
 
 export const READ_CAPTURE_SYSTEM = `You read a photo taken right after an in-store clothing purchase. Classify it as a receipt, a price/brand tag, a garment photo, or unknown. Extract only clothing line items with per-unit prices in cents when visible. For tags, read brand, size, and price. For garments, describe the item and guess category and color. Report confidence 0-1. Never invent prices.`;
 
+// ─── judge_images (Identify the item) ─────────────────────────────────────────
+
+export const JudgeImagesSchema = z.object({
+  images: z.array(z.object({
+    index: z.number().int(),
+    /** Only the garment is shown: flat lay, mannequin/ghost, or hanger. No person. */
+    product_only: z.boolean(),
+    /** The image plausibly shows the named item (right garment type). */
+    matches_item: z.boolean(),
+  })),
+});
+export type JudgeImagesResult = z.infer<typeof JudgeImagesSchema>;
+
+export const JUDGE_IMAGES_SYSTEM = `You look at numbered product thumbnails for one clothing item. For each image report: product_only = true only when no person or body part is visible (flat lay, ghost mannequin, hanger, or plain product shot); matches_item = true when the picture shows the same kind of garment as the item name. Return every index you were given.`;
+
 // ─── parse_query (search bar) ─────────────────────────────────────────────────
 
 export const ParseQuerySchema = z.object({

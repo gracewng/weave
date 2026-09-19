@@ -35,6 +35,7 @@ export type Task =
   | 'extract_email'
   | 'tag_items'
   | 'read_capture'
+  | 'judge_images'
   | 'parse_query'
   | 'search_note'
   | 'borrow_message'
@@ -71,6 +72,11 @@ export const TASKS: Record<Task, TaskConfig> = {
     provider: 'meta', fallback: 'openai', reasoningEffort: 'low', structured: true,
     timeoutMs: 15000, maxOutputTokens: 800,
     why: 'Native multimodal (receipt / tag / garment photo)',
+  },
+  judge_images: {
+    provider: 'meta', fallback: 'openai', reasoningEffort: 'minimal', structured: true,
+    timeoutMs: 20000, maxOutputTokens: 300,
+    why: 'Identify the item: which candidate thumbnails show only the garment (no person)? Low-detail images, one call per item',
   },
   parse_query: {
     provider: 'meta', fallback: 'openai', reasoningEffort: 'minimal', structured: true,

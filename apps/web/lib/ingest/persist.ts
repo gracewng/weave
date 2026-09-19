@@ -10,6 +10,14 @@ const IMG_MAX = 5 * 1024 * 1024;
 /** Download a product image and store it in the public `items` bucket. Returns the public URL or null. */
 export async function storeImageFromUrl(admin: SupabaseClient, userId: string, url: string): Promise<string | null> {
   try {
+    if (url.startsWith('data:image/')) {
+      const m = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(url); if (!m) return null;
+      const type = m[1]!; const buf = Buffer.from(m[2]!, 'base64');
+      const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
+      const path = `${userId}/${randomUUID()}.${ext}`;
+      const { error } = await admin.storage.from('items').upload(path, buf, { contentType: type, upsert: false });
+      return error ? null : admin.storage.from('items').getPublicUrl(path).data.publicUrl;
+    }
     const res = await fetch(url, { signal: AbortSignal.timeout(IMG_TIMEOUT), headers: { 'User-Agent': 'Mozilla/5.0 (Weave image fetch)' } });
     const type = res.headers.get('content-type') ?? '';
     if (!res.ok || !type.startsWith('image/')) return null;

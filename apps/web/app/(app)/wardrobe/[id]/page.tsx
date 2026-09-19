@@ -7,6 +7,8 @@ import { WoreToday } from './WoreToday';
 import { ShareToggles } from './ShareToggles';
 import { costPerWear, costPerWearAtThirty, daysBetween, wearsToThirty } from '@weave/shared/wears';
 import { similarOwned } from '@/lib/tagging';
+import { candidatesFor } from '@/lib/identify';
+import { Candidates } from './Candidates';
 import type { Item } from '@weave/shared/types';
 
 export const dynamic = 'force-dynamic';
@@ -28,17 +30,19 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
   const sinceWorn = wears[0] ? daysBetween(wears[0].worn_on, today) : null;
   const returnOpen = !!it.return_by && it.return_by >= today;
   const similar = it.embedding ? await similarOwned(user.id, { itemId: it.id }, 4).catch(() => []) : [];
+  const { results: candidates } = await candidatesFor(it, false).catch(() => ({ results: [] }));
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div>
         <div className="cutout p-3">
           <div className="aspect-[3/4] w-full bg-paper-2">
-            {it.image_url ? <img src={it.image_url} alt={it.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center px-4 text-center text-[11px] text-ink-3">NO IMAGE YET<br />LOOKUP RUNS WHEN THE PRODUCT SEARCH KEY IS SET</div>}
+            {it.image_url ? <img src={it.image_url} alt={it.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center px-4 text-center text-[11px] text-ink-3">NO IMAGE YET</div>}
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {wears.slice(0, 12).map((w, i) => <span key={i} className="stamp">WORN {w.worn_on.slice(5).replace('-', '/')}</span>)}
           </div>
+          <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} />
         </div>
         <div className="mono mt-3 text-[11px] text-ink-3"><Link href="/wardrobe" className="hover:text-ink">← WARDROBE</Link></div>
       </div>

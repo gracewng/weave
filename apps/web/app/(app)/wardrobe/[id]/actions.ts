@@ -1,6 +1,9 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { applyCandidateImage, candidatesFor } from '@/lib/identify';
+import type { ShoppingResult } from '@weave/shared/contracts';
 
 export async function woreToday(itemId: string): Promise<{ ok: boolean; wears: number; price_cents: number | null; name: string }> {
   const { supabase, user } = await requireUser();
@@ -18,4 +21,21 @@ export async function setSharing(itemId: string, field: 'shareable' | 'lendable'
   const { supabase, user } = await requireUser();
   await supabase.from('items').update({ [field]: value }).eq('id', itemId).eq('user_id', user.id);
   revalidatePath(`/wardrobe/${itemId}`);
+}
+
+/** One product search for this item (cached forever by query). */
+export async function findCandidates(itemId: string): Promise<ShoppingResult[]> {
+  const { supabase, user } = await requireUser();
+  const { data: item } = await supabase.from('items').select('name,brand,color,retailer').eq('id', itemId).eq('user_id', user.id).maybeSingle();
+  if (!item) return [];
+  const { results } = await candidatesFor(item, true);
+  return results;
+}
+
+export async function chooseImage(itemId: string, imageUrl: string): Promise<boolean> {
+  const { user } = await requireUser();
+  const admin = createAdminClient(); if (!admin) return false;
+  const ok = await applyCandidateImage(admin, user.id, itemId, imageUrl);
+  if (ok) { revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe'); }
+  return ok;
 }

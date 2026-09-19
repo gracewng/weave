@@ -177,7 +177,9 @@ async function callProvider<T>(p: Provider, opts: CallLLMOptions<T>, fellBack: b
       body as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
       { timeout },
     );
-    const text = res.choices[0]?.message?.content ?? '';
+    const message = res.choices[0]?.message as { content?: string | null; refusal?: string | null } | undefined;
+    const text = message?.content ?? '';
+    if (!text && message?.refusal) throw new LLMError(`${p}: model refused: ${message.refusal.slice(0, 200)}`, p);
     const usage = extractUsage(res.usage);
     const latencyMs = Date.now() - started;
     const cost = costUsd(model, usage.input, usage.output, usage.cached);

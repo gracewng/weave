@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runIngestion, type IngestEvent } from '@/lib/ingest/pipeline';
 import { tagAndEmbed } from '@/lib/tagging';
+import { lookupMissingImages } from '@/lib/identify';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -43,6 +44,9 @@ export async function GET(req: Request) {
           if (c.itemsFound > 0) {
             const t = await tagAndEmbed(user.id).catch(() => null);
             if (t) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tagged', ...t })}\n\n`));
+            // Identify the item: product images for anything the email didn't picture. Capped to protect the search quota.
+            const im = await lookupMissingImages(user.id, { maxSearches: 15 }).catch(() => null);
+            if (im) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'images', ...im })}\n\n`));
           }
         })
         .catch((err) => send({ type: 'error', message: err instanceof Error ? err.message : String(err), counters: { scanned: 0, prefiltered: 0, sent: 0, clothingOrders: 0, itemsFound: 0, duplicates: 0, failed: 0, costUsd: 0, tokens: 0, cached: 0 } }))
