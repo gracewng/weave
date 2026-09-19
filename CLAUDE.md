@@ -41,9 +41,10 @@ list; confirm official rules before submitting.)
    → secondhand (eBay API + marketplace links) → new retail last. Deterministic verdict + one model-written line.
    **Purchase memory:** "Your median tee purchase is $28 across 6 confirmed purchases; this one is $45."
    Actions: Wear mine · Ask to borrow · Buy used · Hold 48h · Skip · Buy anyway.
-8. **Ghost Rack — "The clothes you almost owned."** Held/skipped intentions hang in the wardrobe as translucent
-   ghosts with intended price, chosen alternative, and outcome. Pending holds show *potential* Money Kept;
-   confirmed outcomes show *estimated* Money Kept. 48h re-check notifies ("$23 used now — or Maya just added one").
+8. **Ghost Rack — "The clothes you almost owned."** A ledger of purchase intentions you didn't act on: torn,
+   VOIDED receipt stubs with intended price, chosen alternative, and outcome. Never silhouettes in the wardrobe.
+   Pending holds show *potential* Money Kept; confirmed outcomes show *estimated* Money Kept. 48h re-check
+   notifies ("$23 used now — or Maya just added one").
 9. **Friend wardrobes + borrowing.** Invite link/QR, browse shareable items in your size, loan request → accept →
    out → returned, push, **Closet Karma** ("Lent 7× · saved friends $412"). No prices, ever.
 10. **Statement.** One monthly receipt: **Money Kept** hero, **Money Recovered** separately, a chronological
@@ -87,7 +88,7 @@ Jeans               intended  $98 → bought used, paid $37
 -----------------------------------------------------
 ESTIMATED MONEY KEPT                              $254
 ```
-The 35%-opacity cutout and the printed decision receipt are the screenshot moment. Prefer a labeled demo
+The torn VOIDED stub and the stand-in stamp on the owned item are the screenshot moment. Prefer a labeled demo
 time-advance over scheduler work until the main flow is solid.
 
 ### Money Kept — "saved from yourself"
@@ -169,7 +170,7 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 |---|---|---|
 | P0 | Receipt reconstruction → usable wardrobe and mini receipt | 2–3 |
 | P0 | Owned-first search, visible purchase memory, deterministic verdict | 7 |
-| P0 | Ghost Rack with pending/confirmed states and printed action receipt | 7 |
+| P0 | Ghost Rack stub ledger with pending/confirmed states and printed action receipt | 7 |
 | P0 | One reliable two-account borrowing path (+ demo-panel "Maya accepts" fallback) | 8 |
 | P0 | One return rescue with honest pending/refund distinction | 6 |
 | P0 | Statement with traceable totals; `/stats` evidence | 9 |
@@ -191,7 +192,7 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 | Token optimization | Measured filtering, batching, caching, short outputs | `/stats` + controlled before/after sample with quality held constant |
 | Meta (bring people closer) | A real shared wardrobe, not a feed; Meta Model API does extraction/parsing | Two accounts complete a loan; private fields shown excluded |
 | Sustainability | Reduced new consumption, reuse, lending | Confirmed avoided purchases, borrows, used buys, repeat wears. No carbon/water figures |
-| Interactive Media | Cutouts → ghosts, receipt printing, timeline reacting to decisions | Motion communicates state; reduced-motion respected |
+| Interactive Media | Printer slot, tear-to-decide, stamps, receipt printing, timeline reacting to decisions | Motion communicates state; reduced-motion respected |
 | Education | Price awareness and cost per wear from one's own purchases | Autopsy + purchase memory; no invented outcomes |
 
 ## Hard constraints
@@ -283,13 +284,79 @@ prefix first → prompt cache; `cached_tokens` tracked · 6. Embeddings once per
 verdicts, budget, memory, coverage, kept, returns — the model writes only short text · 8. `/stats`: tokens + cost
 by task/provider, cache rate, fallbacks, cost per email/search, kept per AI dollar, live vs fixture.
 
+## Psychology — why each surface exists (read before designing anything)
+The goal is intentional spending, not less shopping for its own sake, and tracking without anxiety. Every surface
+maps to a known effect; every rule below closes a known failure mode.
+
+| Effect | What we use it for | Rule that keeps it honest |
+|---|---|---|
+| **Ownership salience / endowment** — people want less when they can see what they have | Wardrobe grid fills itself in the first minute; owned matches appear *as you type* in search, before desire forms | Owned items are always the largest image on any decision surface |
+| **Pain of paying** — cards make spending invisible | Card ingestion re-inks every charge; the keep/returning/not-clothes prompt is a moment of reflection | One question per prompt, neutral ink, no red |
+| **Opportunity-cost neglect** — people don't picture the alternative use of money | "What this could be instead" beside every price and the month's overspend | Never followed by a buy button |
+| **Cooling-off / delay discounting** — desire peaks at search and decays | Hold 48h is the primary action on a `wait` verdict; sections print in order (owned first) to slow the moment | A hold is never counted as savings |
+| **Anchoring** — retailers anchor with strike-through prices | Purchase memory anchors on *your* median ("$28 across 6 purchases") | Never show retailer was/now anchors; never celebrate a "deal" |
+| **Sunk cost, used constructively** — past spend feels wasted | Cost-per-wear and the #30wears ring turn past spend into something recoverable **through use, not more buying** | Zero wears → "No wears logged", never "wasted" |
+| **Default effect / choice architecture** — order is a recommendation | Fixed order owned → borrow → used → new; "Buy anyway" is always present, plain text, last | Never hidden, never shamed |
+| **Peak-end rule** — flows are remembered by their end | Every not-buy ends on a printed receipt; buying ends on a plain "noted" receipt | Not buying gets the satisfying animation |
+| **Commitment + Zeigarnik** — open loops nag | A hold is a commitment with a 48h check-in; pending holds are text-only (no product image) | Check-in offers "bought anyway" in one tap with no judgment, or people lie or abandon |
+| **Identity** — behavior follows self-image | Stamps, % worn, "stood in for" credits build "someone who wears what they own" | Never "frugal", "saver", or a score |
+| **Social norms, not social comparison** | Lending is visible and warm (Closet Karma); friends see items, never money | No feed, no likes, no rankings, no spend comparison |
+| **Loss aversion, used narrowly** | "$89 at stake, 3 days left" on the return board only | Everywhere else uses gain framing ("kept"), never "wasted" |
+
+**Failure modes we design against**
+- **Licensing.** Money Kept must never read as a balance to spend. It appears only on the Statement and Ghost Rack,
+  never on search or near a buy action. No "you earned it" copy, ever.
+- **Budget as permission.** The envelope shows what's left as remaining paper, never "you can still spend $X."
+- **Purchase memory as a target.** Show the median with its sample size as an anchor; never flag an item cheaper than
+  your median as good. Cheaper is still buying.
+- **Gaps that beg to be filled.** Ghosts never appear in the wardrobe grid as silhouettes. The wardrobe only shows what
+  you own, so it always looks complete. Confirmed outcomes are torn receipt stubs with a VOIDED stamp; the credit
+  goes to the owned item that stood in ("STOOD IN FOR $148 DRESS · SEP 18").
+- **Deal excitement.** Secondhand shows price plainly. No "40% off!", no urgency, no countdowns except return windows.
+- **Gamification creep.** Wear stamps are self-tracking, not streaks. No points, badges, or leaderboards.
+- **Tracking anxiety.** Monthly cadence, calm ink, green only for confirmed kept/recovered, no alarms. A quiet
+  month is a feature.
+- **Overclaiming.** Every estimate is labeled; broken trust ends the product.
+
+**Language guide.** Use verbs of use: wear, lend, return, stand in, keep. Say "kept", not "saved". Never: deal,
+treat, wishlist, missing, gap, saved for later, wasted, frugal, score, streak. "Buy anyway" is the neutral label;
+"Skip" is the neutral opposite.
+
+**Notification policy.** Exactly three kinds, each at most once per event: a new clothing charge (immediate), a
+return window at 4 days with zero wears (once), a hold check-in at 48h (once). Never marketing, never nudges to shop.
+
 ## Design direction
-Aesthetic digital wardrobe on receipt paper. Off-white thermal paper, near-black ink, one accent: savings green
-(`--save`) **only for confirmed** kept/recovered money. IBM Plex Mono for numbers, IBM Plex Sans for body; tabular
-numerals. Wardrobe grid is the hero: clean cutouts; hover shows the mini receipt. Ghosts = same cutouts at 35%
-opacity, dashed outline, potential $ while pending, estimated $ kept when confirmed. Decisions print mini receipts
-(`.print`); loans print a Shared Receipt; the Statement is one long receipt. Perforated edges (`.receipt`), dashed
-dividers, carbon-copy dark mode. Respect `prefers-reduced-motion`. Primitives: `apps/web/components/Receipt.tsx`.
+Aesthetic digital wardrobe on receipt paper. **The app is a thermal printer:** every decision produces a receipt,
+the wardrobe is a rack of cutouts, money is always ink on paper. Off-white thermal paper, near-black ink, one
+accent: savings green (`--save`) **only for confirmed** kept/recovered money. No red anywhere; over-budget is the
+receipt running out of paper. IBM Plex Mono for numbers, IBM Plex Sans for body; tabular numerals. Carbon-copy dark
+mode with slightly blue ink. Respect `prefers-reduced-motion` (every animation degrades to an instant state
+change); receipts are real text. Primitives: `apps/web/components/Receipt.tsx`.
+
+**Signature interactions (build in this order; each phase inherits the earlier ones)**
+1. **Printer slot.** A dark slit fixed at the top; every action's receipt prints from it line by line, then settles.
+   Completed receipts curl into a spool icon that unrolls into the Statement. Latency becomes theater.
+2. **Stand-in stamps + stub ledger.** Owned items that replaced a purchase get a stamp on their receipt; the Ghost
+   Rack is a ledger of torn, VOIDED stubs (intended price struck through, kept amount in green). No silhouettes.
+3. **Wear stamps and a ticking price.** Tap a cutout → rubber stamp "WORN SEP 19" → cost-per-wear ticks down
+   toward $4. Stamps accumulate like a passport. One tap, no form.
+4. **Search prints in order.** Owned prints first while the rest fetch; empty sections still print
+   ("NOTHING OWNED ........ that's fine") so the order is never hidden.
+5. **Tear to decide.** Results and stubs sit on a perforation; drag across to skip / confirm. Button fallback
+   ships first, gesture second.
+6. **Coverage barcode.** Resolved records are printed bars, unresolved are gaps; tap a gap to open that Mystery
+   Purchase.
+7. **Slash command bar.** `/` anywhere; owned matches appear from a lexical index as you type, before the semantic
+   search runs; typing "$45" prints purchase memory beside it.
+
+**Decision-surface rules.** Owned alternative is the largest image; pending holds are text-only; "Buy anyway" is
+plain text, same size, last; one primary action per section; every printed receipt shows VOID for ten seconds.
+Mystery Purchases are receipts with the item line thermally faded; resolving re-inks it. "Bought anyway" prints a
+plain receipt with "$45 / 0 wears" and invites the first wear log — a purchase becomes a use commitment. Search's
+owned section sorts by fewest wears (rediscovery). Wardrobe has a "least recently worn" sort.
+
+**Stretch (Phase 10):** budget as receipt length (remaining money = remaining paper, projection as a dotted
+extension), Shared Receipt that tears in half on return, optional printer sound (off by default).
 
 ## Conventions
 - Server code in Route Handlers / Server Actions / Server Components; `createClient()` (RLS) for user data;
@@ -299,6 +366,8 @@ dividers, carbon-copy dark mode. Respect `prefers-reduced-motion`. Primitives: `
 - `isDemoMode()` everywhere; fixture results carry a visible "fixture" label in UI.
 - Hidden demo panel (`D` ×3, Phase 4): fire mock charge, return reminder, **advance 48h**, **Maya accepts**,
   **seed confirmed refund**, reset demo users.
+- Copy passes the language guide (no deal/treat/wishlist/missing/gap/wasted/saved). Money Kept never appears on a
+  buy surface.
 
 ## Phase checklist
 - [x] **Phase 1 — Skeleton** (re-planned). Monorepo, migrations, Google sign-in (Gmail scope + refresh-token
@@ -319,10 +388,10 @@ dividers, carbon-copy dark mode. Respect `prefers-reduced-motion`. Primitives: `
 - [ ] **Phase 6 — Return board** (2h). Open windows by days left, policy, $ at stake, receipt badge; **Return
       Pending** → **Refund Confirmed** (amount entered) credits Money Recovered; daily cron push at 4 days.
 - [ ] **Phase 7 — Search + Ghost Rack** (5h). `parse_query` → embed → owned / friends / used / retail; verdict;
-      `search_note`; purchase memory with n; actions; Hold → `holds`; ghosts in grid; confirmation prompts
-      (skipped / borrowed / bought used / bought) set `kept_cents`; 48h re-check + push (demo time-advance first).
+      `search_note`; purchase memory with n; actions; Hold → `holds`; stub ledger + stand-in stamps; confirmation
+      prompts (skipped / borrowed / bought used / bought) set `kept_cents`; 48h re-check + push (demo time-advance first).
       Accept: near-duplicate tee shows owned first "worn 2×"; formal dress shows "Borrow from Maya"; Hold prints a
-      ghost; confirming a skip turns it green and raises Money Kept by exactly the intended price.
+      Purchase Paused stub; confirming a skip turns it green and raises Money Kept by exactly the intended price.
 - [ ] **Phase 8 — Friend wardrobes + borrowing** (3h). Invite + QR, friend grid (in my size), loan flow, Realtime,
       push, Shared Receipt, Closet Karma. Accept: two accounts complete a borrow live (demo-panel fallback works).
 - [ ] **Phase 9 — Statement + Stats** (2.5h). Timeline → Money Kept → Money Recovered → details; `/stats` kept per
@@ -337,7 +406,7 @@ Live vs fixture is always labeled; the recorded fallback is ready.
 | 0:00–0:15 | "Weave is a bank statement for your closet." Reconstruction fills the wardrobe with a real or labeled-fixture count and the logged processing cost. | Commerce data becomes wardrobe memory with no manual entry. |
 | 0:15–0:25 | One mini receipt: paid $128, 1 wear, $128/wear. Closet Coverage + one unresolved charge. | Financial context; admits what it doesn't know. |
 | 0:25–0:45 | Search "black dress for a wedding." Owned first, then Maya's size-match, then used, then new. Request loan; second account accepts (or demo-panel accept). Shared Receipt prints. | An intention becomes a real social alternative. |
-| 0:45–1:00 | Search a $45 tee: three owned alternatives + purchase memory. Hold 48h prints a pending ghost. Labeled time-advance or "I skipped it" → ghost confirms, Money Kept +$45. | The alternate timeline; a hold is not yet savings. |
+| 0:45–1:00 | Search a $45 tee: three owned alternatives + purchase memory. Hold 48h prints a Purchase Paused stub. Labeled time-advance or "I skipped it" → stub is VOIDED, the owned tee gets a stand-in stamp, Money Kept +$45. | The alternate timeline; a hold is not yet savings. |
 | 1:00–1:12 | Unworn item, 3 days left, $89 at stake → Return Pending → seeded Refund Confirmed. | Reminder, return, and refund are different states. |
 | 1:12–1:30 | Statement: timeline → Money Kept → Money Recovered; `/stats` with real or labeled costs. Close: "an AI shopping assistant whose goal is to stop you from shopping." | Every headline traces to an action. |
 
