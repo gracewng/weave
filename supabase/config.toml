@@ -1,0 +1,14 @@
+# Minimal Supabase CLI config. Link with: supabase link --project-ref <ref>; apply with: pnpm db:push
+project_id = "worth-it"
+
+[db]
+major_version = 17
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "https://*.vercel.app/auth/callback"]
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"

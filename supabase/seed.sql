@@ -1,0 +1,2 @@
+-- Demo seed lives in scripts/seed-demo.ts (Devin-owned) because it needs auth.users + Storage uploads.
+-- This file intentionally stays empty so `supabase db reset` works.

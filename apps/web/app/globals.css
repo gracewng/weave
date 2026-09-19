@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* ─── Receipt / bank-statement aesthetic ─────────────────────────────────────
+   Thermal-paper background, near-black ink, one accent (savings green) used ONLY for money saved.
+   Dark mode = "carbon copy": inverted ink. */
+:root {
+  --paper: #f6f3ec;
+  --paper-2: #efeadf;
+  --ink: #141414;
+  --ink-2: #4a4a48;
+  --ink-3: #8a8a86;
+  --rule: #c9c4b8;
+  --save: #0f8a3c;
+  --save-bg: #e3f3e8;
+  --warn: #b5541c;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "IBM Plex Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #161616;
+    --paper-2: #1e1e1e;
+    --ink: #ecebe6;
+    --ink-2: #b9b8b2;
+    --ink-3: #7d7c77;
+    --rule: #3a3a38;
+    --save: #4cd57a;
+    --save-bg: #0f2a19;
+    --warn: #e9895a;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-save: var(--save);
+  --color-save-bg: var(--save-bg);
+  --color-warn: var(--warn);
+  --font-mono: var(--font-mono);
+  --font-sans: var(--font-sans);
+}
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Receipt paper with perforated top/bottom edges */
+.receipt {
+  background: var(--paper-2);
+  color: var(--ink);
+  position: relative;
+  padding: 1.25rem 1.25rem;
+  --perf: 10px;
+  -webkit-mask:
+    radial-gradient(circle at 50% 0, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 0 / var(--perf) var(--perf) repeat-x,
+    linear-gradient(#000, #000) 0 var(--perf) / 100% calc(100% - 2 * var(--perf)) no-repeat,
+    radial-gradient(circle at 50% 100%, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 100% / var(--perf) var(--perf) repeat-x;
+  mask:
+    radial-gradient(circle at 50% 0, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 0 / var(--perf) var(--perf) repeat-x,
+    linear-gradient(#000, #000) 0 var(--perf) / 100% calc(100% - 2 * var(--perf)) no-repeat,
+    radial-gradient(circle at 50% 100%, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 100% / var(--perf) var(--perf) repeat-x;
+  box-shadow: 0 1px 0 var(--rule), 0 12px 24px -18px rgba(0,0,0,.35);
+}
+
+.rule-dashed { border-top: 1px dashed var(--rule); }
+
+/* Dotted leader between label and value: LABEL ........ VALUE */
+.leader { display: flex; align-items: baseline; gap: .5rem; font-family: var(--font-mono); }
+.leader > .l { flex: none; }
+.leader > .dots { flex: 1; border-bottom: 1px dotted var(--ink-3); transform: translateY(-4px); min-width: 1rem; }
+.leader > .v { flex: none; }
+
+.saved { color: var(--save); }
+
+/* Receipt printing animation */
+@keyframes print { from { clip-path: inset(0 0 100% 0); opacity: .4 } to { clip-path: inset(0 0 0 0); opacity: 1 } }
+.print { animation: print .9s steps(18, end) both; }
+
+/* Item cutouts: clean, square, no pastel cards */
+.cutout { background: var(--paper); border: 1px solid var(--rule); }
+
+.btn { font-family: var(--font-mono); font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; border: 1px solid var(--ink); padding: .55rem .9rem; background: transparent; color: var(--ink); cursor: pointer; }
+.btn:hover { background: var(--ink); color: var(--paper); }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { opacity: .9; }
+.btn-save { border-color: var(--save); color: var(--save); }
+.btn-save:hover { background: var(--save); color: #fff; }

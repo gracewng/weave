@@ -1,0 +1,10 @@
+{
+  "name": "Worth It",
+  "short_name": "Worth It",
+  "description": "The spending copilot for clothes.",
+  "start_url": "/closet",
+  "display": "standalone",
+  "background_color": "#f6f3ec",
+  "theme_color": "#141414",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

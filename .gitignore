@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+dist
+.env
+.env.local
+.env*.local
+.vercel
+.DS_Store
+*.log
+.turbo
+coverage
+supabase/.branches
+supabase/.temp
+services/rembg/.venv
+__pycache__
