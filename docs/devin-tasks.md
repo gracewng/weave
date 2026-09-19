@@ -1,4 +1,4 @@
-# Devin task briefs — Worth It
+# Devin task briefs — Weave
 
 Paste each brief into Devin as-is. Every brief starts with the same preamble.
 
@@ -6,7 +6,7 @@ Paste each brief into Devin as-is. Every brief starts with the same preamble.
 
 ## Preamble (include with every task)
 
-> You are working in the `worth-it` monorepo (pnpm workspaces, TypeScript). **Read `CLAUDE.md` at the repo root
+> You are working in the `weave` monorepo (pnpm workspaces, TypeScript). **Read `CLAUDE.md` at the repo root
 > first** — it has the architecture, conventions, and the ownership map. You may only touch the paths listed under
 > "Files you may touch" in this brief. Do not edit `/supabase`, `/apps/web` (except `fixtures/`), `/apps/extension/src`,
 > or `/packages/shared` (except `*.test.ts`). If you need a change outside your paths, add a TODO under "TODOs for
@@ -17,7 +17,7 @@ Paste each brief into Devin as-is. Every brief starts with the same preamble.
 
 ---
 
-## Task 1 — Retailer data (`@worthit/data`)
+## Task 1 — Retailer data (`@weave/data`)
 
 **Context.** Before any LLM call, Gmail ingestion pre-filters emails by sender domain, and card-transaction matching
 maps statement merchant strings to retailers. Return windows compute `items.return_by`. This data is the cheap
@@ -42,7 +42,7 @@ Export `retailerData: RetailerData` from `/packages/data/src/index.ts` (a scaffo
 - `/packages/data/src/data.test.ts`: lookups for 10 domains, 10 merchant strings incl. messy ones
   (`SQ *UNIQLO NEWBURY`, `AMZN Mktp US*2K4`), and return windows.
 
-**Acceptance.** `pnpm --filter @worthit/data typecheck` and `pnpm test` pass; `byMerchant('UNIQLO NEWBURY ST')`
+**Acceptance.** `pnpm --filter @weave/data typecheck` and `pnpm test` pass; `byMerchant('UNIQLO NEWBURY ST')`
 → Uniqlo; `bySenderDomain('email.uniqlo.com')` → Uniqlo; `returnWindowFor('zara')` → 30; `returnWindowFor('shein')`
 returns the documented value.
 
@@ -50,10 +50,10 @@ returns the documented value.
 
 ---
 
-## Task 2 — API clients + mocks (`@worthit/clients`)
+## Task 2 — API clients + mocks (`@weave/clients`)
 
 **Context.** Four external services, each must have a mock selected by `DEMO_MODE=true` **and** used automatically
-if the real call throws. Realistic latency in mocks (300–800ms, use `fixtureLatency()` from `@worthit/shared/env`).
+if the real call throws. Realistic latency in mocks (300–800ms, use `fixtureLatency()` from `@weave/shared/env`).
 
 **Contract.** `EbayClient`, `SerpClient`, `TtsClient`, `PlaidClient`, `Clients` in `contracts.ts`.
 Export `getClients(): Clients` from `/packages/clients/src/index.ts` (scaffold exists — replace it).
@@ -111,7 +111,7 @@ users so the 2-minute demo works without any real account.
     verdict, one `borrow_message`.
   - `audio`: one short mp3 data URL per verdict (can be silence or a TTS-generated clip committed as base64).
 - `/scripts/seed-demo.ts` (run with `pnpm tsx scripts/seed-demo.ts`, needs `SUPABASE_SERVICE_ROLE_KEY`):
-  creates via the Supabase admin API a main demo user (`demo@worthit.app`) with a 45-item closet (images uploaded to
+  creates via the Supabase admin API a main demo user (`demo@weave.app`) with a 45-item closet (images uploaded to
   the `items` bucket, sizes, prices, purchase dates, categories/slots/formality/descriptions filled, `return_by` for
   2 items within 4 days, wear logs), 18 months of `transactions` incl. 6 `mystery`; **three friends** Maya, Jordan,
   Priya (25–40 items each, varied sizes, accepted friendships with demo user and each other), one past loan
@@ -163,18 +163,18 @@ writes the business logic in `/apps/extension/src`; you provide the build system
 logic**.
 
 **Deliverables.**
-- `/apps/extension/package.json` (`@worthit/extension`, Vite + `@crxjs/vite-plugin` or plain Vite multi-entry — pick
+- `/apps/extension/package.json` (`@weave/extension`, Vite + `@crxjs/vite-plugin` or plain Vite multi-entry — pick
   what's currently maintained and say why), `vite.config.ts`, `tsconfig.json` extending `../../tsconfig.base.json`.
 - `manifest.json` (MV3): `content_scripts` on `<all_urls>` (Claude narrows with URL heuristics at runtime),
   `background` service worker, `permissions: ["storage", "activeTab"]`, `host_permissions` for
   `http://localhost:3000/*` and `https://*.vercel.app/*`, an `action` popup.
-- Entry points that compile and do nothing meaningful: `src/content.ts` (logs "worth-it content script"),
+- Entry points that compile and do nothing meaningful: `src/content.ts` (logs "weave content script"),
   `src/background.ts`, `src/popup.html` + `src/popup.ts` with a field to store the web app base URL + a paste-in
   session token in `chrome.storage.sync`.
 - Dev reload (crxjs HMR or a `watch` script) and a `README.md` with "load unpacked" steps.
 - Add `dev:ext` / `build:ext` scripts to root `package.json`.
 
-**Acceptance.** `pnpm --filter @worthit/extension build` produces `dist/` loadable in Chrome with no console errors;
+**Acceptance.** `pnpm --filter @weave/extension build` produces `dist/` loadable in Chrome with no console errors;
 content script logs on any page.
 
 **Files you may touch.** `/apps/extension/**` except `/apps/extension/src/**` after your initial scaffold commit

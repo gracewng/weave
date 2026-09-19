@@ -1,5 +1,5 @@
 import 'server-only';
-import { configureLLM, type LLMCallLog } from '@worthit/shared/llm';
+import { configureLLM, type LLMCallLog } from '@weave/shared/llm';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 let configured = false;

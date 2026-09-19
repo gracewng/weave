@@ -1,5 +1,5 @@
 # Minimal Supabase CLI config. Link with: supabase link --project-ref <ref>; apply with: pnpm db:push
-project_id = "worth-it"
+project_id = "weave"
 
 [db]
 major_version = 17

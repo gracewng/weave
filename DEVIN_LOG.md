@@ -1,4 +1,4 @@
-# Devin log — Worth It (HackMIT 2026)
+# Devin log — Weave (HackMIT 2026)
 
 Devin works asynchronously in its own environment and opens one PR per task against this repo. A human merges.
 Fill this in as PRs land; it becomes a slide for the Devin judges.

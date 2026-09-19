@@ -1,5 +1,5 @@
 {
-  "name": "@worthit/web",
+  "name": "@weave/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,9 +11,9 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
-    "@worthit/clients": "workspace:*",
-    "@worthit/data": "workspace:*",
-    "@worthit/shared": "workspace:*",
+    "@weave/clients": "workspace:*",
+    "@weave/data": "workspace:*",
+    "@weave/shared": "workspace:*",
     "next": "^16.3.5",
     "openai": "^7.20.0",
     "react": "^19.2.0",

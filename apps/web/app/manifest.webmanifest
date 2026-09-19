@@ -1,6 +1,6 @@
 {
-  "name": "Worth It",
-  "short_name": "Worth It",
+  "name": "Weave",
+  "short_name": "Weave",
   "description": "The spending copilot for clothes.",
   "start_url": "/closet",
   "display": "standalone",

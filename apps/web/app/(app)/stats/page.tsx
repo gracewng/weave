@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule } from '@/components/Receipt';
-import { TASKS, MODELS } from '@worthit/shared/models';
-import type { LlmCallRow } from '@worthit/shared/types';
+import { TASKS, MODELS } from '@weave/shared/models';
+import type { LlmCallRow } from '@weave/shared/types';
 
 export const dynamic = 'force-dynamic';
 

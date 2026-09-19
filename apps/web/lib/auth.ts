@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseConfigured } from '@/lib/env';
-import type { Profile } from '@worthit/shared/types';
+import type { Profile } from '@weave/shared/types';
 
 export async function getSession() {
   if (!supabaseConfigured()) return { supabase: null, user: null };

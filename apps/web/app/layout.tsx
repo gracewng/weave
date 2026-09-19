@@ -2,10 +2,10 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Worth It',
+  title: 'Weave',
   description: 'The spending copilot for clothes. Know what you own, borrow before you buy, and keep the receipts.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Worth It', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'Weave', statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {

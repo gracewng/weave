@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@worthit/shared', '@worthit/data', '@worthit/clients'],
+  transpilePackages: ['@weave/shared', '@weave/data', '@weave/clients'],
   images: { remotePatterns: [{ protocol: 'https', hostname: '**' }] },
 };
 

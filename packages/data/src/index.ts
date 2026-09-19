@@ -2,7 +2,7 @@
  * DEVIN-OWNED. Scaffold only — see /docs/devin-tasks.md task 1.
  * Must export `retailerData: RetailerData` built from retailers.ts + returnPolicies.ts.
  */
-import type { RetailerData, RetailerInfo, ReturnPolicy } from '@worthit/shared/contracts';
+import type { RetailerData, RetailerInfo, ReturnPolicy } from '@weave/shared/contracts';
 
 const retailers: RetailerInfo[] = [];
 const returnPolicies: ReturnPolicy[] = [];

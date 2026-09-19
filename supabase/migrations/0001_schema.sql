@@ -1,4 +1,4 @@
--- Worth It · schema (Claude-owned; schema owner session only). Phase 1.
+-- Weave · schema (Claude-owned; schema owner session only). Phase 1.
 create extension if not exists vector;
 create extension if not exists pgcrypto;
 

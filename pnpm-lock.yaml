@@ -23,13 +23,13 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.116.0
         version: 2.116.0
-      '@worthit/clients':
+      '@weave/clients':
         specifier: workspace:*
         version: link:../../packages/clients
-      '@worthit/data':
+      '@weave/data':
         specifier: workspace:*
         version: link:../../packages/data
-      '@worthit/shared':
+      '@weave/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       next:
@@ -72,7 +72,7 @@ importers:
 
   packages/clients:
     dependencies:
-      '@worthit/shared':
+      '@weave/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
@@ -85,7 +85,7 @@ importers:
 
   packages/data:
     dependencies:
-      '@worthit/shared':
+      '@weave/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:

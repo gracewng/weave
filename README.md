@@ -1,4 +1,4 @@
-# Worth It
+# Weave
 
 The spending copilot for clothes. See `CLAUDE.md` for architecture, conventions, ownership, and phase status.
 

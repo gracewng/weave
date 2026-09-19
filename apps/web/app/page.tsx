@@ -8,7 +8,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
   return (
     <main className="mx-auto max-w-md px-4 py-12 sm:py-20">
       <Receipt>
-        <div className="mono text-center text-xs tracking-[.3em] text-ink-2">WORTH IT</div>
+        <div className="mono text-center text-xs tracking-[.3em] text-ink-2">WEAVE</div>
         <h1 className="mono mt-2 text-center text-lg font-semibold">SPENDING STATEMENT · CLOTHES</h1>
         <div className="mono mt-1 text-center text-xs text-ink-3">{new Date().toISOString().slice(0, 10)}</div>
         <ReceiptRule />
@@ -20,7 +20,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <ReceiptLine label="NEW CLOTHES YOU DIDN'T NEED" value="$0.00" valueClass="saved" />
         <ReceiptRule />
         <p className="mt-4 text-sm text-ink-2">
-          Worth It reads your order emails and card charges to build a closet you never have to type in, then stops you
+          Weave reads your order emails and card charges to build a closet you never have to type in, then stops you
           buying what you already own — or what a friend can lend you.
         </p>
         <div className="mt-6 flex flex-col gap-3">

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { pingProvider, MODELS, isDemoMode } from '@worthit/shared';
+import { pingProvider, MODELS, isDemoMode } from '@weave/shared';
 import { ensureLLM } from '@/lib/llm';
 
 export const runtime = 'nodejs';

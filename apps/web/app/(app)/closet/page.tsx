@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { EmptyState } from '@/components/EmptyState';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
-import type { Item } from '@worthit/shared/types';
+import type { Item } from '@weave/shared/types';
 
 export default async function ClosetPage() {
   const { supabase, user } = await requireUser();

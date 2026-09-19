@@ -1,11 +1,11 @@
 {
-  "name": "worth-it",
+  "name": "weave",
   "private": true,
   "packageManager": "pnpm@10.17.1",
   "scripts": {
-    "dev": "pnpm --filter @worthit/web dev",
-    "build": "pnpm --filter @worthit/web build",
-    "start": "pnpm --filter @worthit/web start",
+    "dev": "pnpm --filter @weave/web dev",
+    "build": "pnpm --filter @weave/web build",
+    "start": "pnpm --filter @weave/web start",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "vitest run",
     "db:push": "supabase db push",

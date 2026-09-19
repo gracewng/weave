@@ -21,7 +21,7 @@ export function ReceiptLine({ label, value, valueClass = '', muted = false }: { 
 export function ReceiptHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="text-center">
-      <div className="mono text-xs tracking-[.3em] text-ink-2">WORTH IT</div>
+      <div className="mono text-xs tracking-[.3em] text-ink-2">WEAVE</div>
       <h1 className="mono mt-1 text-base font-semibold uppercase">{title}</h1>
       {subtitle && <div className="mono mt-1 text-xs text-ink-3">{subtitle}</div>}
     </div>

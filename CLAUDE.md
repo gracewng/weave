@@ -1,4 +1,4 @@
-# Worth It — shared context for every agent session (Claude Code, Devin, humans)
+# Weave — shared context for every agent session (Claude Code, Devin, humans)
 
 **Read this first.** It is the single source of truth for architecture, conventions, ownership, and status.
 Keep it current: done / mocked / known issues / contract changes / open Devin tasks.
@@ -156,7 +156,7 @@ Dashed dividers, perforated edges (`.receipt`), dark mode = carbon copy. Primiti
 ### Done
 - Phase 1 code (see checklist).
 ### Mocked / not yet live
-- `@worthit/data` and `@worthit/clients` are stubs (Devin tasks 1–2). `fixtures/` is a README (Devin task 3).
+- `@weave/data` and `@weave/clients` are stubs (Devin tasks 1–2). `fixtures/` is a README (Devin task 3).
 - No real Supabase project or Vercel deployment has been linked from this repo yet.
 ### Known issues
 - `match_items`/`match_friend_items` use HNSW cosine; rebuild index if recall looks off after seeding.
