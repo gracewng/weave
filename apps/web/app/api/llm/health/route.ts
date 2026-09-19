@@ -9,10 +9,13 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   ensureLLM();
   const [meta, openai] = await Promise.all([pingProvider('meta'), pingProvider('openai')]);
-  const allOk = meta.ok && openai.ok;
+  // ok = every provider that has a key responds. An unconfigured provider is reported, not counted as a failure.
+  const configured = [meta, openai].filter((p) => p.configured);
+  const allOk = configured.length > 0 && configured.every((p) => p.ok);
   return NextResponse.json(
     {
       ok: allOk,
+      configuredProviders: configured.map((p) => p.provider),
       demoMode: isDemoMode(),
       checkedAt: new Date().toISOString(),
       providers: { meta, openai },

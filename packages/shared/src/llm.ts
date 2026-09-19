@@ -214,16 +214,18 @@ export async function callLLM<T = string>(opts: CallLLMOptions<T>): Promise<Call
   const chain: Provider[] = [primary];
   if (!opts.disableFallback && cfg.fallback && cfg.fallback !== primary) chain.push(cfg.fallback);
 
+  // A provider with no key is simply not in play: using the other one is routing, not a fallback.
+  // fellBack is only true when a configured provider actually failed and we moved on.
   const errors: string[] = [];
-  let attempt = 0;
+  let failedConfigured = false;
   for (const p of chain) {
     if (!hasProvider(p)) { errors.push(`${p}: no key`); continue; }
     try {
-      const r = await callProvider(p, opts, attempt > 0);
+      const r = await callProvider(p, opts, failedConfigured);
       return r;
     } catch (err) {
       errors.push(err instanceof Error ? err.message : String(err));
-      attempt++;
+      failedConfigured = true;
     }
   }
 
