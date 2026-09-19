@@ -13,8 +13,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm test -- --passWithNoTests
+      # build first: it generates .next/types that the web typecheck references
       - run: pnpm --filter @weave/web build
         env:
           DEMO_MODE: "true"
+      - run: pnpm typecheck
+      - run: pnpm test -- --passWithNoTests
