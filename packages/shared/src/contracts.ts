@@ -196,6 +196,52 @@ export interface VerdictInputs {
   budgetRemainingCents: number | null;
 }
 
+// ─── Money Kept / Recovered (pure, in /packages/shared/src/kept.ts; tests are Devin's) ─
+
+export type HoldOutcome = 'held' | 'skipped' | 'borrowed' | 'bought_used' | 'bought' | 'released';
+
+export interface KeptInputs {
+  holds: Array<{
+    id: string;
+    status: HoldOutcome;
+    priceCents: number | null;          // intended new price; null = unknown → excluded from dollars, counted in actions
+    actualPaidCents: number | null;     // used price / borrowing cost; null = 0
+    outcomeConfirmedAt: string | null;  // unconfirmed → potential only
+  }>;
+  returns: Array<{
+    itemId: string;
+    status: 'returning' | 'returned' | 'owned';
+    refundCents: number | null;         // confirmed refund net of fees; null = pending
+  }>;
+}
+export interface KeptSummary {
+  keptCents: number;                    // confirmed only
+  potentialKeptCents: number;           // held + unconfirmed, informational
+  byOutcome: { skipped: number; borrowed: number; boughtUsed: number };
+  actionsCount: number;                 // confirmed outcomes incl. unpriced ones
+  unpricedActions: number;
+  recoveredCents: number;               // confirmed refunds only
+  pendingRecoveryCount: number;
+}
+
+// ─── Closet Coverage (pure, in /packages/shared/src/coverage.ts) ─────────────
+
+export interface CoverageInputs {
+  periodStart: string;                  // YYYY-MM-DD
+  periodEnd: string;
+  transactions: Array<{ id: string; date: string; isClothing: boolean | null; matchStatus: 'unmatched' | 'matched' | 'captured' | 'mystery' | 'skipped'; decision: 'keep' | 'returning' | 'not_clothes' | null; hasReceipt: boolean }>;
+  /** Email orders = items grouped by (retailer, purchase_date); always resolved. */
+  emailOrders: Array<{ key: string; date: string }>;
+}
+export interface CoverageSummary {
+  detected: number;
+  resolved: number;
+  ratio: number | null;                 // null when detected = 0 → "Not enough purchase history"
+  unresolved: number;
+  missingReceipts: number;              // subset of unresolved
+  confirmedItems: number;
+}
+
 // ─── Budget math (pure, in /packages/shared/src/budget.ts; tests are Devin's) ─
 
 export interface BudgetInputs {

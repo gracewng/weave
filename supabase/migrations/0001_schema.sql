@@ -31,7 +31,10 @@ create table public.items (
   receipt_url text,                 -- photo of the paper receipt (proof for returns)
   source text not null check (source in ('email','receipt','tag','photo','quick_add','mystery','search')),
   return_by date,
-  status text not null default 'owned' check (status in ('owned','returned','sold','donated')),
+  status text not null default 'owned' check (status in ('owned','returning','returned','sold','donated')),
+  return_initiated_at timestamptz,          -- Return Pending
+  refund_cents int,                         -- Refund Confirmed: actual amount net of fees → Money Recovered
+  refunded_at timestamptz,
   shareable boolean not null default true,
   lendable boolean not null default true,
   est_resale_cents int,
@@ -118,15 +121,21 @@ create table public.holds (
   title text not null,
   url text,
   image_url text,
-  price_cents int not null,
+  price_cents int not null,                  -- intended price (new)
+  intended_source text,                      -- retailer / listing the user was about to buy from
   query text,                                -- the search that produced it
   verdict text check (verdict in ('skip','borrow','secondhand','wait','buy')),
   similar_item_ids uuid[] not null default '{}',
   friend_item_ids uuid[] not null default '{}',
   cheapest_used_cents int,
+  -- Lifecycle: held → skipped | borrowed | bought_used | bought | released (expired, unanswered). One intention, one outcome.
   status text not null default 'held' check (status in ('held','skipped','borrowed','bought_used','bought','released')),
-  saved_cents int not null default 0,        -- credited when status ∈ (skipped, borrowed, bought_used)
-  release_at timestamptz,                    -- 48h cooling-off; cron re-checks friends + secondhand then notifies
+  outcome_confirmed_at timestamptz,          -- set when the user confirms what happened; kept_cents is only valid after this
+  actual_paid_cents int,                     -- what they actually paid (used price, borrowing cost); null = $0
+  loan_id uuid references public.loans on delete set null,      -- the loan that replaced the purchase
+  wore_item_id uuid references public.items on delete set null, -- "wore mine": the owned item used instead
+  kept_cents int not null default 0,         -- Money Kept: computed by kept.ts at confirmation; 0 while pending; reversed if bought later
+  release_at timestamptz,                    -- 48h cooling-off; cron re-checks friends + secondhand then asks "what happened?"
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

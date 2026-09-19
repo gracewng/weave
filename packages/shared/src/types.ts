@@ -3,7 +3,7 @@
 export type Category = 'top' | 'bottom' | 'dress' | 'outerwear' | 'shoes' | 'accessory' | 'intimates' | 'other';
 export type Slot = 'top' | 'bottom' | 'one_piece' | 'outer' | 'shoes' | 'accessory';
 export type ItemSource = 'email' | 'receipt' | 'tag' | 'photo' | 'quick_add' | 'mystery' | 'search';
-export type ItemStatus = 'owned' | 'returned' | 'sold' | 'donated';
+export type ItemStatus = 'owned' | 'returning' | 'returned' | 'sold' | 'donated';
 export type VoicePersona = 'bestie' | 'stylist' | 'cfo';
 export type LoanStatus = 'requested' | 'accepted' | 'declined' | 'out' | 'returned';
 export type MatchStatus = 'unmatched' | 'matched' | 'captured' | 'mystery' | 'skipped';
@@ -38,6 +38,9 @@ export interface Item {
   source: ItemSource;
   return_by: string | null;
   status: ItemStatus;
+  return_initiated_at: string | null;
+  refund_cents: number | null;
+  refunded_at: string | null;
   shareable: boolean;
   lendable: boolean;
   est_resale_cents: number | null;
@@ -112,14 +115,21 @@ export interface Hold {
   title: string;
   url: string | null;
   image_url: string | null;
+  /** Intended (new) price. */
   price_cents: number;
+  intended_source: string | null;
   query: string | null;
   verdict: Verdict | null;
   similar_item_ids: string[];
   friend_item_ids: string[];
   cheapest_used_cents: number | null;
   status: HoldStatus;
-  saved_cents: number;
+  outcome_confirmed_at: string | null;
+  actual_paid_cents: number | null;
+  loan_id: string | null;
+  wore_item_id: string | null;
+  /** Money Kept — valid only when outcome_confirmed_at is set. */
+  kept_cents: number;
   release_at: string | null;
   created_at: string;
   updated_at: string;

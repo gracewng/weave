@@ -117,7 +117,10 @@ users so the 2-minute demo works without any real account.
   2 items within 4 days, wear logs), 18 months of `transactions` incl. 6 `mystery`; **three friends** Maya, Jordan,
   Priya (25–40 items each, varied sizes, accepted friendships with demo user and each other; Maya owns a black slip
   dress in the demo user's size), one past loan (`returned`), a `budgets` row (income $4,200 take-home, 5%),
-  three `holds` (2 `held` with `release_at` in the past so the 48h re-check fires, 1 `skipped` with saved_cents),
+  five `holds` covering the lifecycle (2 `held` with `release_at` in the past so the 48h re-check fires; 1 `skipped`
+  confirmed with `kept_cents` = intended price; 1 `borrowed` confirmed with `loan_id` pointing at the past loan and
+  `actual_paid_cents` 0; 1 `bought_used` confirmed with `actual_paid_cents` < price), one item in `returning`
+  status with `return_initiated_at`, one item `returned` with `refund_cents` + `refunded_at` (Money Recovered),
   and ≥120 `wears` rows spread over 6 months so cost-per-wear and "% worn this season" are meaningful (leave ~8
   items unworn). Idempotent: `--reset` deletes and recreates the demo users. Embeddings may be left null
   (Phase 3 fills them) unless `OPENAI_API_KEY` is set, in which case embed descriptions.
@@ -148,12 +151,20 @@ implementation lands; Claude will un-todo them.
   remaining; linear projection; remainingRatio clamped; overBy) and
   `priceMemory(items: Array<{category, brand, price_cents}>, category, brand?) → { medianCents: number; n: number } | null`
   (median by category; by brand only when ≥ 3 samples).
-- `wears.ts`: `costPerWear(priceCents, wears) → number | null`, `wearsToThirty(wears) → number`,
+- `wears.ts`: `costPerWear(priceCents, wears) → number | null` (null at 0 wears), `wearsToThirty(wears) → number`,
   `wornShare(items, wears, sinceDate) → number` (0..1), `dormant(items, wears, days) → Item[]`.
+- `kept.ts`: `summarizeKept(inputs: KeptInputs) → KeptSummary` per the Money Kept table in `CLAUDE.md`: confirmed
+  outcomes only; skipped = intended price; borrowed / bought_used = intended − actual paid, floor 0; `bought` and
+  `released` contribute 0; unconfirmed → potential only; null price → excluded from dollars but counted in
+  `unpricedActions`; refunds count only with `refundCents` set.
+- `coverage.ts`: `summarizeCoverage(inputs: CoverageInputs) → CoverageSummary` — detected = clothing transactions in
+  period with decision ≠ not_clothes + email orders; resolved = matched/captured/decision returning + all email
+  orders; `ratio` null when detected = 0; `missingReceipts` = unresolved without receipt.
 
 **Deliverables.** `*.test.ts` next to each file, vitest, table-driven, covering happy paths, boundaries (exactly 10%,
 exactly ±4 days, similarity exactly 0.88, price exactly equal to budget remaining), the priority order of verdict
-rules, and budget projection on day 1 / last day of month.
+rules, budget projection on day 1 / last day of month, Money Kept with a hold that changes from `held` → `borrowed`
+(one credit, not two), a `bought` reversal, and coverage where "not clothes" shrinks the denominator.
 
 **Acceptance.** `pnpm test` runs green (todos allowed for unimplemented functions).
 
