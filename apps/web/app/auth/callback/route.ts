@@ -6,7 +6,7 @@ import { originFrom } from '@/lib/env';
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
-  const next = url.searchParams.get('next') ?? '/closet';
+  const next = url.searchParams.get('next') ?? '/wardrobe';
   const origin = originFrom(req);
   if (!code) return NextResponse.redirect(`${origin}/?error=missing_code`);
 
@@ -33,6 +33,6 @@ export async function GET(req: Request) {
       });
     }
   }
-  const safeNext = next.startsWith('/') ? next : '/closet';
+  const safeNext = next.startsWith('/') ? next : '/wardrobe';
   return NextResponse.redirect(`${origin}${safeNext}`);
 }

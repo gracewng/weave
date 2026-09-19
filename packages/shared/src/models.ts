@@ -35,8 +35,8 @@ export type Task =
   | 'extract_email'
   | 'tag_items'
   | 'read_capture'
-  | 'score_pairings'
-  | 'crew_fits'
+  | 'parse_query'
+  | 'search_note'
   | 'borrow_message'
   | 'spoken_line'
   | 'embed'
@@ -72,15 +72,15 @@ export const TASKS: Record<Task, TaskConfig> = {
     timeoutMs: 15000, maxOutputTokens: 800,
     why: 'Native multimodal (receipt / tag / garment photo)',
   },
-  score_pairings: {
-    provider: 'meta', fallback: 'openai', reasoningEffort: 'low', structured: true, batchSize: 40,
-    timeoutMs: 15000, maxOutputTokens: 2000,
-    why: 'Batched, cached forever in `pairings`',
+  parse_query: {
+    provider: 'meta', fallback: 'openai', reasoningEffort: 'minimal', structured: true,
+    timeoutMs: 8000, maxOutputTokens: 200,
+    why: 'Search bar: "black slip dress under $60" → {category, color, max price, event}',
   },
-  crew_fits: {
-    provider: 'meta', fallback: 'openai', reasoningEffort: 'medium', structured: true,
-    timeoutMs: 45000, maxOutputTokens: 3000,
-    why: 'Flagship Meta feature: group outfit coordination',
+  search_note: {
+    provider: 'openai', fallback: 'meta', structured: false,
+    timeoutMs: 8000, maxOutputTokens: 80,
+    why: 'One line above search results: "You own 3 black tees, worn 2x total." Verdict is rule-based.',
   },
   borrow_message: {
     provider: 'meta', fallback: 'openai', reasoningEffort: 'minimal', structured: false,
@@ -90,7 +90,7 @@ export const TASKS: Record<Task, TaskConfig> = {
   spoken_line: {
     provider: 'openai', fallback: 'meta', structured: false,
     timeoutMs: 8000, maxOutputTokens: 80,
-    why: 'Short, persona-styled checkout verdict',
+    why: 'ElevenLabs spoken statement / verdict (low priority)',
   },
   embed: {
     provider: 'openai', structured: false, batchSize: 100, timeoutMs: 10000,

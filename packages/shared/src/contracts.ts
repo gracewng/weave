@@ -145,6 +145,25 @@ export interface FixtureProductPage {
   description: string;
 }
 
+/** Marketplace deep links for the "secondhand" and "new retail" tiers of search (no API needed). */
+export interface MarketplaceLink {
+  id: string;                 // "depop" | "poshmark" | "thredup" | "ebay" | "google_shopping" ...
+  name: string;
+  kind: 'secondhand' | 'retail';
+  /** Build a search URL for a query. */
+  searchUrl(query: string): string;
+  logoEmoji?: string;
+}
+
+/** "What this could be instead" comparisons for the budget page. Sourced averages, with URLs in comments. */
+export interface MoneyAlternative {
+  id: string;
+  label: string;              // "months of Spotify", "weeks of groceries (1 person)", "invested for 10 years at 7%"
+  /** Convert cents to a human count, e.g. 4900 → "4.5 months of Spotify". */
+  describe(cents: number): string;
+  source?: string;
+}
+
 export interface Fixtures {
   emails: FixtureEmail[];
   charges: FixtureCharge[];
@@ -153,9 +172,10 @@ export interface Fixtures {
   productPages: FixtureProductPage[];
   /** Pre-computed LLM outputs keyed by task, used when both providers are down. */
   llm: {
-    extract_email: Record<string, unknown>;      // keyed by FixtureEmail.id
-    crew_fits: unknown;                           // one Formal Friday result for the seeded crew
-    spoken_line: Record<string, string>;          // keyed by verdict
+    extract_email: Record<string, unknown>;      // keyed by FixtureEmail.id — must pass ExtractEmailSchema
+    parse_query: Record<string, unknown>;        // keyed by lowercased query — must pass ParseQuerySchema
+    search_note: Record<string, string>;         // keyed by verdict
+    spoken_line: Record<string, string>;         // keyed by verdict
     borrow_message: string;
   };
   /** ElevenLabs mp3 data URLs keyed by verdict for offline audio. */
@@ -172,5 +192,27 @@ export interface VerdictInputs {
   oneTimeNeedSignal: boolean;
   priceCents: number;
   cheapestUsedCents: number | null;
-  outfitsUnlocked: number;
+  /** Monthly envelope minus spend so far; null when no budget set. */
+  budgetRemainingCents: number | null;
+}
+
+// ─── Budget math (pure, in /packages/shared/src/budget.ts; tests are Devin's) ─
+
+export interface BudgetInputs {
+  monthlyIncomeCents: number | null;
+  clothingPct: number;               // e.g. 5
+  envelopeOverrideCents: number | null;
+  spentThisMonthCents: number;
+  dayOfMonth: number;
+  daysInMonth: number;
+}
+export interface BudgetSummary {
+  envelopeCents: number | null;
+  spentCents: number;
+  remainingCents: number | null;
+  /** Linear projection of month-end spend from pace so far. */
+  projectedCents: number;
+  /** remaining / envelope, clamped 0..1; null without an envelope. */
+  remainingRatio: number | null;
+  overBy: number;                    // cents over envelope (0 when under)
 }

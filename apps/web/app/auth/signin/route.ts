@@ -10,7 +10,7 @@ import { originFrom, supabaseConfigured } from '@/lib/env';
 export async function GET(req: Request) {
   if (!supabaseConfigured()) return NextResponse.json({ error: 'Supabase env not configured' }, { status: 500 });
   const origin = originFrom(req);
-  const next = new URL(req.url).searchParams.get('next') ?? '/closet';
+  const next = new URL(req.url).searchParams.get('next') ?? '/wardrobe';
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

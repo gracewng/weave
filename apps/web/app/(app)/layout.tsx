@@ -2,6 +2,8 @@ import { Nav } from '@/components/Nav';
 import { getProfile } from '@/lib/auth';
 import { isDemoMode } from '@weave/shared/env';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, user } = await getProfile();
   const name = profile?.display_name ?? user.email ?? 'you';

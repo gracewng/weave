@@ -1,4 +1,4 @@
--- Weave · schema (Claude-owned; schema owner session only). Phase 1.
+-- Weave · schema (Claude-owned; schema owner session only). Phase 1 (re-planned 2026-09-19: no crews, no pairings).
 create extension if not exists vector;
 create extension if not exists pgcrypto;
 
@@ -28,7 +28,8 @@ create table public.items (
   purchase_date date,
   retailer text,
   image_url text,
-  source text not null check (source in ('email','receipt','tag','photo','quick_add','mystery','intervention')),
+  receipt_url text,                 -- photo of the paper receipt (proof for returns)
+  source text not null check (source in ('email','receipt','tag','photo','quick_add','mystery','search')),
   return_by date,
   status text not null default 'owned' check (status in ('owned','returned','sold','donated')),
   shareable boolean not null default true,
@@ -75,32 +76,6 @@ create table public.loans (
 create index loans_owner_idx on public.loans (owner_id);
 create index loans_borrower_idx on public.loans (borrower_id);
 
--- ─── crews ───────────────────────────────────────────────────────────────────
-create table public.crews (
-  id uuid primary key default gen_random_uuid(),
-  name text,
-  event_date date,
-  dress_code text,
-  vibe text,
-  created_by uuid references auth.users on delete set null,
-  created_at timestamptz not null default now()
-);
-create table public.crew_members (
-  crew_id uuid not null references public.crews on delete cascade,
-  user_id uuid not null references auth.users on delete cascade,
-  primary key (crew_id, user_id)
-);
-create table public.crew_looks (
-  id uuid primary key default gen_random_uuid(),
-  crew_id uuid not null references public.crews on delete cascade,
-  user_id uuid not null references auth.users on delete cascade,
-  item_ids uuid[] not null default '{}',
-  borrowed_item_ids uuid[] not null default '{}',
-  rationale text,
-  accepted boolean not null default false,
-  created_at timestamptz not null default now()
-);
-
 -- ─── transactions ────────────────────────────────────────────────────────────
 create table public.transactions (
   id uuid primary key default gen_random_uuid(),
@@ -112,11 +87,13 @@ create table public.transactions (
   is_clothing boolean,
   match_status text not null default 'unmatched' check (match_status in ('unmatched','matched','captured','mystery','skipped')),
   item_ids uuid[] not null default '{}',
+  decision text check (decision in ('keep','returning','not_clothes')),  -- purchase confirmation answer
+  decided_at timestamptz,
   created_at timestamptz not null default now()
 );
 create index transactions_user_idx on public.transactions (user_id, match_status);
 
--- ─── wears / pairings ────────────────────────────────────────────────────────
+-- ─── wears ────────────────────────────────────────────────────────────────────
 create table public.wears (
   id uuid primary key default gen_random_uuid(),
   item_id uuid not null references public.items on delete cascade,
@@ -124,33 +101,37 @@ create table public.wears (
 );
 create index wears_item_idx on public.wears (item_id);
 
-create table public.pairings (
-  item_a uuid not null references public.items on delete cascade,
-  item_b uuid not null references public.items on delete cascade,
-  score real not null,
-  primary key (item_a, item_b),
-  check (item_a < item_b)
+
+-- ─── budgets (income → monthly clothing envelope) ────────────────────────────
+create table public.budgets (
+  user_id uuid primary key references auth.users on delete cascade,
+  monthly_income_cents int,                  -- take-home
+  clothing_pct numeric(5,2) not null default 5.00,   -- share of take-home for clothes
+  envelope_override_cents int,               -- manual monthly envelope, wins over pct when set
+  updated_at timestamptz not null default now()
 );
 
--- ─── interventions ───────────────────────────────────────────────────────────
-create table public.interventions (
+-- ─── holds (Ghost Rack: things you searched for and did NOT buy) ─────────────
+create table public.holds (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users on delete cascade,
-  product_title text,
-  product_url text,
-  product_image text,
-  price_cents int,
-  similar_item_ids uuid[] default '{}',
-  friend_item_ids uuid[] default '{}',
-  outfits_unlocked int,
+  title text not null,
+  url text,
+  image_url text,
+  price_cents int not null,
+  query text,                                -- the search that produced it
   verdict text check (verdict in ('skip','borrow','secondhand','wait','buy')),
-  decision text check (decision in ('skipped','borrowed','bought_secondhand','queued','bought','pending')),
-  saved_cents int not null default 0,
-  remind_at timestamptz,
-  created_at timestamptz not null default now()
+  similar_item_ids uuid[] not null default '{}',
+  friend_item_ids uuid[] not null default '{}',
+  cheapest_used_cents int,
+  status text not null default 'held' check (status in ('held','skipped','borrowed','bought_used','bought','released')),
+  saved_cents int not null default 0,        -- credited when status ∈ (skipped, borrowed, bought_used)
+  release_at timestamptz,                    -- 48h cooling-off; cron re-checks friends + secondhand then notifies
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
-create index interventions_user_idx on public.interventions (user_id, created_at desc);
-create index interventions_remind_idx on public.interventions (remind_at) where remind_at is not null;
+create index holds_user_idx on public.holds (user_id, created_at desc);
+create index holds_release_idx on public.holds (release_at) where release_at is not null and status = 'held';
 
 -- ─── llm_calls (token-optimization ledger) ───────────────────────────────────
 create table public.llm_calls (

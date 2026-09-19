@@ -21,7 +21,7 @@ export default async function SettingsPage() {
           <input name="display_name" defaultValue={profile?.display_name ?? ''} className="mt-1 w-full border border-rule bg-paper p-2 text-sm" />
         </label>
         <fieldset>
-          <legend className="mono text-xs uppercase text-ink-3">Voice persona</legend>
+          <legend className="mono text-xs uppercase text-ink-3">Voice persona (spoken statement, optional)</legend>
           <div className="mt-2 space-y-2">
             {PERSONAS.map(([v, label, desc]) => (
               <label key={v} className="flex items-start gap-2 text-sm">

@@ -8,7 +8,7 @@ Paste each brief into Devin as-is. Every brief starts with the same preamble.
 
 > You are working in the `weave` monorepo (pnpm workspaces, TypeScript). **Read `CLAUDE.md` at the repo root
 > first** — it has the architecture, conventions, and the ownership map. You may only touch the paths listed under
-> "Files you may touch" in this brief. Do not edit `/supabase`, `/apps/web` (except `fixtures/`), `/apps/extension/src`,
+> "Files you may touch" in this brief. Do not edit `/supabase`, `/apps/web` (except `fixtures/`),
 > or `/packages/shared` (except `*.test.ts`). If you need a change outside your paths, add a TODO under "TODOs for
 > Devin-owned folders" in `CLAUDE.md` and mention it in the PR description. Implement against the interfaces in
 > `/packages/shared/src/contracts.ts` — do not change them. Work on a branch `devin/<task>`; open one PR per task
@@ -104,25 +104,28 @@ users so the 2-minute demo works without any real account.
   - `charges`: 18 months of card charges; ≥6 clothing charges with no matching email (mystery), 2 in the last 48h,
     plus non-clothing noise.
   - `usedListings`, `shoppingResults`: keyed by lowercased query prefix, ≥5 queries each.
-  - `productPages`: 6 product pages (a near-duplicate black tee, a formal dress, a neutral overshirt, a loud
-    statement jacket, sneakers, jeans) with title/price/image/description.
-  - `llm`: pre-computed `extract_email` results keyed by email id (must validate against `ExtractEmailSchema`), one
-    `crew_fits` result for the seeded Formal Friday crew (validates against `CrewFitsSchema`), `spoken_line` per
-    verdict, one `borrow_message`.
+  - `productPages`: 6 retail results (a near-duplicate black tee, a formal slip dress, a neutral overshirt, a loud
+    statement jacket, sneakers, jeans) with title/price/image/description — used as the "new retail" tier of search.
+  - `llm`: pre-computed `extract_email` results keyed by email id (must validate against `ExtractEmailSchema`),
+    `parse_query` results for ≥8 queries keyed by lowercased query (validate against `ParseQuerySchema`; include
+    "black slip dress for a wedding", "plain black tee", "white sneakers under $80"), `search_note` and
+    `spoken_line` per verdict, one `borrow_message`.
   - `audio`: one short mp3 data URL per verdict (can be silence or a TTS-generated clip committed as base64).
 - `/scripts/seed-demo.ts` (run with `pnpm tsx scripts/seed-demo.ts`, needs `SUPABASE_SERVICE_ROLE_KEY`):
   creates via the Supabase admin API a main demo user (`demo@weave.app`) with a 45-item closet (images uploaded to
   the `items` bucket, sizes, prices, purchase dates, categories/slots/formality/descriptions filled, `return_by` for
   2 items within 4 days, wear logs), 18 months of `transactions` incl. 6 `mystery`; **three friends** Maya, Jordan,
-  Priya (25–40 items each, varied sizes, accepted friendships with demo user and each other), one past loan
-  (`returned`), and a crew "Formal Friday" with event date next week, dress code "cocktail", vibe "black tie-ish but
-  fun", all four as members. Idempotent: `--reset` deletes and recreates the demo users. Embeddings may be left null
+  Priya (25–40 items each, varied sizes, accepted friendships with demo user and each other; Maya owns a black slip
+  dress in the demo user's size), one past loan (`returned`), a `budgets` row (income $4,200 take-home, 5%),
+  three `holds` (2 `held` with `release_at` in the past so the 48h re-check fires, 1 `skipped` with saved_cents),
+  and ≥120 `wears` rows spread over 6 months so cost-per-wear and "% worn this season" are meaningful (leave ~8
+  items unworn). Idempotent: `--reset` deletes and recreates the demo users. Embeddings may be left null
   (Phase 3 fills them) unless `OPENAI_API_KEY` is set, in which case embed descriptions.
 - `/scripts/README.md` with usage.
 
 **Acceptance.** `pnpm tsx scripts/seed-demo.ts --reset` against a fresh Supabase project completes without error and
 `select count(*) from items` ≈ 45 + 3×(25–40); `fixtures.llm.extract_email` values all pass `ExtractEmailSchema`;
-`fixtures.llm.crew_fits` passes `CrewFitsSchema` and references only seeded item ids.
+`fixtures.llm.parse_query` values all pass `ParseQuerySchema`.
 
 **Files you may touch.** `/apps/web/fixtures/**`, `/scripts/**`, root `package.json` (add `tsx` devDependency only).
 
@@ -139,16 +142,18 @@ implementation lands; Claude will un-todo them.
   — retailer fuzzy match (via `retailerData.byMerchant` + name similarity) AND `|amount diff| ≤ 10%` AND date within
   ±4 days.
 - `returns.ts`: `returnBy(purchaseDate: string, retailerId: string | null, data: RetailerData) → string | null`.
-- `outfits.ts`: `countOutfits(items: Item[], pairings: Map<string, number>) → number` and
-  `outfitsUnlocked(candidate: Item, items: Item[], pairings) → { count: number; examples: Item[][] }` per the rules in
-  `CLAUDE.md` (Outfit = top+bottom or one_piece, + shoes, optional outer; every pair ≥ 0.6; formality spread ≤ 2).
-- `verdict.ts`: `decideVerdict(inputs: VerdictInputs) → Verdict` with the five ordered rules in `CLAUDE.md`.
-- `crewValidate.ts`: `validateCrewFits(result: CrewFitsResult, members: CrewMemberCompact[]) → { ok: true } | { ok: false; errors: string[] }`
-  — every item exists in the combined closets, borrowed items match the borrower's size for that slot, no item
-  assigned to two people, exactly one look per member.
+- `verdict.ts`: `decideVerdict(inputs: VerdictInputs) → Verdict` with the five ordered rules in `CLAUDE.md`
+  (skip / borrow / secondhand / wait / buy).
+- `budget.ts`: `summarizeBudget(inputs: BudgetInputs) → BudgetSummary` (envelope = override ?? income × pct;
+  remaining; linear projection; remainingRatio clamped; overBy) and
+  `priceMemory(items: Array<{category, brand, price_cents}>, category, brand?) → { medianCents: number; n: number } | null`
+  (median by category; by brand only when ≥ 3 samples).
+- `wears.ts`: `costPerWear(priceCents, wears) → number | null`, `wearsToThirty(wears) → number`,
+  `wornShare(items, wears, sinceDate) → number` (0..1), `dormant(items, wears, days) → Item[]`.
 
 **Deliverables.** `*.test.ts` next to each file, vitest, table-driven, covering happy paths, boundaries (exactly 10%,
-exactly ±4 days, similarity exactly 0.88), and the priority order of verdict rules.
+exactly ±4 days, similarity exactly 0.88, price exactly equal to budget remaining), the priority order of verdict
+rules, and budget projection on day 1 / last day of month.
 
 **Acceptance.** `pnpm test` runs green (todos allowed for unimplemented functions).
 
@@ -156,26 +161,26 @@ exactly ±4 days, similarity exactly 0.88), and the priority order of verdict ru
 
 ---
 
-## Task 5 — Chrome extension scaffold
+## Task 5 — Marketplace links + money alternatives (`@weave/data`)
 
-**Context.** Phase 7 is a Chrome MV3 content script that detects product/checkout pages and shows an overlay. Claude
-writes the business logic in `/apps/extension/src`; you provide the build system and entry points with **no business
-logic**.
+**Context.** Search results have four tiers: your wardrobe → friends → secondhand → new retail. The eBay API covers
+one secondhand source; the rest are deep links (no API): Depop, Poshmark, ThredUp, Vinted, Grailed, The RealReal,
+plus a Google Shopping link as the "new retail" tier. The budget page shows "what this money could be instead."
+
+**Contract.** `MarketplaceLink`, `MoneyAlternative` in `/packages/shared/src/contracts.ts`.
 
 **Deliverables.**
-- `/apps/extension/package.json` (`@weave/extension`, Vite + `@crxjs/vite-plugin` or plain Vite multi-entry — pick
-  what's currently maintained and say why), `vite.config.ts`, `tsconfig.json` extending `../../tsconfig.base.json`.
-- `manifest.json` (MV3): `content_scripts` on `<all_urls>` (Claude narrows with URL heuristics at runtime),
-  `background` service worker, `permissions: ["storage", "activeTab"]`, `host_permissions` for
-  `http://localhost:3000/*` and `https://*.vercel.app/*`, an `action` popup.
-- Entry points that compile and do nothing meaningful: `src/content.ts` (logs "weave content script"),
-  `src/background.ts`, `src/popup.html` + `src/popup.ts` with a field to store the web app base URL + a paste-in
-  session token in `chrome.storage.sync`.
-- Dev reload (crxjs HMR or a `watch` script) and a `README.md` with "load unpacked" steps.
-- Add `dev:ext` / `build:ext` scripts to root `package.json`.
+- `/packages/data/src/marketplaces.ts`: `marketplaces: MarketplaceLink[]` with working `searchUrl(query)` builders
+  (verify each site's search URL format by hand; URL-encode). Secondhand ones first, retail last. Export
+  `secondhandLinks(query)` and `retailLinks(query)`.
+- `/packages/data/src/alternatives.ts`: `alternatives: MoneyAlternative[]` — ≥8 sourced US averages (streaming
+  subscription, coffee, groceries per person per week, a month of transit pass, a textbook, a concert ticket, a
+  flight BOS→NYC, invested 10y at 7% compounding). `describe(cents)` returns a short phrase with one decimal max
+  ("4.5 months of Spotify"). Source URLs in comments. Export `bestAlternatives(cents, n=3)` picking the ones whose
+  count lands between 0.5 and 50 for readability.
+- Re-export both from `/packages/data/src/index.ts`. Tests in `data.test.ts`.
 
-**Acceptance.** `pnpm --filter @weave/extension build` produces `dist/` loadable in Chrome with no console errors;
-content script logs on any page.
+**Acceptance.** `secondhandLinks('black slip dress')` returns ≥5 valid URLs that open a results page;
+`bestAlternatives(4900)` returns 3 readable phrases.
 
-**Files you may touch.** `/apps/extension/**` except `/apps/extension/src/**` after your initial scaffold commit
-(Claude takes over `src/`), root `package.json` scripts.
+**Files you may touch.** `/packages/data/**`.

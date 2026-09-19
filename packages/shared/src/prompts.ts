@@ -80,49 +80,46 @@ export type ReadCaptureResult = z.infer<typeof ReadCaptureSchema>;
 
 export const READ_CAPTURE_SYSTEM = `You read a photo taken right after an in-store clothing purchase. Classify it as a receipt, a price/brand tag, a garment photo, or unknown. Extract only clothing line items with per-unit prices in cents when visible. For tags, read brand, size, and price. For garments, describe the item and guess category and color. Report confidence 0-1. Never invent prices.`;
 
-// ─── score_pairings ───────────────────────────────────────────────────────────
+// ─── parse_query (search bar) ─────────────────────────────────────────────────
 
-export const ScorePairingsSchema = z.object({
-  pairs: z.array(z.object({ a: z.string(), b: z.string(), score: z.number().min(0).max(1) })),
+export const ParseQuerySchema = z.object({
+  /** Cleaned search phrase for embeddings + marketplaces, e.g. "black slip dress". */
+  query: z.string(),
+  category: z.enum(CATEGORIES).nullable(),
+  color: z.string().nullable(),
+  brand: z.string().nullable(),
+  max_price_cents: z.number().int().nullable(),
+  /** e.g. "wedding", "interview" — signals a one-time need → borrow first. */
+  occasion: z.string().nullable(),
+  one_time_need: z.boolean(),
 });
-export type ScorePairingsResult = z.infer<typeof ScorePairingsSchema>;
+export type ParseQueryResult = z.infer<typeof ParseQuerySchema>;
 
-export const SCORE_PAIRINGS_SYSTEM = `You judge whether two clothing items look good worn together in one outfit. Score 0-1: 1.0 = classic combination, 0.6 = works, 0.3 = awkward, 0.0 = clashing. Consider color harmony, formality match, silhouette, and season. Return every pair you were given, with the same ids.`;
+export const PARSE_QUERY_SYSTEM = `You parse a clothing shopping query into structured filters. Extract the cleaned item phrase, category, color, brand, a max price in cents if stated, and an occasion if mentioned. Set one_time_need true when the query implies a single event (wedding, formal, interview, costume, "for Saturday"). Use null when not stated. Never invent a price.`;
 
-export function scorePairingsInput(pairs: Array<{ a: string; b: string; descA: string; descB: string }>): string {
-  return pairs.map((p) => `${p.a} :: ${p.descA}\n${p.b} :: ${p.descB}`).join('\n---\n');
-}
+// ─── search_note ──────────────────────────────────────────────────────────────
 
-// ─── crew_fits ────────────────────────────────────────────────────────────────
+export const SEARCH_NOTE_SYSTEM = `You write the one line shown above shopping search results in a wardrobe app. The verdict is already decided and you must not contradict it. One sentence, under 25 words, plain text, no emojis. Mention one concrete number (a count, a price, a wear count) or the friend's name. Never shame the user.`;
 
-export const CrewFitsSchema = z.object({
-  looks: z.array(z.object({
-    user_id: z.string(),
-    item_ids: z.array(z.string()),
-    borrowed: z.array(z.object({ item_id: z.string(), from_user_id: z.string() })),
-    rationale: z.string(),
-  })),
-  group_palette: z.string(),
-  notes: z.string().nullable(),
-});
-export type CrewFitsResult = z.infer<typeof CrewFitsSchema>;
-
-export const CREW_FITS_SYSTEM = `You style a group of friends for one event using ONLY the items listed. Produce exactly one look per member. A look is (top + bottom) or one one_piece, plus shoes, optionally outerwear and accessories. Rules: (a) use only listed item ids; (b) the group must coordinate — complementary palette, matching formality that fits the dress code; (c) prefer each person's own items, borrow from another member only to fill a gap; (d) a borrowed item must be in the borrower's size for that slot; (e) never assign one item to two people. For each look, list item_ids (including borrowed ones) and the borrowed entries with from_user_id, plus a one-sentence rationale. Return group_palette as a short phrase.`;
-
-export interface CrewMemberCompact {
-  user_id: string;
-  name: string;
-  sizes: Record<string, string>;
-  items: Array<{ id: string; slot: string; size: string | null; description: string }>;
-}
-
-/** Compact descriptions only — never images. */
-export function crewFitsInput(args: { event: string; date: string; dressCode: string; vibe: string; members: CrewMemberCompact[] }): string {
-  const members = args.members.map((m) =>
-    `MEMBER ${m.user_id} (${m.name}) sizes=${JSON.stringify(m.sizes)}\n` +
-    m.items.map((i) => `  ${i.id} | ${i.slot} | size ${i.size ?? '?'} | ${i.description}`).join('\n'),
-  ).join('\n');
-  return `EVENT: ${args.event} on ${args.date}\nDRESS CODE: ${args.dressCode}\nVIBE: ${args.vibe}\n\n${members}`;
+export function searchNoteInput(args: {
+  verdict: (typeof VERDICTS)[number];
+  query: string;
+  ownedSimilar: Array<{ name: string; wears: number; price_cents: number | null }>;
+  friendItem?: { name: string; friendName: string } | null;
+  cheapestUsedCents?: number | null;
+  usualPriceCents?: number | null;
+  budgetRemainingCents?: number | null;
+}): string {
+  const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+  return [
+    `VERDICT (fixed): ${args.verdict}`,
+    `QUERY: ${args.query}`,
+    `OWNED SIMILAR: ${args.ownedSimilar.length ? args.ownedSimilar.map((i) => `${i.name} (worn ${i.wears}x${i.price_cents != null ? `, paid ${usd(i.price_cents)}` : ''})`).join('; ') : 'none'}`,
+    `FRIEND CAN LEND: ${args.friendItem ? `${args.friendItem.friendName}'s ${args.friendItem.name}` : 'none'}`,
+    `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,
+    `USER USUALLY PAYS: ${args.usualPriceCents != null ? usd(args.usualPriceCents) : 'unknown'}`,
+    `BUDGET LEFT THIS MONTH: ${args.budgetRemainingCents != null ? usd(args.budgetRemainingCents) : 'unknown'}`,
+  ].join('\n');
 }
 
 // ─── spoken_line ──────────────────────────────────────────────────────────────
@@ -133,7 +130,7 @@ export const PERSONA_STYLE: Record<(typeof PERSONAS)[number], string> = {
   cfo: 'Dry, all numbers, mildly amused. Talks in dollars and cost-per-wear.',
 };
 
-export const SPOKEN_LINE_SYSTEM = `You write the one spoken line a shopping copilot says at checkout. The verdict is already decided and you must not contradict it. One or two sentences, under 30 words. Mention at least one concrete number (a price, a wear count, an outfit count) or a friend's name. Never shame the user. Output plain text only, no quotes, no emojis.`;
+export const SPOKEN_LINE_SYSTEM = `You write the one spoken line a wardrobe copilot says about a purchase or a monthly statement. The verdict is already decided and you must not contradict it. One or two sentences, under 30 words. Mention at least one concrete number (a price, a wear count, a budget figure) or a friend's name. Never shame the user. Output plain text only, no quotes, no emojis.`;
 
 export function spokenLineInput(args: {
   persona: (typeof PERSONAS)[number];
@@ -142,8 +139,8 @@ export function spokenLineInput(args: {
   priceCents: number;
   similarOwned?: { name: string; wears: number } | null;
   friendItem?: { name: string; friendName: string } | null;
-  outfitsUnlocked: number;
   cheapestUsedCents?: number | null;
+  budgetRemainingCents?: number | null;
 }): string {
   const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
   return [
@@ -152,7 +149,7 @@ export function spokenLineInput(args: {
     `PRODUCT: ${args.productTitle} at ${usd(args.priceCents)}`,
     `MOST SIMILAR OWNED: ${args.similarOwned ? `${args.similarOwned.name} (worn ${args.similarOwned.wears}x)` : 'none'}`,
     `FRIEND CAN LEND: ${args.friendItem ? `${args.friendItem.friendName}'s ${args.friendItem.name}` : 'none'}`,
-    `OUTFITS UNLOCKED: ${args.outfitsUnlocked}`,
+    `BUDGET LEFT THIS MONTH: ${args.budgetRemainingCents != null ? usd(args.budgetRemainingCents) : 'unknown'}`,
     `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,
   ].join('\n');
 }

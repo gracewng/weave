@@ -49,6 +49,7 @@ create trigger items_privacy_defaults before insert or update of category on pub
 create or replace function public.touch_updated_at() returns trigger language plpgsql as $$
 begin new.updated_at := now(); return new; end $$;
 create trigger loans_touch before update on public.loans for each row execute procedure public.touch_updated_at();
+create trigger holds_touch before update on public.holds for each row execute procedure public.touch_updated_at();
 
 -- ─── Friendship helpers (security definer so RLS policies can use them without recursion) ──
 create or replace function public.is_friend(a uuid, b uuid) returns boolean
@@ -57,11 +58,6 @@ language sql stable security definer set search_path = public as $$
     select 1 from public.friendships f
     where f.user_a = least(a, b) and f.user_b = greatest(a, b) and f.status = 'accepted'
   );
-$$;
-
-create or replace function public.is_crew_member(p_crew uuid, p_user uuid) returns boolean
-language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.crew_members m where m.crew_id = p_crew and m.user_id = p_user);
 $$;
 
 -- Which profile size key applies to an item category

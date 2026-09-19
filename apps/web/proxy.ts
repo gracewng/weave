@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { env, supabaseConfigured } from '@/lib/env';
 
-const PROTECTED = ['/closet', '/friends', '/crews', '/ledger', '/mystery', '/returns', '/settings', '/stats', '/capture', '/join'];
+const PROTECTED = ['/wardrobe', '/search', '/charges', '/budget', '/returns', '/friends', '/ghosts', '/statement', '/settings', '/stats', '/capture', '/join'];
 
 /** Refreshes the Supabase session cookie on every request and gates app routes. */
 export async function proxy(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function proxy(request: NextRequest) {
   }
   if (user && path === '/') {
     const url = request.nextUrl.clone();
-    url.pathname = '/closet';
+    url.pathname = '/wardrobe';
     url.search = '';
     return NextResponse.redirect(url);
   }

@@ -42,7 +42,7 @@ export default async function StatsPage() {
         <ReceiptLine label="DOLLARS SAVED" value="$0.00" valueClass="saved" />
         <ReceiptLine label="SAVED PER $1 OF AI" value={totalCost > 0 ? `$${(0 / totalCost).toFixed(0)}` : '—'} valueClass="saved" />
         <ReceiptRule />
-        <div className="mono text-[11px] text-ink-3">SAVED figure wires up with interventions in Phase 7.</div>
+        <div className="mono text-[11px] text-ink-3">SAVED figure wires up with the Ghost Rack, borrows and returns in Phase 7+.</div>
       </Receipt>
 
       <Receipt>
@@ -64,9 +64,9 @@ export default async function StatsPage() {
         <ul className="mono list-disc space-y-1 pl-4 text-[11px] text-ink-3">
           <li>Gmail query + sender allowlist before any LLM call</li>
           <li>HTML stripped, boilerplate removed, truncated to ~6k chars</li>
-          <li>reasoning_effort minimal for extraction/tagging; medium only for crew styling</li>
-          <li>Batched tagging (20) and pairing scores; static prompt prefix first for cache hits</li>
-          <li>Embeddings once per item; pairings + audio cached; verdicts are rules, the model only writes one line</li>
+          <li>reasoning_effort minimal for extraction, tagging and query parsing</li>
+          <li>Batched tagging (20 per call); static prompt prefix first for cache hits</li>
+          <li>Embeddings once per item; audio cached; verdicts and budget math are rules, the model only writes one line</li>
         </ul>
       </Receipt>
     </div>

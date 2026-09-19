@@ -2,13 +2,14 @@
 
 export type Category = 'top' | 'bottom' | 'dress' | 'outerwear' | 'shoes' | 'accessory' | 'intimates' | 'other';
 export type Slot = 'top' | 'bottom' | 'one_piece' | 'outer' | 'shoes' | 'accessory';
-export type ItemSource = 'email' | 'receipt' | 'tag' | 'photo' | 'quick_add' | 'mystery' | 'intervention';
+export type ItemSource = 'email' | 'receipt' | 'tag' | 'photo' | 'quick_add' | 'mystery' | 'search';
 export type ItemStatus = 'owned' | 'returned' | 'sold' | 'donated';
 export type VoicePersona = 'bestie' | 'stylist' | 'cfo';
 export type LoanStatus = 'requested' | 'accepted' | 'declined' | 'out' | 'returned';
 export type MatchStatus = 'unmatched' | 'matched' | 'captured' | 'mystery' | 'skipped';
 export type Verdict = 'skip' | 'borrow' | 'secondhand' | 'wait' | 'buy';
-export type Decision = 'skipped' | 'borrowed' | 'bought_secondhand' | 'queued' | 'bought' | 'pending';
+export type HoldStatus = 'held' | 'skipped' | 'borrowed' | 'bought_used' | 'bought' | 'released';
+export type ChargeDecision = 'keep' | 'returning' | 'not_clothes';
 
 export interface Profile {
   id: string;
@@ -33,6 +34,7 @@ export interface Item {
   purchase_date: string | null;
   retailer: string | null;
   image_url: string | null;
+  receipt_url: string | null;
   source: ItemSource;
   return_by: string | null;
   status: ItemStatus;
@@ -81,9 +83,6 @@ export interface Loan {
   created_at: string;
 }
 
-export interface Crew { id: string; name: string | null; event_date: string | null; dress_code: string | null; vibe: string | null; created_by: string | null }
-export interface CrewLook { id: string; crew_id: string; user_id: string; item_ids: string[]; borrowed_item_ids: string[]; rationale: string | null; accepted: boolean }
-
 export interface Transaction {
   id: string;
   user_id: string;
@@ -94,23 +93,36 @@ export interface Transaction {
   is_clothing: boolean | null;
   match_status: MatchStatus;
   item_ids: string[];
+  decision: ChargeDecision | null;
+  decided_at: string | null;
 }
 
-export interface Intervention {
+export interface Budget {
+  user_id: string;
+  monthly_income_cents: number | null;
+  clothing_pct: number;
+  envelope_override_cents: number | null;
+  updated_at: string;
+}
+
+/** Ghost Rack row: something searched for and not bought (yet). */
+export interface Hold {
   id: string;
   user_id: string;
-  product_title: string | null;
-  product_url: string | null;
-  product_image: string | null;
-  price_cents: number | null;
-  similar_item_ids: string[] | null;
-  friend_item_ids: string[] | null;
-  outfits_unlocked: number | null;
+  title: string;
+  url: string | null;
+  image_url: string | null;
+  price_cents: number;
+  query: string | null;
   verdict: Verdict | null;
-  decision: Decision | null;
+  similar_item_ids: string[];
+  friend_item_ids: string[];
+  cheapest_used_cents: number | null;
+  status: HoldStatus;
   saved_cents: number;
-  remind_at: string | null;
+  release_at: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface LlmCallRow {

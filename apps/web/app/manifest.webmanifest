@@ -2,7 +2,7 @@
   "name": "Weave",
   "short_name": "Weave",
   "description": "The spending copilot for clothes.",
-  "start_url": "/closet",
+  "start_url": "/wardrobe",
   "display": "standalone",
   "background_color": "#f6f3ec",
   "theme_color": "#141414",
