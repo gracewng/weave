@@ -39,10 +39,11 @@ export default async function StatsPage() {
         <ReceiptLine label="FALLBACKS" value={String(fallbacks)} />
         <ReceiptRule />
         <ReceiptLine label="TOTAL AI SPEND" value={money(totalCost)} />
-        <ReceiptLine label="DOLLARS SAVED" value="$0.00" valueClass="saved" />
-        <ReceiptLine label="SAVED PER $1 OF AI" value={totalCost > 0 ? `$${(0 / totalCost).toFixed(0)}` : '—'} valueClass="saved" />
+        <ReceiptLine label="MONEY KEPT (CONFIRMED)" value="$0.00" valueClass="saved" />
+        <ReceiptLine label="KEPT PER $1 OF AI" value={totalCost > 0 ? `$${(0 / totalCost).toFixed(0)}` : 'N/A'} valueClass="saved" />
+        <ReceiptLine label="MODE" value={rows.some((r) => r.provider !== 'fixture') ? 'live' : 'fixture / no calls'} muted />
         <ReceiptRule />
-        <div className="mono text-[11px] text-ink-3">SAVED figure wires up with the Ghost Rack, borrows and returns in Phase 7+.</div>
+        <div className="mono text-[11px] text-ink-3">Money Kept counts confirmed outcomes only; the ratio is a product ratio, not causal ROI. Wires up in Phase 7+.</div>
       </Receipt>
 
       <Receipt>

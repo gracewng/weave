@@ -11,8 +11,8 @@ export default async function WardrobePage() {
 
   if (items.length === 0) {
     return (
-      <EmptyState title="Wardrobe" lines={[['ITEMS', '0'], ['PAID IN TOTAL', '$0.00'], ['WORN THIS SEASON', '—'], ['FROM EMAIL', '0'], ['FROM CARD', '0']]}>
-        <p className="text-sm text-ink-2">Your wardrobe fills itself from order emails and card charges. Gmail ingestion lands in Phase 2.</p>
+      <EmptyState title="Wardrobe" lines={[['ITEMS', '0'], ['PAID IN TOTAL', '$0.00'], ['WORN THIS SEASON', '—'], ['FROM EMAIL', '0'], ['FROM CARD', '0'], ['CLOSET COVERAGE', 'Not enough purchase history']]}>
+        <p className="text-sm text-ink-2">Your wardrobe rebuilds itself from order emails and card charges, with what you paid attached to every item. Gmail ingestion lands in Phase 2.</p>
         <div className="mt-4 flex gap-2">
           <button className="btn btn-primary" disabled title="Phase 2">Scan my inbox</button>
           <Link href="/settings" className="btn">Settings</Link>
