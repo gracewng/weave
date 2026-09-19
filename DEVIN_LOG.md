@@ -22,3 +22,17 @@ Fill this in as PRs land; it becomes a slide for the Devin judges.
 ## Totals
 - Devin hours: —
 - Estimated human hours replaced: ~15h
+
+## Learning & collaboration notes (10% of the score — fill in before submission)
+One or two lines each: what you built, what surprised you, what you'd do differently.
+| Person / agent | Owned | What we learned |
+|---|---|---|
+| Grace (lead) | product, schema decisions, Claude Code sessions | |
+| Zoe | | |
+| Emma | | |
+| (teammate 4) | | |
+| Claude Code | app, shared package, migrations | |
+| Devin | data, clients, fixtures, tests | |
+
+Process facts worth stating: written ownership map so agents and humans never touched the same files; contracts
+before implementation; PR-only `main` with CI; every LLM call logged with cost so we could see our own spend.

@@ -23,6 +23,26 @@ strong pitch fit. Meta, token optimization, Devin, and Interactive Media depend 
 ElevenLabs is low priority. Education secondary. Healthcare not a target. (Track list is the supplied challenge
 list; confirm official rules before submitting.)
 
+## Judging criteria (weights drive every priority call)
+| Criterion | Weight | What we show | Where it lives |
+|---|---|---|---|
+| **Innovation** | 30% | An anti-shopping agent: owned → borrow → used → new; Ghost Rack stub ledger; stand-in stamps; Closet Coverage; the printer interaction language | Search, Ghost Rack, Wardrobe, 90s demo |
+| **Technical complexity** | 30% | Unstructured commerce data → structured wardrobe: Gmail pipeline with allowlist + cleanup, dual-provider LLM router (Meta + OpenAI) with strict JSON, timeout fallback and per-call cost logging, pgvector semantic matching, receipt↔transaction matcher, multimodal receipt capture via PWA push + camera, RLS privacy view, SSE streaming, cron | `/stats`, `/api/llm/health`, the capture flow, an architecture slide |
+| **Impact** | 30% | Traceable Money Kept and Money Recovered, wear rate, avoided new purchases; honest estimates beat inflated claims | Statement, Ghost Rack, Returns |
+| **Learning & collaboration** | 10% | 4 humans + Claude Code + Devin under a written ownership map, contracts-first, PR-only main with CI; what each of us learned | `DEVIN_LOG.md` (incl. Learning notes), PR history, `CLAUDE.md` |
+
+**Adjustments from the weights**
+- Technical complexity must be *visible*. Every demo beat pairs a user moment with a proof moment: the ingestion
+  counter shows tokens and cost live; search shows which provider answered and the similarity retrieval; `/stats`
+  is on screen for at least five seconds. Keep an architecture slide with the data flow.
+- In-store capture (push → camera → multimodal read → item) moves from P2 to **P1**: it is the most technically
+  dense 15 seconds we have and it is unique. Plaid sandbox stays P2; the mock charge is enough.
+- Impact needs one number a judge can repeat. Lead with confirmed Money Kept for the demo user and the wear-rate
+  change, never a projected annual figure without a labeled basis. Any market or behavior statistic in the pitch
+  needs a cited source.
+- Learning & collaboration is cheap points: keep `DEVIN_LOG.md` honest and current, and add a short
+  "what we learned" per person before submission.
+
 ## The features
 1. **Receipt tracker via email** (main ingestion). Gmail backfill → items with image, price, size, retailer,
    purchase date, return_by. Raw email bodies are never stored.
@@ -175,9 +195,10 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 | P0 | One return rescue with honest pending/refund distinction | 6 |
 | P0 | Statement with traceable totals; `/stats` evidence | 9 |
 | P0 | Complete fixtures, visible fallback mode, recorded demo — before voice | 10 |
+| P1 | In-store capture: mock charge → push → camera → multimodal read → item with receipt on file | 4 |
 | P1 | One Mystery Purchase resolution with a coverage change | 4 |
 | P1 | Purchase Autopsy expansion | 3 / 9 |
-| P2 | Full capture/Plaid walkthrough, elaborate budget alternatives, richer friend features | kept in plan, off main stage |
+| P2 | Plaid Link walkthrough, elaborate budget alternatives, richer friend features | kept in plan, off main stage |
 | P2 | ElevenLabs voice/personas | 10, after all P0 |
 
 ## Track strategy (same product for every track)
@@ -403,16 +424,16 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
 Live vs fixture is always labeled; the recorded fallback is ready.
 | Time | Show | Proves |
 |---|---|---|
-| 0:00–0:15 | "Weave is a bank statement for your closet." Reconstruction fills the wardrobe with a real or labeled-fixture count and the logged processing cost. | Commerce data becomes wardrobe memory with no manual entry. |
+| 0:00–0:15 | "Weave is a bank statement for your closet." Reconstruction fills the wardrobe with a real or labeled-fixture count, the logged token cost, and the provider that answered. | Commerce data becomes wardrobe memory with no manual entry (technical proof #1). |
 | 0:15–0:25 | One mini receipt: paid $128, 1 wear, $128/wear. Closet Coverage + one unresolved charge. | Financial context; admits what it doesn't know. |
 | 0:25–0:45 | Search "black dress for a wedding." Owned first, then Maya's size-match, then used, then new. Request loan; second account accepts (or demo-panel accept). Shared Receipt prints. | An intention becomes a real social alternative. |
 | 0:45–1:00 | Search a $45 tee: three owned alternatives + purchase memory. Hold 48h prints a Purchase Paused stub. Labeled time-advance or "I skipped it" → stub is VOIDED, the owned tee gets a stand-in stamp, Money Kept +$45. | The alternate timeline; a hold is not yet savings. |
 | 1:00–1:12 | Unworn item, 3 days left, $89 at stake → Return Pending → seeded Refund Confirmed. | Reminder, return, and refund are different states. |
-| 1:12–1:30 | Statement: timeline → Money Kept → Money Recovered; `/stats` with real or labeled costs. Close: "an AI shopping assistant whose goal is to stop you from shopping." | Every headline traces to an action. |
+| 1:12–1:30 | Statement: timeline → Money Kept → Money Recovered; `/stats` on screen ≥ 5s with real or labeled costs, cache rate, fallbacks. Close: "an AI shopping assistant whose goal is to stop you from shopping." | Every headline traces to an action (technical proof #2). |
 
 Consistent numbers: $168 borrowed + $45 skipped = **$213 estimated Money Kept**; $89 refund = **$89 Money
-Recovered**; combined only as "$302 kept + recovered". Extended appendix (off main stage): in-store charge →
-receipt capture → mystery resolution → budget. Autopsy and token comparisons are judge follow-ups.
+Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s, or as the first appendix beat: in-store charge → push → snap receipt → item appears
+(15s, P1). Then mystery resolution → budget. Autopsy and token comparisons are judge follow-ups.
 
 ## Status
 ### Done
