@@ -4,6 +4,14 @@ import { FALLBACK_RETAILERS } from './retailers-fallback';
 
 export interface RetailerMatch { id: string; name: string; returnWindowDays: number | null; mixed: boolean }
 
+/** Root domains for the Gmail `from:` pass (Devin's list when present, else the fallback). */
+export function allowlistDomains(): string[] {
+  const src = retailerData.retailers.length > 0 ? retailerData.retailers.map((r) => r.senderDomains) : FALLBACK_RETAILERS.map((r) => r.domains);
+  const roots = new Set<string>();
+  for (const list of src) for (const d of list) { const parts = d.toLowerCase().split('.'); roots.add(parts.slice(-2).join('.')); }
+  return [...roots];
+}
+
 export function senderDomain(from: string): string {
   const m = /<([^>]+)>/.exec(from);
   const addr = (m?.[1] ?? from).trim().toLowerCase();

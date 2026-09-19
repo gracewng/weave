@@ -5,9 +5,9 @@ import type { Item } from '@weave/shared/types';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ensureLLM } from '@/lib/llm';
 import { refreshGoogleAccessToken } from '@/lib/google';
-import { ORDER_QUERY, getMessage, listMessageIds, type GmailMessage } from '@/lib/gmail';
+import { ORDER_QUERY, retailerQuery, getMessage, listMessageIds, type GmailMessage } from '@/lib/gmail';
 import { prepareEmail } from './html';
-import { prefilter } from './prefilter';
+import { prefilter, allowlistDomains } from './prefilter';
 import { insertExtractedItems } from './persist';
 import { SAMPLE_EMAILS } from './sample-emails';
 import { fixtures } from '@/fixtures';
@@ -82,7 +82,11 @@ export async function runIngestion(opts: RunOptions): Promise<Counters> {
   try {
     if (mode === 'gmail') {
       token = await refreshGoogleAccessToken(opts.refreshToken!);
-      const all = await listMessageIds(token, ORDER_QUERY, maxEmails);
+      // Two passes: (1) everything from known clothing retailers — full 3 years, never crowded out by receipts
+      // from food/transit/prints; (2) the generic purchases query for retailers we don't know yet.
+      const fromRetailers = await listMessageIds(token, retailerQuery(allowlistDomains()), Math.min(maxEmails, 200));
+      const generic = await listMessageIds(token, ORDER_QUERY, maxEmails);
+      const all = [...new Set([...fromRetailers, ...generic])].slice(0, maxEmails + 200);
       const { data: done } = await admin.from('email_records').select('message_id').eq('user_id', opts.userId);
       const doneSet = new Set((done ?? []).map((r: { message_id: string }) => r.message_id));
       ids = all.filter((id) => !doneSet.has(id));

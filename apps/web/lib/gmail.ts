@@ -16,9 +16,17 @@ export interface GmailMessage {
   text: string | null;
 }
 
-/** The spec's query: 3 years of order/receipt mail, minus shipping/delivery updates. */
+/** Senders that flood `category:purchases` with non-clothing mail. Excluded in the query so they never cost a fetch. */
+const NOISY_SENDERS = ['informeddelivery.usps.com', 'usps.com', 'uber.com', 'ubereats.com', 'doordash.com', 'grubhub.com', 'toasttab.com', 'chownow.com', 'olo.com', 'order.online', 'shutterfly.com', 'squareup.com', 'anthropic.com', 'google.com', 'apple.com', 'amazonaws.com', 'ticketmaster.com', 'eventbrite.com', 'airbnb.com', 'lyft.com', 'venmo.com', 'paypal.com'];
+
+/** The spec's query: 3 years of order/receipt mail, minus shipping/delivery updates and known-noisy senders. */
 export const ORDER_QUERY =
-  'newer_than:3y (category:purchases OR subject:(order OR receipt OR "order confirmation" OR "your purchase")) -subject:(shipped OR "out for delivery" OR delivered)';
+  `newer_than:3y (category:purchases OR subject:(order OR receipt OR "order confirmation" OR "your purchase")) -subject:(shipped OR "out for delivery" OR delivered OR "daily digest") -from:(${NOISY_SENDERS.join(' OR ')})`;
+
+/** High-precision pass: every email from an allowlisted clothing retailer in the last 3 years, regardless of category. */
+export function retailerQuery(domains: string[]): string {
+  return `newer_than:3y from:(${domains.join(' OR ')}) -subject:(shipped OR "out for delivery" OR delivered)`;
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
