@@ -151,7 +151,7 @@ export async function runIngestion(opts: RunOptions): Promise<Counters> {
   };
 
   if (mode === 'gmail') {
-    await mapLimit(ids, 6, async (id) => {
+    await mapLimit(ids, 4, async (id) => {
       if (aborted) return;
       let msg: GmailMessage;
       try { msg = await getMessage(token!, id); }

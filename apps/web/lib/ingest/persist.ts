@@ -33,6 +33,10 @@ export function addDays(iso: string, days: number): string {
 
 function titleCase(s: string) { return s.replace(/\b\w/g, (c) => c.toUpperCase()); }
 
+/** Privacy guard before tagging runs: obvious intimates get category='intimates' at insert time, and the DB trigger makes them non-shareable. */
+const INTIMATES_RE = /\b(bra|bralette|bras|underwear|panty|panties|briefs?|boxers?|thong|lingerie|sleepwear|pajamas?|pyjamas?|nightgown|robe|shapewear|socks?)\b/i;
+export function guessIntimates(name: string): 'intimates' | null { return INTIMATES_RE.test(name) ? 'intimates' : null; }
+
 export interface PersistContext {
   messageId: string;
   retailerName: string;
@@ -55,24 +59,33 @@ export async function insertExtractedItems(
 
   const { data: existing } = await admin.from('items').select('name,size,purchase_date,line_index')
     .eq('user_id', userId).eq('retailer', retailer).eq('source', 'email');
-  const seen = new Set((existing ?? []).map((e: { name: string; size: string | null; purchase_date: string | null; line_index: number }) =>
-    `${e.name.toLowerCase()}|${e.size ?? ''}|${e.purchase_date ?? ''}|${e.line_index}`));
+  // Units already owned per (name, size, date). A repeated identical line in the same email (or a rescan of a
+  // quantity-2 line) becomes the next line_index; a true rescan of the same email adds nothing.
+  const owned = new Map<string, number>();
+  for (const e of (existing ?? []) as Array<{ name: string; size: string | null; purchase_date: string | null; line_index: number }>) {
+    const k = `${e.name.toLowerCase()}|${e.size ?? ''}|${e.purchase_date ?? ''}`;
+    owned.set(k, Math.max(owned.get(k) ?? 0, e.line_index + 1));
+  }
+  const wanted = new Map<string, number>();   // units this email asks for, per key
+  const firstSeen = new Map<string, ExtractEmailResult['items'][number]>();
+  for (const it of result.items) {
+    const name = it.name.trim(); if (!name) continue;
+    const k = `${name.toLowerCase()}|${it.size ?? ''}|${purchaseDate ?? ''}`;
+    wanted.set(k, (wanted.get(k) ?? 0) + Math.max(1, Math.min(10, it.quantity || 1)));
+    if (!firstSeen.has(k)) firstSeen.set(k, it);
+  }
 
   const rows: Array<Record<string, unknown>> = [];
   let duplicates = 0;
   const imageCache = new Map<number, string | null>();
 
-  for (const it of result.items) {
+  for (const [k, units] of wanted) {
+    const it = firstSeen.get(k)!;
     const name = it.name.trim();
-    if (!name) continue;
-    const qty = Math.max(1, Math.min(10, it.quantity || 1));
-    const units: number[] = [];
-    for (let i = 0; i < qty; i++) {
-      const key = `${name.toLowerCase()}|${it.size ?? ''}|${purchaseDate ?? ''}|${i}`;
-      if (seen.has(key)) { duplicates++; continue; }
-      seen.add(key); units.push(i);
-    }
-    if (units.length === 0) continue;
+    const have = owned.get(k) ?? 0;
+    const toInsert = Math.max(0, units - have);
+    duplicates += units - toInsert;
+    if (toInsert === 0) continue;
 
     let image_url: string | null = null;
     let image_source: string | null = null;
@@ -81,10 +94,11 @@ export async function insertExtractedItems(
       image_url = imageCache.get(it.image_index) ?? null;
       image_source = image_url ? 'email' : null;
     }
-    for (const i of units) {
+    for (let i = have; i < have + toInsert; i++) {
       rows.push({
         user_id: userId, name, brand: it.brand, size: it.size, color: it.color ? titleCase(it.color) : null,
         price_cents: it.price_cents, purchase_date: purchaseDate, retailer, image_url, image_source, line_index: i,
+        category: guessIntimates(name),
         source: 'email', return_by: purchaseDate && ctx.returnWindowDays != null ? addDays(purchaseDate, ctx.returnWindowDays) : null,
       });
     }

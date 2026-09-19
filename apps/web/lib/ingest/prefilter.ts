@@ -21,7 +21,7 @@ export function resolveRetailer(domain: string): RetailerMatch | undefined {
 }
 
 const ORDER_RE = /\b(order|receipt|purchase|invoice|confirmation|thank you for (your|shopping))\b/i;
-const NOT_ORDER_RE = /\b(shipped|shipping update|out for delivery|delivered|on its way|has arrived|tracking|return (started|received|label)|refund|cancel+ed|password|verify|newsletter|sale ends|% off|last chance|survey|review your)\b/i;
+const NOT_ORDER_RE = /(\b(shipped|shipping update|out for delivery|delivered|on its way|has arrived|tracking|return (started|received|label)|refund|cancel+ed|password|verify|newsletter|sale ends?|last chance|survey|review your|pre-?order|promo|deal|hrs? left|hours left|ends (tonight|tomorrow|soon)|extended|daily digest|wishlist|back in stock|price drop)\b|% off|\$\d+ off|off your (next |entire )?order)/i;
 const CLOTHING_RE = /\b(shirt|t-?shirt|tee|top|blouse|sweater|hoodie|sweatshirt|cardigan|jacket|coat|blazer|dress|skirt|pants|trousers|jeans|denim|shorts|leggings|joggers|sneakers?|shoes?|boots?|sandals?|heels|loafers|bra|underwear|socks|scarf|hat|cap|beanie|bag|tote|belt|size\s*[:\-]?\s*(xs|s|m|l|xl|xxl|\d{1,2}))\b/i;
 
 export interface PrefilterInput { from: string; subject: string; text: string }

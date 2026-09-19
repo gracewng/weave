@@ -20,11 +20,19 @@ export interface GmailMessage {
 export const ORDER_QUERY =
   'newer_than:3y (category:purchases OR subject:(order OR receipt OR "order confirmation" OR "your purchase")) -subject:(shipped OR "out for delivery" OR delivered)';
 
-async function gfetch<T>(token: string, path: string): Promise<T> {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Gmail call with exponential backoff on quota (403 rate limit / 429) and transient 5xx errors. */
+async function gfetch<T>(token: string, path: string, attempt = 0): Promise<T> {
   const res = await fetch(`${API}${path}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15000) });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
     const msg = body.error?.message ?? res.statusText;
+    const quota = res.status === 429 || (res.status === 403 && /quota|rate ?limit|user-rate/i.test(msg));
+    if ((quota || res.status >= 500) && attempt < 6) {
+      await sleep(Math.min(20000, 1500 * 2 ** attempt) + Math.random() * 500);
+      return gfetch<T>(token, path, attempt + 1);
+    }
     if (res.status === 403 && /Gmail API has not been used|is disabled/i.test(msg)) {
       throw new GmailError('Gmail API is not enabled on the Google Cloud project that owns the OAuth client. Enable it and retry.', 403);
     }
