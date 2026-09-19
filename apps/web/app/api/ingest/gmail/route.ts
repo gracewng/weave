@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runIngestion, type IngestEvent } from '@/lib/ingest/pipeline';
+import { tagAndEmbed } from '@/lib/tagging';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,12 @@ export async function GET(req: Request) {
       const send = (e: IngestEvent) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(e)}\n\n`));
       const keepalive = setInterval(() => controller.enqueue(encoder.encode(': keepalive\n\n')), 15000);
       runIngestion({ userId: user.id, refreshToken, maxEmails: max, forceFixture: url.searchParams.get('source') === 'fixture', onEvent: send })
+        .then(async (c) => {
+          if (c.itemsFound > 0) {
+            const t = await tagAndEmbed(user.id).catch(() => null);
+            if (t) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tagged', ...t })}\n\n`));
+          }
+        })
         .catch((err) => send({ type: 'error', message: err instanceof Error ? err.message : String(err), counters: { scanned: 0, prefiltered: 0, sent: 0, clothingOrders: 0, itemsFound: 0, duplicates: 0, failed: 0, costUsd: 0, tokens: 0, cached: 0 } }))
         .finally(() => { clearInterval(keepalive); controller.close(); });
     },

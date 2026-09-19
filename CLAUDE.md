@@ -406,9 +406,14 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
 - [ ] **Phase 2 — Gmail receipt backfill** (3.5h). Query + allowlist → strip/truncate → `extract_email` → email
       image if present, else Identify-the-item lookup for a clean product image → Storage → dedupe → `return_by`. SSE progress "Scanned 214 emails · found 47 items · 9¢ in tokens".
       Accept: a teammate's real inbox → wardrobe with images, prices, return dates in < 2 min.
-- [ ] **Phase 3 — Tagging, embeddings, Wardrobe UI** (3h). `tag_items` batches; embed once. Grid + item page (mini
-      receipt, cost-per-wear, #30wears ring, wore today, Autopsy expansion). Accept: `match_items` returns sensible
-      neighbors; cost-per-wear updates after "wore today".
+- [x] **Phase 3 — Tagging, embeddings, Wardrobe UI** (3h). `lib/tagging.ts` (`tagAndEmbed`: only untagged /
+      unembedded rows, batch 20; `similarOwned`), `POST /api/items/tag`, `GET /api/items/similar`, tagging runs
+      automatically after an ingestion that found items. `packages/shared/src/wears.ts` (cost-per-wear, #30wears,
+      wornShare, dormant). Wardrobe grid with sorts (newest / least recently worn / cost per wear / paid) + item
+      page = mini receipt + WearRing + wear stamps + "Wore today" (prints from the **PrinterSlot**) + Purchase
+      Autopsy + sharing toggles + semantic neighbors. **Verified live:** 10 items tagged + embedded for $0.0008;
+      "black cotton crew neck t-shirt" → the two black tees first (0.66), "formal black dress for a wedding" →
+      slip midi dress first (0.43).
 - [ ] **Phase 4 — Card transactions + Charges** (3.5h). Plaid sandbox/mock; matcher; push "Snap the receipt" +
       keep/returning/not-clothes; capture page with three inputs (receipt photo / garment photo / typed description)
       → Identify the item (`read_capture` + Shopping/Lens + candidate strip + `rembg` fallback); Mystery Purchases stack with Closet
@@ -454,6 +459,10 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   `@weave/data` automatically once it has retailers; `pipeline.ts` prefers `fixtures.emails` when present.
 - Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). No Vercel deployment yet.
 ### Known issues
+- **Similarity thresholds need calibration.** With `text-embedding-3-small`, a near-exact owned match scores
+  ~0.66 and a category match ~0.43, so the spec's 0.88 / 0.85 verdict thresholds would never fire. Phase 7 sets
+  the constants from real data (start: skip ≥ 0.60, borrow ≥ 0.55) and embeds the parsed query in the same
+  "<color> <material> <garment>, <formality>" shape as item descriptions to tighten the match. Rule order is unchanged.
 - Meta `cached_tokens` field location unverified in a real response — `extractUsage()` accepts both
   `usage.prompt_tokens_details.cached_tokens` and `usage.cached_tokens`; confirm on first live call.
 ### Contract changes

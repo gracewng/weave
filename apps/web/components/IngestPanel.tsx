@@ -10,7 +10,8 @@ type Ev =
   | { type: 'progress'; counters: Counters; subject?: string; retailer?: string; provider?: string }
   | { type: 'item'; item: RecentItem }
   | { type: 'done'; counters: Counters; mode: 'gmail' | 'fixture'; elapsedMs: number }
-  | { type: 'error'; message: string; counters: Counters };
+  | { type: 'error'; message: string; counters: Counters }
+  | { type: 'tagged'; tagged: number; embedded: number; costUsd: number; calls: number };
 
 const ZERO: Counters = { scanned: 0, prefiltered: 0, sent: 0, clothingOrders: 0, itemsFound: 0, duplicates: 0, failed: 0, costUsd: 0, tokens: 0, cached: 0 };
 
@@ -27,13 +28,14 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
   const [recent, setRecent] = useState<RecentItem[]>([]);
   const [error, setError] = useState('');
   const [elapsed, setElapsed] = useState(0);
+  const [tagged, setTagged] = useState<{ tagged: number; embedded: number; costUsd: number } | null>(null);
   const es = useRef<EventSource | null>(null);
   const [open, setOpen] = useState(!compact);
 
   useEffect(() => () => es.current?.close(), []);
 
   function start() {
-    setState('running'); setC(ZERO); setRecent([]); setError(''); setSubject(''); setOpen(true);
+    setState('running'); setC(ZERO); setRecent([]); setError(''); setSubject(''); setOpen(true); setTagged(null);
     const src = new EventSource('/api/ingest/gmail?max=300');
     es.current = src;
     src.onmessage = (m) => {
@@ -41,7 +43,8 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
       if (e.type === 'start') { setMode(e.mode); setTotal(e.total); }
       else if (e.type === 'progress') { setC(e.counters); if (e.subject) setSubject(e.subject); if (e.provider) setProvider(e.provider); }
       else if (e.type === 'item') setRecent((r) => [e.item, ...r].slice(0, 8));
-      else if (e.type === 'done') { setC(e.counters); setElapsed(e.elapsedMs); setState('done'); src.close(); router.refresh(); }
+      else if (e.type === 'done') { setC(e.counters); setElapsed(e.elapsedMs); setState('done'); if (e.counters.itemsFound === 0) { src.close(); } router.refresh(); }
+      else if (e.type === 'tagged') { setTagged(e); src.close(); router.refresh(); }
       else if (e.type === 'error') { setC(e.counters); setError(e.message); setState('error'); src.close(); router.refresh(); }
     };
     src.onerror = () => { if (state === 'running') { setError('Connection dropped. Items found so far are saved — scan again to continue.'); setState('error'); } src.close(); };
@@ -97,6 +100,8 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
           )}
           <ReceiptRule />
           {state === 'done' && <ReceiptLine label="DONE" value={`${(elapsed / 1000).toFixed(1)}s · ${c.itemsFound} ITEMS · ${cents(c.costUsd)} IN TOKENS`} />}
+          {state === 'done' && c.itemsFound > 0 && !tagged && <ReceiptLine label="TAGGING + EMBEDDING" value="…" muted />}
+          {tagged && <ReceiptLine label="TAGGED · EMBEDDED" value={`${tagged.tagged} · ${tagged.embedded} · ${cents(tagged.costUsd)}`} muted />}
           {state === 'error' && <div className="mono text-[11px] text-warn">{error}</div>}
           {(state === 'done' || state === 'error') && (
             <div className="mt-3 flex gap-2">
