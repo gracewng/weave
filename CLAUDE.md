@@ -393,8 +393,8 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
 ## Phase checklist
 - [x] **Phase 1 — Skeleton** (re-planned). Monorepo, migrations, Google sign-in (Gmail scope + refresh-token
       capture), profile trigger + invite code, nav, `DEMO_MODE`, LLM router + logging, `/api/llm/health`,
-      `.env.example`, docs, `contracts.ts`. **Manual:** Supabase project + migrations, Google provider with Gmail
-      scope, `.env.local`, Vercel (root `apps/web`).
+      `.env.example`, docs, `contracts.ts`. **Done:** Supabase project + migrations, Google provider, `.env.local`. **Manual:** LLM keys in `.env.local`,
+      Gmail scope + test users on the Google consent screen, Vercel (root `apps/web`).
 - [ ] **Phase 2 — Gmail receipt backfill** (3h). Query + allowlist → strip/truncate → `extract_email` → images to
       Storage → dedupe → `return_by`. SSE progress "Scanned 214 emails · found 47 items · 9¢ in tokens".
       Accept: a teammate's real inbox → wardrobe with images, prices, return dates in < 2 min.
@@ -440,7 +440,7 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - Phase 1 code (see checklist), re-planned 2026-09-19; accounting/coverage schema fields added 2026-09-19.
 ### Mocked / not yet live
 - `@weave/data` and `@weave/clients` are stubs (Devin tasks 1–2). `fixtures/` is a README (Devin task 3).
-- No Supabase project or Vercel deployment linked yet.
+- Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). No Vercel deployment yet.
 ### Known issues
 - Meta `cached_tokens` field location unverified in a real response — `extractUsage()` accepts both
   `usage.prompt_tokens_details.cached_tokens` and `usage.cached_tokens`; confirm on first live call.
