@@ -9,6 +9,7 @@ import { costPerWear, costPerWearAtThirty, daysBetween, wearsToThirty } from '@w
 import { similarOwned } from '@/lib/tagging';
 import { candidatesFor } from '@/lib/identify';
 import { Candidates } from './Candidates';
+import { EditDetails } from './EditDetails';
 import type { Item } from '@weave/shared/types';
 
 export const dynamic = 'force-dynamic';
@@ -51,6 +52,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         <Receipt>
           <ReceiptHeader title={it.name} subtitle={[it.brand, it.size ? `SIZE ${it.size}` : null, it.color].filter(Boolean).join(' · ').toUpperCase()} />
           <ReceiptRule />
+          <div className="mb-2"><EditDetails itemId={it.id} name={it.name} brand={it.brand} color={it.color} size={it.size} /></div>
           <ReceiptLine label="PAID" value={usd(it.price_cents)} />
           <ReceiptLine label="BOUGHT" value={it.purchase_date ?? '—'} muted />
           <ReceiptLine label="AT" value={it.retailer ?? '—'} muted />

@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { applyCandidateImage, candidatesFor } from '@/lib/identify';
+import { applyCandidateImage, candidatesFor, lookupMissingImages } from '@/lib/identify';
 import type { ShoppingResult } from '@weave/shared/contracts';
 
 export async function woreToday(itemId: string): Promise<{ ok: boolean; wears: number; price_cents: number | null; name: string }> {
@@ -38,4 +38,24 @@ export async function chooseImage(itemId: string, imageUrl: string): Promise<boo
   const ok = await applyCandidateImage(admin, user.id, itemId, imageUrl);
   if (ok) { revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe'); }
   return ok;
+}
+
+/** Edit name/brand/color/size. If anything that changes the product query changed, the image is looked up again. */
+export async function updateDetails(itemId: string, input: { name: string; brand: string; color: string; size: string }): Promise<{ ok: boolean; relookup: boolean }> {
+  const { supabase, user } = await requireUser();
+  const { data: before } = await supabase.from('items').select('name,brand,color,size,image_source').eq('id', itemId).eq('user_id', user.id).maybeSingle();
+  if (!before) return { ok: false, relookup: false };
+  const name = input.name.trim() || before.name;
+  const brand = input.brand.trim() || null;
+  const color = input.color.trim() || null;
+  const size = input.size.trim() || null;
+  const queryChanged = name !== before.name || (brand ?? '') !== (before.brand ?? '') || (color ?? '') !== (before.color ?? '');
+  const relookup = queryChanged && before.image_source !== 'email' && before.image_source !== 'user_photo';
+  const patch: Record<string, unknown> = { name, brand, color, size, description: null };  // description null → re-tag/re-embed on next tagging run
+  if (relookup) { patch.image_url = null; patch.image_source = null; }
+  const { error } = await supabase.from('items').update(patch).eq('id', itemId).eq('user_id', user.id);
+  if (error) return { ok: false, relookup: false };
+  if (relookup) await lookupMissingImages(user.id, { itemIds: [itemId], maxSearches: 1 }).catch(() => null);
+  revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe');
+  return { ok: true, relookup };
 }

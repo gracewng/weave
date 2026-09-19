@@ -23,6 +23,12 @@ export function buildQuery(item: { name: string; brand?: string | null; color?: 
   return [brand, name, color].filter(Boolean).join(' ').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+/** "Bare Strapless Bra — color: black" so the judge can reject wrong colors. */
+export function judgeLabel(item: { name: string; color?: string | null; brand?: string | null }): string {
+  const color = item.color && item.color.toLowerCase() !== 'unknown' ? ` — color: ${item.color}` : ' — color not known';
+  return `${item.brand ? item.brand + ' ' : ''}${item.name}${color}`;
+}
+
 function tokens(s: string): Set<string> { return new Set(s.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 2)); }
 
 /** Deterministic rank: brand present, name-token overlap, has thumbnail. Higher is better. */
@@ -113,12 +119,14 @@ export async function searchProducts(query: string, limit = 8): Promise<{ result
 export interface LookupSummary { looked_up: number; imaged: number; searches: number; cached: number; skipped: number }
 
 /** Give image-less items a product image. Caps searches per run to protect the quota. */
-export async function lookupMissingImages(userId: string, opts: { limit?: number; maxSearches?: number } = {}): Promise<LookupSummary> {
+export async function lookupMissingImages(userId: string, opts: { limit?: number; maxSearches?: number; itemIds?: string[] } = {}): Promise<LookupSummary> {
   const admin = createAdminClient(); if (!admin) throw new Error('service role not configured');
   const out: LookupSummary = { looked_up: 0, imaged: 0, searches: 0, cached: 0, skipped: 0 };
   if (!process.env.SERPAPI_KEY) return out;
   const maxSearches = opts.maxSearches ?? 20;
-  const { data } = await admin.from('items').select('id,name,brand,color,retailer').eq('user_id', userId).is('image_url', null).eq('status', 'owned').limit(opts.limit ?? 50);
+  let sel = admin.from('items').select('id,name,brand,color,retailer').eq('user_id', userId).is('image_url', null).eq('status', 'owned').limit(opts.limit ?? 50);
+  if (opts.itemIds?.length) sel = sel.in('id', opts.itemIds);
+  const { data } = await sel;
   const items = (data ?? []) as Array<{ id: string; name: string; brand: string | null; color: string | null; retailer: string | null }>;
   const imageByQuery = new Map<string, string | null>();
   for (const it of items) {
@@ -131,7 +139,7 @@ export async function lookupMissingImages(userId: string, opts: { limit?: number
         const { results, cached } = await searchProducts(q, 8);
         if (cached) out.cached++; else out.searches++;
         const ranked = rankCandidates(q, it.brand, results, it.retailer);
-        const judged = preferProductOnly(await judgeProductOnly(it.name, ranked, userId));
+        const judged = preferProductOnly(await judgeProductOnly(judgeLabel(it), ranked, userId));
         const best = judged[0];
         imageByQuery.set(q, best ? await storeImageFromUrl(admin, userId, best.imageUrl) : null);
       } catch (err) { console.warn('[identify] lookup failed', q, err instanceof Error ? err.message : err); imageByQuery.set(q, null); }
@@ -154,7 +162,7 @@ export async function candidatesFor(item: { name: string; brand?: string | null;
   if (!allowSearch) return { query: q, results: [] };
   const { results } = await searchProducts(q, 8);
   const ranked = rankCandidates(q, item.brand, results, item.retailer);
-  return { query: q, results: preferProductOnly(await judgeProductOnly(item.name, ranked)).slice(0, 6) };
+  return { query: q, results: preferProductOnly(await judgeProductOnly(judgeLabel(item), ranked)).slice(0, 6) };
 }
 
 export async function applyCandidateImage(admin: SupabaseClient, userId: string, itemId: string, imageUrl: string): Promise<boolean> {
