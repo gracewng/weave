@@ -5,5 +5,6 @@ export default defineConfig({
   test: {
     include: ['packages/**/*.test.ts', 'apps/**/*.test.ts', 'scripts/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/.next/**'],
+    passWithNoTests: true,
   },
 });

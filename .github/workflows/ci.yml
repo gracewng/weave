@@ -17,4 +17,4 @@ jobs:
         env:
           DEMO_MODE: "true"
       - run: pnpm typecheck
-      - run: pnpm test -- --passWithNoTests
+      - run: pnpm test
