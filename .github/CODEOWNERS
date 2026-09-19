@@ -1,0 +1,7 @@
+# Ownership map (see CLAUDE.md §Ownership). Reviews auto-request the owner.
+# Add teammates' handles next to the paths they drive.
+/supabase/                 @gracewng
+/apps/web/                 @gracewng
+/apps/extension/src/       @gracewng
+/packages/shared/          @gracewng
+# Devin-owned: /packages/data /packages/clients /apps/web/fixtures /scripts *.test.ts — a human reviews Devin's PRs.
