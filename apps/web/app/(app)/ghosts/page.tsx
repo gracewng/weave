@@ -87,7 +87,6 @@ export default async function GhostsPage() {
               <ReceiptLine label="INTENDED" value={h.price_cents > 0 ? usd(h.price_cents) : 'NO PRICE'} />
               {h.actual_paid_cents != null && <ReceiptLine label="PAID" value={usd(h.actual_paid_cents)} />}
               {h.status !== 'bought' && <ReceiptLine label="MONEY KEPT" value={h.price_cents > 0 ? usd(h.kept_cents) : 'NOT COUNTED'} valueClass={h.kept_cents > 0 ? 'saved' : ''} />}
-              {h.status === 'bought' && <ReceiptLine label="COST PER WEAR" value={`${usd(h.price_cents)} / 0 WEARS`} muted />}
             </Receipt>
           ))}
         </div>

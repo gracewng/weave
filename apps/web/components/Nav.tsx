@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 
 const LINKS: Array<[string, string]> = [
   ['/wardrobe', 'Wardrobe'], ['/search', 'Search'], ['/charges', 'Charges'], ['/budget', 'Budget'],
-  ['/returns', 'Returns'], ['/friends', 'Friends'], ['/ghosts', 'Ghost Rack'], ['/statement', 'Statement'], ['/settings', 'Settings'],
+  ['/friends', 'Friends'], ['/ghosts', 'Ghost Rack'], ['/statement', 'Statement'], ['/settings', 'Settings'],
 ];
 
 export function Nav({ name, demo }: { name: string; demo: boolean }) {

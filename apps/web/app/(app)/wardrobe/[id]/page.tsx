@@ -2,10 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
-import { WearRing } from '@/components/WearRing';
-import { WoreToday } from './WoreToday';
 import { ShareToggles } from './ShareToggles';
-import { costPerWear, costPerWearAtThirty, daysBetween, wearsToThirty } from '@weave/shared/wears';
+import { daysBetween } from '@/lib/returns';
 import { similarOwned } from '@/lib/tagging';
 import { candidatesFor } from '@/lib/identify';
 import { Candidates } from './Candidates';
@@ -19,19 +17,14 @@ export const dynamic = 'force-dynamic';
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase, user } = await requireUser();
-  const [{ data: item }, { data: wearRows }, { data: stoodIn }] = await Promise.all([
+  const [{ data: item }, { data: stoodIn }] = await Promise.all([
     supabase.from('items').select('*').eq('id', id).eq('user_id', user.id).maybeSingle(),
-    supabase.from('wears').select('worn_on').eq('item_id', id).order('worn_on', { ascending: false }),
-    supabase.from('holds').select('title,price_cents,created_at').eq('wore_item_id', id).eq('status', 'skipped').order('created_at', { ascending: false }),
+    supabase.from('holds').select('title,price_cents,created_at').eq('owned_item_id', id).eq('status', 'skipped').order('created_at', { ascending: false }),
   ]);
   if (!item) notFound();
   const it = item as Item;
-  const wears = (wearRows ?? []) as Array<{ worn_on: string }>;
-  const n = wears.length;
   const today = new Date().toISOString().slice(0, 10);
-  const cpw = costPerWear(it.price_cents, n);
   const owned = it.purchase_date ? daysBetween(it.purchase_date, today) : null;
-  const sinceWorn = wears[0] ? daysBetween(wears[0].worn_on, today) : null;
   const returnOpen = !!it.return_by && it.return_by >= today;
   const similar = it.embedding ? await similarOwned(user.id, { itemId: it.id }, 4).catch(() => []) : [];
   const { results: candidates } = await candidatesFor(it, false).catch(() => ({ results: [] }));
@@ -44,7 +37,6 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             {it.image_url ? <img src={it.image_url} alt={it.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center px-4 text-center text-[11px] text-ink-3">NO IMAGE YET</div>}
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
-            {wears.slice(0, 12).map((w, i) => <span key={i} className="stamp">WORN {w.worn_on.slice(5).replace('-', '/')}</span>)}
             {((stoodIn ?? []) as Array<{ title: string; price_cents: number; created_at: string }>).map((h, i) => <span key={`s${i}`} className="stamp saved">STOOD IN FOR {h.price_cents > 0 ? usd(h.price_cents) : 'A'} {h.title.toUpperCase().slice(0, 18)} · {h.created_at.slice(5, 10).replace('-', '/')}</span>)}
           </div>
           <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} imageSource={it.image_source} />
@@ -67,31 +59,18 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           {it.identifier && <ReceiptLine label="ITEM NO." value={it.identifier} muted />}
           {it.image_url && it.image_source && <ReceiptLine label="IMAGE FROM" value={it.image_source.replace('_', ' ').toUpperCase()} muted />}
           <ReceiptRule />
-          <div className="flex items-center gap-4">
-            <WearRing wears={n} />
-            <div className="flex-1">
-              <ReceiptLine label="WEARS LOGGED" value={n === 0 ? 'NONE' : String(n)} />
-              <ReceiptLine label="COST PER WEAR" value={cpw != null ? usd(cpw) : 'NO WEARS LOGGED'} />
-              <ReceiptLine label="TO #30WEARS" value={wearsToThirty(n) === 0 ? 'REACHED' : `${wearsToThirty(n)} MORE`} muted />
-            </div>
-          </div>
-          <div className="mt-3"><WoreToday itemId={it.id} initialWears={n} /></div>
-          <ReceiptRule />
           {returnOpen
             ? <ReceiptLine label="RETURN WINDOW" value={`OPEN · ${daysBetween(today, it.return_by!)} DAYS LEFT`} />
             : <ReceiptLine label="RETURN WINDOW" value={it.return_by ? `CLOSED ${it.return_by}` : 'UNKNOWN'} muted />}
-          {returnOpen && n === 0 && <div className="mono mt-1 text-[11px] text-ink-3">UNWORN AND STILL RETURNABLE · {usd(it.price_cents)} AT STAKE</div>}
+          {returnOpen && <div className="mono mt-1 text-[11px] text-ink-3">STILL RETURNABLE · {usd(it.price_cents)} AT STAKE</div>}
           <ReceiptRule />
           <ShareToggles itemId={it.id} shareable={it.shareable} lendable={it.lendable} intimates={it.category === 'intimates'} />
         </Receipt>
 
         <Receipt>
-          <ReceiptHeader title="Purchase autopsy" subtitle="WHAT THIS ITEM HAS COST YOU SO FAR" />
+          <ReceiptHeader title="Purchase details" subtitle="WHAT WE KNOW ABOUT THIS ITEM" />
           <ReceiptRule />
           <ReceiptLine label="DAYS OWNED" value={owned != null ? String(owned) : '—'} />
-          <ReceiptLine label="DAYS SINCE LAST WEAR" value={sinceWorn != null ? String(sinceWorn) : 'NO WEARS LOGGED'} />
-          <ReceiptLine label={`${usd(it.price_cents)} / ${n || 0} WEARS`} value={cpw != null ? `${usd(cpw)} PER WEAR` : '—'} />
-          <ReceiptLine label={`${usd(it.price_cents)} / 30 WEARS`} value={costPerWearAtThirty(it.price_cents) != null ? `${usd(costPerWearAtThirty(it.price_cents))} PER WEAR` : '—'} valueClass={n >= 30 ? 'saved' : ''} />
           {it.description && <><ReceiptRule /><div className="mono text-[11px] text-ink-3">TAGGED AS · {it.description}{it.formality ? ` · FORMALITY ${it.formality}/5` : ''}</div></>}
         </Receipt>
 

@@ -127,12 +127,12 @@ export const PARSE_QUERY_SYSTEM = `You parse a clothing shopping query into stru
 
 // ─── search_note ──────────────────────────────────────────────────────────────
 
-export const SEARCH_NOTE_SYSTEM = `You write the one line shown above shopping search results in a wardrobe app. The verdict is already decided and you must not contradict it. One sentence, under 25 words, plain text, no emojis. Mention one concrete number (a count, a price, a wear count) or the friend's name. If OWNED SIMILAR lists items, name the closest one and its wear count even when the verdict is buy — never say nothing matches when something is listed. Never shame the user.`;
+export const SEARCH_NOTE_SYSTEM = `You write the one line shown above shopping search results in a wardrobe app. The verdict is already decided and you must not contradict it. One sentence, under 25 words, plain text, no emojis. Mention one concrete number (a count or price) or the friend's name. If OWNED SIMILAR lists items, name the closest one even when the verdict is buy — never say nothing matches when something is listed. Never shame the user.`;
 
 export function searchNoteInput(args: {
   verdict: (typeof VERDICTS)[number];
   query: string;
-  ownedSimilar: Array<{ name: string; wears: number; price_cents: number | null }>;
+  ownedSimilar: Array<{ name: string; price_cents: number | null }>;
   friendItem?: { name: string; friendName: string } | null;
   cheapestUsedCents?: number | null;
   usualPriceCents?: number | null;
@@ -142,7 +142,7 @@ export function searchNoteInput(args: {
   return [
     `VERDICT (fixed): ${args.verdict}`,
     `QUERY: ${args.query}`,
-    `OWNED SIMILAR: ${args.ownedSimilar.length ? args.ownedSimilar.map((i) => `${i.name} (worn ${i.wears}x${i.price_cents != null ? `, paid ${usd(i.price_cents)}` : ''})`).join('; ') : 'none'}`,
+    `OWNED SIMILAR: ${args.ownedSimilar.length ? args.ownedSimilar.map((i) => `${i.name}${i.price_cents != null ? ` (paid ${usd(i.price_cents)})` : ''}`).join('; ') : 'none'}`,
     `FRIEND CAN LEND: ${args.friendItem ? `${args.friendItem.friendName}'s ${args.friendItem.name}` : 'none'}`,
     `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,
     `USER USUALLY PAYS: ${args.usualPriceCents != null ? usd(args.usualPriceCents) : 'unknown'}`,
@@ -155,17 +155,17 @@ export function searchNoteInput(args: {
 export const PERSONA_STYLE: Record<(typeof PERSONAS)[number], string> = {
   bestie: 'Warm, hype, a little funny, gently talks the user down. Sounds like a best friend texting.',
   stylist: 'Blunt, fashion-literate, opinionated about fit and fabric. No fluff.',
-  cfo: 'Dry, all numbers, mildly amused. Talks in dollars and cost-per-wear.',
+  cfo: 'Dry, all numbers, mildly amused. Talks in dollars and budgets.',
 };
 
-export const SPOKEN_LINE_SYSTEM = `You write the one spoken line a wardrobe copilot says about a purchase or a monthly statement. The verdict is already decided and you must not contradict it. One or two sentences, under 30 words. Mention at least one concrete number (a price, a wear count, a budget figure) or a friend's name. Never shame the user. Output plain text only, no quotes, no emojis.`;
+export const SPOKEN_LINE_SYSTEM = `You write the one spoken line a wardrobe copilot says about a purchase or a monthly statement. The verdict is already decided and you must not contradict it. One or two sentences, under 30 words. Mention at least one concrete number (a price or budget figure) or a friend's name. Never shame the user. Output plain text only, no quotes, no emojis.`;
 
 export function spokenLineInput(args: {
   persona: (typeof PERSONAS)[number];
   verdict: (typeof VERDICTS)[number];
   productTitle: string;
   priceCents: number;
-  similarOwned?: { name: string; wears: number } | null;
+  similarOwned?: { name: string } | null;
   friendItem?: { name: string; friendName: string } | null;
   cheapestUsedCents?: number | null;
   budgetRemainingCents?: number | null;
@@ -175,7 +175,7 @@ export function spokenLineInput(args: {
     `PERSONA: ${args.persona} — ${PERSONA_STYLE[args.persona]}`,
     `VERDICT (fixed): ${args.verdict}`,
     `PRODUCT: ${args.productTitle} at ${usd(args.priceCents)}`,
-    `MOST SIMILAR OWNED: ${args.similarOwned ? `${args.similarOwned.name} (worn ${args.similarOwned.wears}x)` : 'none'}`,
+    `MOST SIMILAR OWNED: ${args.similarOwned?.name ?? 'none'}`,
     `FRIEND CAN LEND: ${args.friendItem ? `${args.friendItem.friendName}'s ${args.friendItem.name}` : 'none'}`,
     `BUDGET LEFT THIS MONTH: ${args.budgetRemainingCents != null ? usd(args.budgetRemainingCents) : 'unknown'}`,
     `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,

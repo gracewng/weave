@@ -7,18 +7,6 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { applyCandidateImage, candidatesFor, lookupMissingImages } from '@/lib/identify';
 import type { ShoppingResult } from '@weave/shared/contracts';
 
-export async function woreToday(itemId: string): Promise<{ ok: boolean; wears: number; price_cents: number | null; name: string }> {
-  const { supabase, user } = await requireUser();
-  const { data: item } = await supabase.from('items').select('id,name,price_cents').eq('id', itemId).eq('user_id', user.id).maybeSingle();
-  if (!item) return { ok: false, wears: 0, price_cents: null, name: '' };
-  const today = new Date().toISOString().slice(0, 10);
-  const { error } = await supabase.from('wears').insert({ item_id: itemId, worn_on: today });
-  if (error) return { ok: false, wears: 0, price_cents: item.price_cents, name: item.name };
-  const { count } = await supabase.from('wears').select('id', { count: 'exact', head: true }).eq('item_id', itemId);
-  revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe');
-  return { ok: true, wears: count ?? 1, price_cents: item.price_cents, name: item.name };
-}
-
 export async function setSharing(itemId: string, field: 'shareable' | 'lendable', value: boolean) {
   const { supabase, user } = await requireUser();
   await supabase.from('items').update({ [field]: value }).eq('id', itemId).eq('user_id', user.id);
@@ -70,7 +58,7 @@ export async function clearImage(itemId: string): Promise<boolean> {
   return !error;
 }
 
-/** Remove the item from the wardrobe. Wears cascade; holds that pointed at it keep their record (wore_item_id → null). */
+/** Remove the item from the wardrobe. Related hold records keep their history. */
 export async function removeItem(itemId: string): Promise<void> {
   const { supabase, user } = await requireUser();
   await supabase.from('items').delete().eq('id', itemId).eq('user_id', user.id);

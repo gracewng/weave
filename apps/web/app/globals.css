@@ -111,9 +111,6 @@ html, body {
 .stamp.new { animation: slam .35s cubic-bezier(.2,1.4,.4,1) both; }
 @keyframes slam { from { transform: rotate(-4deg) scale(2.2); opacity: 0 } to { transform: rotate(-4deg) scale(1); opacity: .85 } }
 
-/* #30wears ring */
-.ring { --p: 0; width: 56px; height: 56px; }
-
 @media (prefers-reduced-motion: reduce) {
   .print, .printer-paper, .stamp.new { animation: none !important; }
   .leader > .dots { transform: none; }

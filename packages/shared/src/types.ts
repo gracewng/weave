@@ -147,7 +147,7 @@ export interface Hold {
   outcome_confirmed_at: string | null;
   actual_paid_cents: number | null;
   loan_id: string | null;
-  wore_item_id: string | null;
+  owned_item_id: string | null;
   /** Money Kept — valid only when outcome_confirmed_at is set. */
   kept_cents: number;
   for_other: boolean;

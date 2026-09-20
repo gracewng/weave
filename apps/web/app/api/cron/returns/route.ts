@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Daily (vercel.json): items whose return window closes within 4 days with zero wears.
+ * Daily (vercel.json): items whose return window closes within 4 days.
  * Push delivery lands in Phase 10; until then this returns the list and logs it (one notification per item, ever).
  * Auth: Vercel cron sends `Authorization: Bearer CRON_SECRET`; internal callers may use x-weave-cron.
  */
@@ -20,12 +20,10 @@ export async function GET(req: Request) {
   const { data: items } = await admin.from('items').select('id,user_id,name,price_cents,return_by').eq('status', 'owned').gte('return_by', t).lte('return_by', c).is('return_reminded_at', null);
   const rows = (items ?? []) as Array<{ id: string; user_id: string; name: string; price_cents: number | null; return_by: string }>;
   if (rows.length === 0) return NextResponse.json({ due: [] });
-  const { data: worn } = await admin.from('wears').select('item_id').in('item_id', rows.map((r) => r.id));
-  const wornSet = new Set(((worn ?? []) as Array<{ item_id: string }>).map((w) => w.item_id));
-  const due = rows.filter((r) => !wornSet.has(r.id));
+  const due = rows;
   let sent = 0;
   for (const d of due) {
-    sent += await sendPush(admin, d.user_id, { title: 'Return window closing', body: `${d.name} · $${((d.price_cents ?? 0) / 100).toFixed(0)} at stake · unworn · by ${d.return_by}`, url: '/returns', tag: `return-${d.id}` });
+    sent += await sendPush(admin, d.user_id, { title: 'Return window closing', body: `${d.name} · $${((d.price_cents ?? 0) / 100).toFixed(0)} at stake · by ${d.return_by}`, url: '/wardrobe', tag: `return-${d.id}` });
     await admin.from('items').update({ return_reminded_at: new Date().toISOString() }).eq('id', d.id);
   }
   return NextResponse.json({ due: due.map((d) => ({ id: d.id, name: d.name, price_cents: d.price_cents, return_by: d.return_by })), sent });
