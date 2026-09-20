@@ -189,7 +189,6 @@ export async function lookupMissingImages(userId: string, opts: { limit?: number
   const imageByQuery = new Map<string, { url: string | null; source: string }>();
   for (const it of items) {
     if (it.image_source === 'none') { out.skipped++; continue; }          // user cleared a wrong image: leave it alone
-    if (isCustomItem(it.name)) { out.skipped++; continue; }                // no retail image exists for custom merch
     // 1. The product page linked from the order email (exact).
     if (it.product_url) {
       const og = await fetchProductPageImage(it.product_url);
@@ -202,7 +201,7 @@ export async function lookupMissingImages(userId: string, opts: { limit?: number
       const stored = bc ? await storeImageFromUrl(admin, userId, bc.imageUrl) : null;
       if (stored) { const { error } = await admin.from('items').update({ image_url: stored, image_source: 'identifier' }).eq('id', it.id); if (!error) { out.imaged++; out.looked_up++; continue; } }
     }
-    // 3. Name search, gated by confidence: sold by the retailer itself, or strong name + brand overlap. Else no image.
+    // 3. Name search: a confident match (retailer's own listing, or strong name + brand overlap) first, else the closest image.
     const q = buildQuery(it);
     if (!q) { out.skipped++; continue; }
     out.looked_up++;
@@ -213,9 +212,12 @@ export async function lookupMissingImages(userId: string, opts: { limit?: number
         if (cached) out.cached++; else out.searches++;
         const ranked = rankCandidates(q, it.brand, results, it.retailer);
         const judged = preferProductOnly(await judgeProductOnly(judgeLabel(it), ranked, userId));
-        const best = judged.find((c) => confident(q, it.brand, it.retailer, c, false));
+        // A confident match wins; otherwise the closest search image still beats a blank tag (lead decision,
+        // 2026-09-20). The Options strip on the item page lets the user swap it.
+        const sure = judged.find((c) => confident(q, it.brand, it.retailer, c, false));
+        const best = sure ?? judged[0] ?? ranked[0] ?? null;
         imageByQuery.set(q, { url: best ? await storeImageFromUrl(admin, userId, best.imageUrl) : null, source: 'shopping' });
-        if (!best) console.log('[identify] no confident match for', q, '— left without image; candidates cached');
+        if (best && !sure) console.log('[identify] no confident match for', q, '— using the closest search image');
       } catch (err) { console.warn('[identify] lookup failed', q, err instanceof Error ? err.message : err); imageByQuery.set(q, { url: null, source: 'shopping' }); }
     }
     const hit = imageByQuery.get(q);
