@@ -227,7 +227,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 
 /* ─── The rack: hang tags on a rail ─────────────────────────────────────── */
 .rack { display: grid; gap: 14px 12px; overflow: hidden; padding-top: 2px; }
-.hook { position: relative; padding-top: 22px; }
+.hook { position: relative; padding-top: 22px; display: flex; flex-direction: column; }
+.hook > .tag { flex: 1; }
 .hook::before { content: ''; position: absolute; top: 6px; left: -6px; right: -6px; height: 4px; border-radius: 2px; background: var(--hunter); }
 .hook::after { content: ''; position: absolute; top: 10px; left: 50%; width: 1px; height: 12px; background: rgba(31, 42, 36, .45); }
 .tag {

@@ -84,7 +84,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </Tape>
 
           {similar.length > 0 && (
-            <section>
+            <section className="pt-4">
               <div className="mb-3 flex items-baseline justify-between"><h2 className="display text-xs text-ink-2">Similar in your wardrobe</h2><span className="text-xs text-ink-3">by description</span></div>
               <div className="grid grid-cols-4 gap-3">
                 {similar.map((s) => (

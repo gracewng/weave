@@ -86,11 +86,12 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {!q && !retOnly && (
             <div className="hook">
-              <Link href="/wardrobe/add" className="tag flex aspect-[3/4.9] flex-col items-center justify-center gap-2 !border-dashed !border-sage !bg-transparent !shadow-none text-ink-2 hover:!border-fern hover:text-ink">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-mist"><Icon name="camera" size={22} /></span>
-                <span className="font-sans text-[15px]">Add your own</span>
-                <span className="text-[11px] text-ink-3">Photo or name</span>
-              </Link>
+              <Link href="/wardrobe/add" className="tag h-full !border-dashed !border-sage !bg-transparent !shadow-none hover:!border-fern">
+                <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 text-center text-ink-2 hover:text-ink">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mist"><Icon name="camera" size={24} /></span>
+                  <span className="font-sans text-[15px]">Add your own</span>
+                  <span className="text-[11px] text-ink-3">Photo or name</span>
+                </div>
             </div>
           )}
           {sorted.map((i) => <HangTag key={i.id} item={i} today={today} showReturnable={!retOnly} />)}
