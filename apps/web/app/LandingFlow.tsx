@@ -43,13 +43,13 @@ export function LandingFlow({
 	const overlay = (
 		<Stage id={stage}>
 			{stage === "intro" ? (
-				<button className="btn btn-ink w-full" onClick={() => setStage("signin")}>
+				<button className="btn btn-ink mx-auto !flex w-fit !px-8" onClick={() => setStage("signin")}>
 					Get started
 				</button>
 			) : (
 				<div className="space-y-2 text-center">
 					{configured ? (
-						<Link href={signinHref} className="btn btn-ink block w-full">
+						<Link href={signinHref} className="btn btn-ink mx-auto !flex w-fit !px-8">
 							Continue with Google
 						</Link>
 					) : (
