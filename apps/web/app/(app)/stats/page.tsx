@@ -1,4 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { requireUser } from '@/lib/auth';
+import { summarizeKept } from '@weave/shared/kept';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule } from '@/components/Receipt';
 import { TASKS, MODELS } from '@weave/shared/models';
 import type { LlmCallRow } from '@weave/shared/types';
@@ -8,9 +10,22 @@ export const dynamic = 'force-dynamic';
 function money(n: number) { return `$${n.toFixed(4)}`; }
 
 export default async function StatsPage() {
+  const { supabase, user } = await requireUser();
   const admin = createAdminClient();
-  const { data } = admin ? await admin.from('llm_calls').select('*').order('created_at', { ascending: false }).limit(5000) : { data: [] as LlmCallRow[] };
+  const [{ data }, { data: holds }, { data: refunds }] = await Promise.all([
+    admin ? admin.from('llm_calls').select('*').order('created_at', { ascending: false }).limit(5000) : Promise.resolve({ data: [] as LlmCallRow[] }),
+    supabase.from('holds').select('id,status,price_cents,actual_paid_cents,outcome_confirmed_at').eq('user_id', user.id),
+    supabase.from('items').select('id,status,refund_cents').eq('user_id', user.id).in('status', ['returning', 'returned']),
+  ]);
   const rows = (data ?? []) as LlmCallRow[];
+  const mine = rows.filter((r) => r.user_id === user.id);
+  const myCost = mine.reduce((s, r) => s + Number(r.cost_usd), 0);
+  const kept = summarizeKept({
+    holds: ((holds ?? []) as Array<{ id: string; status: string; price_cents: number; actual_paid_cents: number | null; outcome_confirmed_at: string | null }>).map((h) => ({ id: h.id, status: h.status as never, priceCents: h.price_cents > 0 ? h.price_cents : null, actualPaidCents: h.actual_paid_cents, outcomeConfirmedAt: h.outcome_confirmed_at })),
+    returns: ((refunds ?? []) as Array<{ id: string; status: string; refund_cents: number | null }>).map((r) => ({ itemId: r.id, status: r.status as 'returning' | 'returned', refundCents: r.refund_cents })),
+  });
+  const emails = mine.filter((r) => r.task === 'extract_email'); const searches = mine.filter((r) => r.task === 'parse_query');
+  const liveCalls = rows.filter((r) => r.provider !== 'fixture').length;
 
   const totalCost = rows.reduce((s, r) => s + Number(r.cost_usd), 0);
   const totalIn = rows.reduce((s, r) => s + r.input_tokens, 0);
@@ -38,12 +53,17 @@ export default async function StatsPage() {
         <ReceiptLine label="CACHE HIT RATE" value={`${cacheRate.toFixed(1)}%`} />
         <ReceiptLine label="FALLBACKS" value={String(fallbacks)} />
         <ReceiptRule />
-        <ReceiptLine label="TOTAL AI SPEND" value={money(totalCost)} />
-        <ReceiptLine label="MONEY KEPT (CONFIRMED)" value="$0.00" valueClass="saved" />
-        <ReceiptLine label="KEPT PER $1 OF AI" value={totalCost > 0 ? `$${(0 / totalCost).toFixed(0)}` : 'N/A'} valueClass="saved" />
-        <ReceiptLine label="MODE" value={rows.some((r) => r.provider !== 'fixture') ? 'live' : 'fixture / no calls'} muted />
+        <ReceiptLine label="TOTAL AI SPEND (ALL USERS)" value={money(totalCost)} />
+        <ReceiptLine label="YOUR AI SPEND" value={money(myCost)} muted />
+        <ReceiptLine label="  PER EMAIL EXTRACTED" value={emails.length ? money(emails.reduce((s, r) => s + Number(r.cost_usd), 0) / emails.length) : 'N/A'} muted />
+        <ReceiptLine label="  PER SEARCH" value={searches.length ? money(mine.filter((r) => ['parse_query', 'search_note', 'embed'].includes(r.task)).reduce((s, r) => s + Number(r.cost_usd), 0) / searches.length) : 'N/A'} muted />
         <ReceiptRule />
-        <div className="mono text-[11px] text-ink-3">Money Kept counts confirmed outcomes only; the ratio is a product ratio, not causal ROI. Wires up in Phase 7+.</div>
+        <ReceiptLine label="YOUR MONEY KEPT (CONFIRMED)" value={`$${(kept.keptCents / 100).toFixed(2)}`} valueClass={kept.keptCents > 0 ? 'saved' : ''} />
+        <ReceiptLine label="YOUR MONEY RECOVERED" value={`$${(kept.recoveredCents / 100).toFixed(2)}`} valueClass={kept.recoveredCents > 0 ? 'saved' : ''} />
+        <ReceiptLine label="KEPT PER $1 OF YOUR AI SPEND" value={myCost > 0 && kept.keptCents > 0 ? `$${(kept.keptCents / 100 / myCost).toFixed(0)}` : 'N/A'} valueClass="saved" />
+        <ReceiptLine label="MODE" value={liveCalls > 0 ? `live · ${liveCalls} real calls` : 'fixture / no calls'} muted />
+        <ReceiptRule />
+        <div className="mono text-[11px] text-ink-3">Money Kept counts confirmed outcomes only. The ratio is a product ratio over the period shown, not a causal claim. N/A at zero.</div>
       </Receipt>
 
       <Receipt>

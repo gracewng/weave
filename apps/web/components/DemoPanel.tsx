@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { demoAdvance48h, demoResetHolds, demoFriendAccepts } from '@/app/demo-actions';
+import { demoAdvance48h, demoResetHolds, demoFriendAccepts, demoSeedRefund } from '@/app/demo-actions';
 import { printReceipt } from '@/lib/printer';
 
 /** Press D three times within 1.5s. Hosts every demo trigger; each one is labeled DEMO. */
@@ -27,7 +27,7 @@ export function DemoPanel() {
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('holds advanced 48h', demoAdvance48h)}>Advance 48h (holds)</button>
         <button className="btn !py-1 !text-[10px]" disabled title="Phase 4">Fire mock charge</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('friend accepted + handed over', demoFriendAccepts)}>Friend accepts my request</button>
-        <button className="btn !py-1 !text-[10px]" disabled title="Phase 6">Seed confirmed refund</button>
+        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('refund seeded (cents)', demoSeedRefund)}>Seed confirmed refund</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => { if (confirm('Delete all of your holds?')) run('holds deleted', demoResetHolds); }}>Reset my holds</button>
       </div>
     </div>

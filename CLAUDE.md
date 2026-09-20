@@ -421,8 +421,10 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       Coverage fraction; `POST /api/demo/charge`; demo panel. Accept: mock charge → notification < 5s → snapped
       receipt → item < 15s; resolving one mystery changes coverage from data.
 - [ ] **Phase 5 — Budget** (2h). Envelope, live spend, projection, alternatives, over-budget state.
-- [ ] **Phase 6 — Return board** (2h). Open windows by days left, policy, $ at stake, receipt badge; **Return
-      Pending** → **Refund Confirmed** (amount entered) credits Money Recovered; daily cron push at 4 days.
+- [x] **Phase 6 — Return board** (2h). `lib/returns.ts`, `/returns` (open windows soonest-first with days-left stamp,
+      $ at stake, policy days, wears, receipt-on-file; Return Pending → Refund Confirmed with the actual amount →
+      Money Recovered; "keeping it after all"), `GET /api/cron/returns` (daily 14:00 UTC via `vercel.json`; lists
+      unworn items closing within 4 days — push delivery is Phase 10), demo panel "Seed confirmed refund".
 - [x] **Phase 7 — Search + Ghost Rack** (5h). Built: `packages/shared/src/{verdict,budget,kept}.ts` (rules, calibrated
       thresholds skip ≥ 0.60 / borrow ≥ 0.55), `lib/search/run.ts` two stages (`local`: `parse_query` → description-
       shaped embedding → `match_items` + `match_friend_items` + price memory + budget + provisional verdict;
@@ -448,8 +450,11 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       **Verified:** Grace ↔ Zoe friendship; Zoe's shareable items appear in the Borrow section with sizes; `friend_items`
       exposes no money fields. **Not yet verified live:** the two-phone accept (needs both of you signed in) — the
       demo-panel accept covers it. Push notifications deferred to Phase 10.
-- [ ] **Phase 9 — Statement + Stats** (2.5h). Timeline → Money Kept → Money Recovered → details; `/stats` kept per
-      AI dollar with live/fixture label. Accept: every headline number opens the receipts that sum to it.
+- [x] **Phase 9 — Statement + Stats** (2.5h). `lib/statement.ts` + `/statement?m=YYYY-MM` (month nav; timeline of
+      holds / returns / loans each linking to its page; Money Kept with breakdown; Money Recovered; pending shown
+      separately; "kept + recovered" labeled; spent on you vs on others; envelope when a budget exists; % worn 90d,
+      best/worst cost per wear, dormant $). `/stats` now shows your AI spend, per-email and per-search cost, your
+      confirmed Money Kept / Recovered, **kept per $1 of your AI spend** (N/A at zero), and live call count.
 - [ ] **Phase 10 — Hardening, then voice.** Fixtures complete, fallback mode visible, 90-second recording, empty and
       loading states, reduced motion; ElevenLabs only after all P0 acceptance passes.
 

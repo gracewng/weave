@@ -31,3 +31,14 @@ export async function demoFriendAccepts(): Promise<number> {
   revalidatePath('/friends'); revalidatePath('/ghosts'); revalidatePath('/statement');
   return 1;
 }
+
+/** DEMO: the item with the soonest open return window becomes Return Pending → Refund Confirmed at its paid price. */
+export async function demoSeedRefund(): Promise<number> {
+  const { supabase, user } = await requireUser();
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: it } = await supabase.from('items').select('id,price_cents').eq('user_id', user.id).eq('status', 'owned').gte('return_by', today).order('return_by').limit(1).maybeSingle();
+  if (!it) return 0;
+  await supabase.from('items').update({ status: 'returned', return_initiated_at: new Date(Date.now() - 86400000).toISOString(), refund_cents: it.price_cents ?? 0, refunded_at: new Date().toISOString() }).eq('id', it.id);
+  revalidatePath('/returns'); revalidatePath('/statement'); revalidatePath('/wardrobe');
+  return it.price_cents ?? 0;
+}
