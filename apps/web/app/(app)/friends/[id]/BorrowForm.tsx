@@ -35,7 +35,7 @@ export function BorrowForm({ itemId, ownerId, friendName, itemName, intendedPric
           router.push('/friends');
         })}>{pending ? 'Sending…' : 'Send request'}</button>
       ) : <div className="mono text-[11px] text-save">REQUEST SENT</div>}
-      <div className="mono text-[10px] text-ink-3">{intendedPriceCents != null ? 'IF THIS REPLACES THE PURCHASE, MONEY KEPT IS CREDITED ONCE THE ITEM IS HANDED OVER.' : 'A REQUEST IS PENDING UNTIL YOUR FRIEND ACCEPTS.'}</div>
+      <div className="mono text-[10px] text-ink-3">{intendedPriceCents != null ? 'KEPT MONEY COUNTS ONCE HANDED OVER.' : 'PENDING UNTIL ACCEPTED.'}</div>
     </div>
   );
 }

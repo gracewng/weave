@@ -19,13 +19,13 @@ export function DemoPanel() {
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, []);
   if (!open) return null;
-  const run = (label: string, fn: () => Promise<number>) => start(async () => { const n = await fn(); printReceipt({ title: 'Demo trigger', lines: [{ label: label.toUpperCase(), value: String(n) }], footer: 'LABELED DEMO ACTION · NOT LIVE DATA', ttlMs: 3000 }); router.refresh(); });
+  const run = (label: string, fn: () => Promise<number>) => start(async () => { const n = await fn(); printReceipt({ title: 'Demo trigger', lines: [{ label: label.toUpperCase(), value: String(n) }], footer: 'DEMO · NOT LIVE', ttlMs: 3000 }); router.refresh(); });
   return (
     <div className="fixed bottom-4 right-4 z-40 w-64 border border-warn bg-paper p-3 shadow-lg">
       <div className="mono mb-2 flex items-center justify-between text-[10px] uppercase text-warn"><span>Demo panel</span><button onClick={() => setOpen(false)}>close</button></div>
       <div className="flex flex-col gap-2">
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('holds advanced 48h', demoAdvance48h)}>Advance 48h (holds)</button>
-        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { const r = await fetch('/api/demo/charge', { method: 'POST' }); const j = await r.json(); printReceipt({ title: 'Demo trigger', lines: [{ label: 'MOCK CHARGE', value: r.ok ? `$42.00 UNIQLO` : 'FAILED' }], footer: 'LABELED DEMO ACTION · NOT LIVE DATA', ttlMs: 3000 }); router.refresh(); void j; })}>Fire mock charge ($42 Uniqlo)</button>
+        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { const r = await fetch('/api/demo/charge', { method: 'POST' }); const j = await r.json(); printReceipt({ title: 'Demo trigger', lines: [{ label: 'MOCK CHARGE', value: r.ok ? `$42.00 UNIQLO` : 'FAILED' }], footer: 'DEMO · NOT LIVE', ttlMs: 3000 }); router.refresh(); void j; })}>Fire mock charge ($42 Uniqlo)</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('friend accepted + handed over', demoFriendAccepts)}>Friend accepts my request</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('refund seeded (cents)', demoSeedRefund)}>Seed confirmed refund</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => { if (confirm('Delete all of your holds?')) run('holds deleted', demoResetHolds); }}>Reset my holds</button>

@@ -22,8 +22,8 @@ export function PushEnable({ compact = false }: { compact?: boolean }) {
       setState(r.ok ? 'on' : 'idle');
     } catch { setState('idle'); }
   }
-  if (state === 'unsupported') return compact ? null : <div className="mono text-[10px] text-ink-3">PUSH NOT SUPPORTED IN THIS BROWSER (ON IPHONE: ADD TO HOME SCREEN FIRST)</div>;
-  if (state === 'on') return <div className="mono text-[10px] text-save">NOTIFICATIONS ON · NEW CHARGE · RETURN WINDOW · 48H CHECK-IN</div>;
-  if (state === 'denied') return <div className="mono text-[10px] text-ink-3">NOTIFICATIONS BLOCKED IN BROWSER SETTINGS</div>;
+  if (state === 'unsupported') return compact ? null : <div className="mono text-[10px] text-ink-3">NOT SUPPORTED HERE (IPHONE: ADD TO HOME SCREEN)</div>;
+  if (state === 'on') return <div className="mono text-[10px] text-save">NOTIFICATIONS ON</div>;
+  if (state === 'denied') return <div className="mono text-[10px] text-ink-3">BLOCKED IN BROWSER</div>;
   return <button className={`btn ${compact ? '!py-1 !text-[10px]' : ''}`} disabled={state === 'busy'} onClick={enable}>{state === 'busy' ? 'Enabling…' : 'Turn on notifications'}</button>;
 }

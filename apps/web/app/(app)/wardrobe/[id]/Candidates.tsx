@@ -14,10 +14,10 @@ export function Candidates({ itemId, initial, hasImage, imageSource }: { itemId:
   return (
     <div className="mt-2">
       <div className="mono flex items-center justify-between text-[10px] uppercase text-ink-3">
-        <span>{hasImage ? `Not the right picture?${imageSource ? ` (from ${imageSource.replace('_', ' ')})` : ''}` : imageSource === 'none' ? 'No image (you cleared it)' : 'Pick the product'}</span>
+        <span>{hasImage ? 'Wrong picture?' : 'Pick a picture'}</span>
         <div className="flex gap-2">
           {hasImage && imageSource !== 'email' && imageSource !== 'user_photo' && <button className="hover:text-ink" disabled={pending} onClick={() => start(async () => { if (await clearImage(itemId)) { printReceipt({ title: 'Image cleared', lines: [{ label: 'LOOKUP', value: 'STOPPED FOR THIS ITEM', muted: true }], ttlMs: 2500 }); router.refresh(); } })}>that&apos;s not it</button>}
-          {list.length > 0 && <button className="hover:text-ink" onClick={() => setOpen((o) => !o)}>{open ? 'hide' : 'show candidates'}</button>}
+          {list.length > 0 && <button className="hover:text-ink" onClick={() => setOpen((o) => !o)}>{open ? 'hide' : 'show'}</button>}
           <button className="hover:text-ink" disabled={pending} onClick={() => start(async () => { const r = await findCandidates(itemId); setList(r); setOpen(true); })}>{pending ? 'searching…' : list.length ? 'search again' : 'search'}</button>
         </div>
       </div>

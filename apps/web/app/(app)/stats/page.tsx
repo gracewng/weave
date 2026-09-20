@@ -53,23 +53,23 @@ export default async function StatsPage() {
         <ReceiptLine label="CACHE HIT RATE" value={`${cacheRate.toFixed(1)}%`} />
         <ReceiptLine label="FALLBACKS" value={String(fallbacks)} />
         <ReceiptRule />
-        <ReceiptLine label="TOTAL AI SPEND (ALL USERS)" value={money(totalCost)} />
+        <ReceiptLine label="AI SPEND (ALL USERS)" value={money(totalCost)} />
         <ReceiptLine label="YOUR AI SPEND" value={money(myCost)} muted />
         <ReceiptLine label="  PER EMAIL EXTRACTED" value={emails.length ? money(emails.reduce((s, r) => s + Number(r.cost_usd), 0) / emails.length) : 'N/A'} muted />
         <ReceiptLine label="  PER SEARCH" value={searches.length ? money(mine.filter((r) => ['parse_query', 'search_note', 'embed'].includes(r.task)).reduce((s, r) => s + Number(r.cost_usd), 0) / searches.length) : 'N/A'} muted />
         <ReceiptRule />
         <ReceiptLine label="YOUR MONEY KEPT (CONFIRMED)" value={`$${(kept.keptCents / 100).toFixed(2)}`} valueClass={kept.keptCents > 0 ? 'saved' : ''} />
         <ReceiptLine label="YOUR MONEY RECOVERED" value={`$${(kept.recoveredCents / 100).toFixed(2)}`} valueClass={kept.recoveredCents > 0 ? 'saved' : ''} />
-        <ReceiptLine label="KEPT PER $1 OF YOUR AI SPEND" value={myCost > 0 && kept.keptCents > 0 ? `$${(kept.keptCents / 100 / myCost).toFixed(0)}` : 'N/A'} valueClass="saved" />
+        <ReceiptLine label="KEPT PER $1 OF AI" value={myCost > 0 && kept.keptCents > 0 ? `$${(kept.keptCents / 100 / myCost).toFixed(0)}` : 'N/A'} valueClass="saved" />
         <ReceiptLine label="MODE" value={liveCalls > 0 ? `live · ${liveCalls} real calls` : 'fixture / no calls'} muted />
         <ReceiptRule />
-        <div className="mono text-[11px] text-ink-3">Money Kept counts confirmed outcomes only. The ratio is a product ratio over the period shown, not a causal claim. N/A at zero.</div>
+        <div className="mono text-[11px] text-ink-3">Confirmed outcomes only. N/A at zero.</div>
       </Receipt>
 
       <Receipt>
         <ReceiptHeader title="By task" />
         <ReceiptRule />
-        {byTask.size === 0 && <div className="mono text-xs text-ink-3">No calls yet. Hit /api/llm/health to log the first two.</div>}
+        {byTask.size === 0 && <div className="mono text-xs text-ink-3">No calls yet.</div>}
         {[...byTask.entries()].map(([k, v]) => (
           <ReceiptLine key={k} label={k} value={`${v.calls}× · ${v.in + v.out} tok · ${v.cached} cached · ${money(v.cost)}`} />
         ))}
@@ -83,11 +83,11 @@ export default async function StatsPage() {
         ))}
         <ReceiptRule />
         <ul className="mono list-disc space-y-1 pl-4 text-[11px] text-ink-3">
-          <li>Gmail query + sender allowlist before any LLM call</li>
-          <li>HTML stripped, boilerplate removed, truncated to ~6k chars</li>
-          <li>reasoning_effort minimal for extraction, tagging and query parsing</li>
-          <li>Batched tagging (20 per call); static prompt prefix first for cache hits</li>
-          <li>Embeddings once per item; audio cached; verdicts and budget math are rules, the model only writes one line</li>
+          <li>Allowlist before any model call</li>
+          <li>Emails stripped to ~6k chars</li>
+          <li>Minimal reasoning for extraction</li>
+          <li>Tagging batched 20/call; cache-friendly prompts</li>
+          <li>Embed once; verdicts are rules; model writes one line</li>
         </ul>
       </Receipt>
     </div>

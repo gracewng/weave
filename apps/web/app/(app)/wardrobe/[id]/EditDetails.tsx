@@ -22,7 +22,7 @@ export function EditDetails({ itemId, name, brand, color, size }: { itemId: stri
       {field('name', 'Name')}
       <div className="grid grid-cols-3 gap-2">{field('brand', 'Brand')}{field('color', 'Color')}{field('size', 'Size')}</div>
       <div className="flex gap-2"><button className="btn btn-primary !py-1" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Save'}</button><button className="btn !py-1" type="button" onClick={() => setOpen(false)}>Cancel</button></div>
-      <div className="mono text-[10px] text-ink-3">Changing name, brand or color searches for a new product image (one search).</div>
+      <div className="mono text-[10px] text-ink-3">Changing name, brand or color re-searches the image.</div>
     </form>
   );
 }
