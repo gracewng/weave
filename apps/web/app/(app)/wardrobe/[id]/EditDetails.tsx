@@ -9,7 +9,7 @@ export function EditDetails({ itemId, name, brand, color, size }: { itemId: stri
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [f, setF] = useState({ name, brand: brand ?? '', color: color && color !== 'unknown' ? color : '', size: size ?? '' });
-  if (!open) return <button className="mono text-[10px] uppercase text-ink-3 hover:text-ink" onClick={() => setOpen(true)}>Edit details{!f.color ? ' · color not known' : ''}</button>;
+  if (!open) return <button className="btn !py-1 !text-[10px]" onClick={() => setOpen(true)}>Edit details{!f.color ? ' · color?' : ''}</button>;
   const field = (k: keyof typeof f, label: string) => (
     <label className="block"><div className="mono text-[10px] uppercase text-ink-3">{label}</div>
       <input className="mt-0.5 w-full border border-rule bg-paper p-1.5 text-sm" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>

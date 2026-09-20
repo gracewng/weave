@@ -2,6 +2,8 @@ import { getProfile } from '@/lib/auth';
 import { Receipt, ReceiptHeader, ReceiptRule } from '@/components/Receipt';
 import { updateSettings } from './actions';
 import { PushEnable } from '@/components/PushEnable';
+import { BudgetSection } from './BudgetSection';
+import { createClient } from '@/lib/supabase/server';
 
 const PERSONAS: Array<[string, string, string]> = [
   ['bestie', 'Bestie', 'Warm, hype, gently talks you down.'],
@@ -11,10 +13,13 @@ const PERSONAS: Array<[string, string, string]> = [
 
 export default async function SettingsPage() {
   const { profile, user } = await getProfile();
+  const supabase = await createClient();
   const sizes = profile?.sizes ?? {};
   return (
     <Receipt className="mx-auto max-w-lg">
       <ReceiptHeader title="Settings" subtitle={user.email ?? ''} />
+      <ReceiptRule />
+      <BudgetSection supabase={supabase} userId={user.id} />
       <ReceiptRule />
       <form action={updateSettings} className="space-y-5">
         <label className="block">

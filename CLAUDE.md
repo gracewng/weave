@@ -499,6 +499,10 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
+- 2026-09-20 restructure (lead): nav trimmed to five; `/budget` redirects to `/settings#budget`; `/returns`,
+  `/statement`, `/ghosts`, `/stats` remain as routes linked from Settings; item page has Edit / Delete buttons, an
+  image-options row (Clear · Other options · My own photo) and a shopping-style similar strip; the wardrobe header
+  shows spend for the last 30 days and a returnable line only when something is returnable.
 - 2026-09-20: a direct push to `main` ("changes") removed wear tracking and broke the build; resolved on branch
   `remove-wear-tracking` (duplicate `/onboarding` + conflicting migration removed, Returns nav restored). Reminder:
   nobody pushes to `main`; PRs only.

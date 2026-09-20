@@ -70,8 +70,10 @@ export async function tagAndEmbed(userId: string, opts: { limit?: number } = {})
   return out;
 }
 
+export interface SimilarItem { id: string; name: string; brand: string | null; category: string | null; color: string | null; size: string | null; image_url: string | null; description: string | null; price_cents: number | null; similarity: number }
+
 /** Nearest owned items to a query string (or to an existing item's embedding). */
-export async function similarOwned(userId: string, query: { text?: string; itemId?: string }, k = 5) {
+export async function similarOwned(userId: string, query: { text?: string; itemId?: string }, k = 5): Promise<SimilarItem[]> {
   ensureLLM();
   const admin = createAdminClient();
   if (!admin) throw new Error('service role not configured');
@@ -85,9 +87,9 @@ export async function similarOwned(userId: string, query: { text?: string; itemI
     const r = await embedTexts([query.text], userId);
     vector = r.vectors[0] ?? null;
   }
-  if (!vector) return [] as Array<{ id: string; name: string; similarity: number }>;
+  if (!vector) return [];
   const { data, error } = await admin.rpc('match_items', { p_user_id: userId, query_embedding: JSON.stringify(vector), k: k + (query.itemId ? 1 : 0) });
   if (error) throw new Error(`match_items: ${error.message}`);
-  const rows = (data ?? []) as Array<{ id: string; name: string; brand: string | null; category: string | null; color: string | null; size: string | null; image_url: string | null; description: string | null; price_cents: number | null; similarity: number }>;
+  const rows = (data ?? []) as SimilarItem[];
   return rows.filter((r) => r.id !== query.itemId).slice(0, k);
 }
