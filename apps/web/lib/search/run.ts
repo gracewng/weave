@@ -5,7 +5,9 @@ import type { ShoppingResult, Verdict, VerdictInputs } from '@weave/shared/contr
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ensureLLM } from '@/lib/llm';
 import { searchProducts } from '@/lib/identify';
-import { secondhandLinks, retailLinks, type Link } from './marketplaces';
+import { secondhandLinks, retailLinks } from '@weave/data';
+import type { MarketplaceLink } from '@weave/shared/contracts';
+type Link = MarketplaceLink & { url: string };
 
 export interface OwnedHit { id: string; name: string; brand: string | null; image_url: string | null; price_cents: number | null; size: string | null; similarity: number }
 export interface FriendHit { id: string; owner_id: string; owner_name: string | null; name: string; image_url: string | null; size: string | null; similarity: number }

@@ -62,7 +62,7 @@ list; confirm official rules before submitting.)
 6. **Return policy board.** Every item inside its window, sorted by days left, retailer policy, dollars at stake.
    A reminder shows money at stake; only a **confirmed refund** credits Money Recovered.
 7. **Search bar** (the intervention point). Four fixed sections: your wardrobe → friends' wardrobes (in your size)
-   → secondhand (eBay API + marketplace links) → new retail last. Deterministic verdict + one model-written line.
+   → secondhand (SerpAPI resale results + marketplace links) → new retail last. Deterministic verdict + one model-written line.
    **Purchase memory:** "Your median tee purchase is $28 across 6 confirmed purchases; this one is $45."
    Actions: Wear mine · Ask to borrow · Buy used · Hold 48h · Skip · Buy anyway.
 8. **Ghost Rack — "The clothes you almost owned."** A ledger of purchase intentions you didn't act on: torn,
@@ -243,7 +243,7 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 ## Stack
 Next.js 16 (App Router, `proxy.ts` not `middleware.ts`) + TypeScript + Tailwind v4 · Supabase (Postgres + pgvector,
 Google OAuth, Storage bucket `items`, Realtime) · Vercel (cron) · Meta Model API (Muse Spark, OpenAI-SDK compatible,
-base `https://api.meta.ai/v1`) · OpenAI (embeddings + short lines) · Plaid sandbox · eBay Browse · SerpAPI ·
+base `https://api.meta.ai/v1`) · OpenAI (embeddings + short lines) · Plaid sandbox · SerpAPI ·
 ElevenLabs (optional) · PWA (web push, camera via file input) · optional FastAPI `rembg`.
 
 ## Repo layout (pnpm workspaces)
@@ -492,9 +492,9 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - **All five Devin tasks merged 2026-09-20** (#1 retailer data, #9 marketplaces + alternatives, #3 tests, #4 eBay +
   ElevenLabs clients, #5 fixtures + seed). `prefilter.ts`/`returns.ts` now use `@weave/data` (66 retailers);
   `pipeline.ts` uses `fixtures.emails`. **Follow-up:** switch `lib/search/run.ts` to `@weave/data` marketplaces and
-  `lib/alternatives.ts` → `@weave/data` alternatives, then delete the stopgaps (`retailers-fallback.ts`,
-  `sample-emails.ts`, `lib/search/marketplaces.ts`, `lib/alternatives.ts`). eBay client not yet wired into search
-  (SerpAPI resale results stand in). 175 tests on `main`.
+  `lib/alternatives.ts` → `@weave/data` alternatives — **done 2026-09-20; stopgaps deleted.** **eBay is out of scope**
+  (lead decision): the secondhand tier uses SerpAPI resale results + `@weave/data` marketplace links; the eBay
+  client in `@weave/clients` stays unused and its env vars were removed from `.env.example`. 175 tests on `main`.
 - Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). **Deployed:** https://weave-phi.vercel.app (Vercel project `weave`,
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
