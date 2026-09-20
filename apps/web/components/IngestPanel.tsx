@@ -50,7 +50,7 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
       else if (e.type === 'images') { setImages(e); src.close(); router.refresh(); }
       else if (e.type === 'error') { setC(e.counters); setError(e.message); setState('error'); src.close(); router.refresh(); }
     };
-    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Items found so far are recorded — scan again to continue.'); setState('error'); } src.close(); };
+    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Scan again to continue.'); setState('error'); } src.close(); };
   }
 
   const pct = total > 0 ? Math.min(100, Math.round((c.scanned / total) * 100)) : 0;
@@ -66,28 +66,28 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
 
   return (
     <Receipt className="mx-auto max-w-lg" print={state === 'running'}>
-      <ReceiptHeader title="Inbox scan" subtitle={mode === 'fixture' ? 'FIXTURE MODE · NOT YOUR REAL INBOX' : mode === 'gmail' ? 'LIVE · GMAIL READ-ONLY' : hasGmail ? 'READY' : 'SIGN IN WITH GOOGLE TO CONNECT GMAIL'} />
+      <ReceiptHeader title="Inbox scan" subtitle={mode === 'fixture' ? 'FIXTURE · NOT YOUR INBOX' : mode === 'gmail' ? 'LIVE · GMAIL READ-ONLY' : hasGmail ? 'READY' : 'SIGN IN TO CONNECT GMAIL'} />
       <ReceiptRule />
       {state === 'idle' && (
         <>
-          <p className="text-sm text-ink-2">Weave reads your order confirmations, extracts each clothing item with its price, size and return window, and discards the email text. Nothing you didn&apos;t buy gets invented.</p>
+          <p className="text-sm text-ink-2">Reads your order emails. Keeps item, price, size, return window. Drops the email.</p>
           <div className="mt-4 flex gap-2">
             <button className="btn btn-primary" onClick={start}>Scan my inbox</button>
           </div>
-          <div className="mono mt-4 text-[11px] text-ink-3">3 YEARS · ORDER + RECEIPT EMAILS ONLY · RETAILER ALLOWLIST BEFORE ANY MODEL CALL</div>
+          <div className="mono mt-4 text-[11px] text-ink-3">3 YEARS · ORDERS ONLY · FILTERED BEFORE THE MODEL</div>
         </>
       )}
       {state !== 'idle' && (
         <>
           <ReceiptLine label="EMAILS SCANNED" value={`${c.scanned}${total ? ` / ${total}` : ''}`} />
-          <ReceiptLine label="SKIPPED BEFORE THE MODEL" value={String(c.prefiltered)} muted />
+          <ReceiptLine label="SKIPPED" value={String(c.prefiltered)} muted />
           <ReceiptLine label="SENT TO MODEL" value={String(c.sent)} muted />
           <ReceiptLine label="CLOTHING ORDERS" value={String(c.clothingOrders)} />
           <ReceiptLine label="ITEMS FOUND" value={String(c.itemsFound)} valueClass={c.itemsFound ? 'saved' : ''} />
-          {c.duplicates > 0 && <ReceiptLine label="ALREADY IN WARDROBE" value={String(c.duplicates)} muted />}
+          {c.duplicates > 0 && <ReceiptLine label="DUPLICATES" value={String(c.duplicates)} muted />}
           {c.failed > 0 && <ReceiptLine label="FAILED" value={String(c.failed)} muted />}
           <ReceiptLine label="TOKENS" value={`${c.tokens.toLocaleString()}${c.cached ? ` (${c.cached} cached)` : ''}`} muted />
-          <ReceiptLine label="MODEL SPEND" value={cents(c.costUsd)} />
+          <ReceiptLine label="COST" value={cents(c.costUsd)} />
           {provider && <ReceiptLine label="PROVIDER" value={provider} muted />}
           <div className="mt-3 h-1 w-full bg-paper"><div className="h-1 bg-ink transition-all" style={{ width: `${state === 'done' ? 100 : pct}%` }} /></div>
           {state === 'running' && <div className="mono mt-2 truncate text-[11px] text-ink-3">READING · {subject || '…'}</div>}
@@ -105,7 +105,7 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
           {state === 'done' && <ReceiptLine label="DONE" value={`${(elapsed / 1000).toFixed(1)}s · ${c.itemsFound} ITEMS · ${cents(c.costUsd)} IN TOKENS`} />}
           {state === 'done' && c.itemsFound > 0 && !tagged && <ReceiptLine label="TAGGING + EMBEDDING" value="…" muted />}
           {tagged && <ReceiptLine label="TAGGED · EMBEDDED" value={`${tagged.tagged} · ${tagged.embedded} · ${cents(tagged.costUsd)}`} muted />}
-          {tagged && !images && <ReceiptLine label="FINDING PRODUCT IMAGES" value="…" muted />}
+          {tagged && !images && <ReceiptLine label="IMAGES" value="…" muted />}
           {images && <ReceiptLine label="IMAGES FOUND" value={`${images.imaged} / ${images.looked_up} · ${images.searches} SEARCHES`} muted />}
           {state === 'error' && <div className="mono text-[11px] text-warn">{error}</div>}
           {(state === 'done' || state === 'error') && (

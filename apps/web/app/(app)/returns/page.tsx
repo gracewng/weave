@@ -15,19 +15,19 @@ export default async function ReturnsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <Receipt>
-        <ReceiptHeader title="Returns" subtitle="THREE DIFFERENT STATES: OPEN · PENDING · REFUNDED" />
+        <ReceiptHeader title="Returns" subtitle="OPEN · PENDING · REFUNDED" />
         <ReceiptRule />
         <ReceiptLine label="RETURN WINDOWS OPEN" value={String(open.length)} />
         <ReceiptLine label="  AT STAKE" value={usd(atStake)} />
         <ReceiptLine label="RETURN PENDING" value={String(pending.length)} muted />
         <ReceiptLine label="REFUND CONFIRMED" value={`${recovered.length} · ${usd(recoveredCents)}`} valueClass={recoveredCents > 0 ? 'saved' : ''} />
         <ReceiptRule />
-        <div className="mono text-[10px] text-ink-3">MONEY RECOVERED COUNTS CONFIRMED REFUNDS ONLY. A REMINDER IS NOT A RETURN; A RETURN IS NOT A REFUND.</div>
+        <div className="mono text-[10px] text-ink-3">RECOVERED = CONFIRMED REFUNDS ONLY.</div>
       </Receipt>
 
       {open.length > 0 && (
         <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Open windows · soonest first</div>
+          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Open</div>
           {open.map((r) => (
             <Receipt key={r.item.id}>
               <div className="flex gap-3">
@@ -50,7 +50,7 @@ export default async function ReturnsPage() {
 
       {pending.length > 0 && (
         <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Return pending · nothing recovered yet</div>
+          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Pending</div>
           {pending.map((i) => (
             <Receipt key={i.id}>
               <div className="flex items-start justify-between gap-2"><div className="truncate text-sm">{i.name}</div><span className="stamp">RETURN PENDING</span></div>

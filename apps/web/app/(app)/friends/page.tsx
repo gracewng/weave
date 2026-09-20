@@ -36,7 +36,7 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
           <ReceiptLine label="HELPED FRIENDS KEEP" value={usd(karma.helpedKeepCents)} valueClass={karma.helpedKeepCents > 0 ? 'saved' : ''} />
           <ReceiptLine label="BORROWED" value={`${karma.borrowed} TIME${karma.borrowed === 1 ? '' : 'S'}`} muted />
           <ReceiptRule />
-          <div className="mono text-[11px] text-ink-3">LENDING IS THE STATUS SYMBOL. NO FEED, NO LIKES, NO RANKINGS.</div>
+          <div className="mono text-[11px] text-ink-3">NO FEED. NO LIKES.</div>
         </Receipt>
         <Receipt>
           <ReceiptHeader title="Invite" subtitle="SCAN OR SHARE" />
@@ -49,13 +49,13 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
               <JoinForm />
             </div>
           </div>
-          <div className="mono mt-3 text-[10px] text-ink-3">FRIENDS SEE SHAREABLE ITEMS ONLY. NEVER PRICES, DATES, STORES OR RECEIPTS.</div>
+          <div className="mono mt-3 text-[10px] text-ink-3">FRIENDS NEVER SEE PRICES OR STORES.</div>
         </Receipt>
       </div>
 
       {open.length > 0 && (
         <Receipt>
-          <ReceiptHeader title="Open loans" subtitle={`${open.length} · UPDATES LIVE`} />
+          <ReceiptHeader title="Open loans" subtitle={`${open.length} · LIVE`} />
           <ReceiptRule />
           <div className="space-y-3">
             {open.map((l) => {
@@ -77,9 +77,9 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
       )}
 
       <Receipt>
-        <ReceiptHeader title="Friends" subtitle={friends.length ? `${friends.length} · TAP TO BROWSE A WARDROBE` : 'NO FRIENDS YET'} />
+        <ReceiptHeader title="Friends" subtitle={friends.length ? `${friends.length} · TAP TO BROWSE` : 'NO FRIENDS YET'} />
         <ReceiptRule />
-        {friends.length === 0 && <p className="text-sm text-ink-2">Share your code. When a friend joins, their shareable items show up here, filtered to your size, ready to borrow before you buy.</p>}
+        {friends.length === 0 && <p className="text-sm text-ink-2">Share your code. Friends' items show up here, in your size.</p>}
         <div className="grid gap-2 sm:grid-cols-2">
           {friends.map((f) => (
             <Link key={f.id} href={`/friends/${f.id}`} className="cutout flex items-center gap-3 p-2 hover:border-ink">

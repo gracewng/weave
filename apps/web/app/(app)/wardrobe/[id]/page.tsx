@@ -76,7 +76,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
 
         {similar.length > 0 && (
           <Receipt>
-            <ReceiptHeader title="Similar in your wardrobe" subtitle="SEMANTIC NEIGHBORS · THE 'YOU ALREADY OWN THIS' SIGNAL" />
+            <ReceiptHeader title="Similar in your wardrobe" />
             <ReceiptRule />
             {similar.map((s) => <ReceiptLine key={s.id} label={<Link href={`/wardrobe/${s.id}`} className="hover:underline">{s.name.slice(0, 34)}</Link>} value={`${Math.round(s.similarity * 100)}%`} muted />)}
           </Receipt>

@@ -16,9 +16,9 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   return (
     <main className="mx-auto max-w-md px-4 py-10">
       <Receipt print>
-        <ReceiptHeader title={first ? 'Before we start' : 'Profile basics'} subtitle="TAKES 10 SECONDS · SHOWN ONCE" />
+        <ReceiptHeader title={first ? 'Before we start' : 'Profile basics'} subtitle="ONCE · 10 SECONDS" />
         <ReceiptRule />
-        <p className="text-sm text-ink-2">Two quick things so the AI picks the <span className="font-medium">right product picture</span> for what you buy, and can flag purchases that might not be yours (gifts, someone else&apos;s order).</p>
+        <p className="text-sm text-ink-2">Helps pick the right product photos and flag purchases that aren&apos;t yours.</p>
         <form action={completeOnboarding} className="mt-4 space-y-4">
           <input type="hidden" name="next" value={next && next.startsWith('/') ? next : '/wardrobe'} />
           <fieldset>
@@ -32,10 +32,9 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
           <fieldset>
             <legend className="mono text-[10px] uppercase text-ink-3">You usually shop</legend>
             <div className="mt-1 flex flex-wrap gap-2">{DEPTS.map(([v, l]) => <label key={v} className="cutout cursor-pointer px-2 py-1 text-xs has-[:checked]:border-ink has-[:checked]:bg-paper"><input type="radio" name="shops_department" value={v} defaultChecked={profile?.shops_department === v} className="sr-only" />{l}</label>)}</div>
-            <div className="mono mt-1 text-[10px] text-ink-3">THIS IS THE STRONGEST SIGNAL FOR PICKING THE RIGHT PICTURE.</div>
           </fieldset>
           <ReceiptRule />
-          <div className="mono text-[10px] text-ink-3">USED ONLY TO MATCH PRODUCT IMAGES AND FLAG MISMATCHES. NEVER SHOWN TO FRIENDS. NEVER USED FOR SUGGESTIONS. EVERY FIELD IS OPTIONAL.</div>
+          <div className="mono text-[10px] text-ink-3">IMAGE MATCHING ONLY. NEVER SHOWN TO FRIENDS. ALL OPTIONAL.</div>
           <button className="btn btn-primary w-full" type="submit">{first ? 'Continue' : edit ? 'Save' : 'Save'}</button>
         </form>
       </Receipt>

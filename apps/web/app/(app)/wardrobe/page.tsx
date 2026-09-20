@@ -33,7 +33,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
           <ReceiptRule />
           <ReceiptLine label="ITEMS" value="0" muted />
           <ReceiptLine label="PAID IN TOTAL" value="$0.00" muted />
-          <ReceiptLine label="CLOSET COVERAGE" value="Not enough purchase history" muted />
+          <ReceiptLine label="CLOSET COVERAGE" value="No history yet" muted />
         </Receipt>
       </div>
     );

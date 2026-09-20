@@ -44,20 +44,20 @@ export default async function ChargesPage() {
         <ReceiptLine label="MYSTERY PURCHASES" value={String(mystery.length)} />
         <ReceiptLine label="MATCHED TO RECEIPTS" value={String(matched.length)} muted />
         <ReceiptRule />
-        <ReceiptLine label="CLOSET COVERAGE" value={cov.ratio == null ? 'NOT ENOUGH PURCHASE HISTORY' : `${cov.resolved} OF ${cov.detected} RECORDS RESOLVED = ${Math.round(cov.ratio * 100)}%`} />
+        <ReceiptLine label="CLOSET COVERAGE" value={cov.ratio == null ? 'NO HISTORY YET' : `${cov.resolved}/${cov.detected} RESOLVED · ${Math.round(cov.ratio * 100)}%`} />
         {cov.detected > 0 && (
           <div className="mono mt-1 flex items-end gap-px" aria-hidden>{Array.from({ length: 40 }).map((_, i) => <span key={i} className="inline-block w-1.5" style={{ height: i % 3 === 0 ? 22 : 16, background: i < bar ? 'var(--ink)' : 'transparent', borderBottom: i < bar ? 'none' : '2px solid var(--rule)' }} />)}</div>
         )}
-        <div className="mono mt-2 text-[10px] text-ink-3">{cov.detected ? `${dates[0]} → ${dates[dates.length - 1]} · ${cov.unresolved} UNRESOLVED · ${cov.missingReceipts} MISSING RECEIPTS · "NOT CLOTHES" LEAVES THE DENOMINATOR` : 'LINK A CARD OR SCAN YOUR INBOX TO START.'}</div>
+        <div className="mono mt-2 text-[10px] text-ink-3">{cov.detected ? `${dates[0]} → ${dates[dates.length - 1]} · ${cov.unresolved} OPEN · ${cov.missingReceipts} NO RECEIPT` : 'LINK A CARD OR SCAN YOUR INBOX.'}</div>
       </Receipt>
 
       {fresh.length > 0 && (
         <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">New · one question each</div>
+          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">New</div>
           {fresh.map((t) => (
             <Receipt key={t.id} print>
               <div className="flex items-start justify-between gap-2"><div className="truncate text-sm">{t.merchant}</div><span className="mono text-sm">{usd(t.amount_cents)}</span></div>
-              <div className="mono text-[10px] text-ink-3">{t.date} · NO MATCHING RECEIPT EMAIL{t.source === 'mock' ? ' · DEMO CHARGE' : ''}</div>
+              <div className="mono text-[10px] text-ink-3">{t.date} · NO RECEIPT{t.source === 'mock' ? ' · DEMO CHARGE' : ''}</div>
               <ChargeActions txId={t.id} merchant={t.merchant ?? ''} amountCents={t.amount_cents ?? 0} decision={t.decision} kind="new" />
             </Receipt>
           ))}
@@ -66,11 +66,11 @@ export default async function ChargesPage() {
 
       {mystery.length > 0 && (
         <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Mystery purchases · what was it?</div>
+          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Mystery purchases</div>
           {mystery.slice(0, 8).map((t) => (
             <Receipt key={t.id}>
               <div className="flex items-start justify-between gap-2"><div className="truncate text-sm">You spent <span className="mono">{usd(t.amount_cents)}</span> at {t.merchant}</div><span className="mono text-[10px] text-ink-3">{t.date}</span></div>
-              <div className="mono text-[10px] text-ink-3">THE ITEM LINE IS BLANK UNTIL YOU FILL IT IN · <span className="opacity-40">▒▒▒▒▒▒▒▒▒▒▒▒</span></div>
+              <div className="mono text-[10px] text-ink-3"><span className="opacity-40">▒▒▒▒▒▒▒▒▒▒▒▒</span></div>
               <ChargeActions txId={t.id} merchant={t.merchant ?? ''} amountCents={t.amount_cents ?? 0} decision={t.decision} kind="mystery" />
             </Receipt>
           ))}
@@ -86,7 +86,7 @@ export default async function ChargesPage() {
         </Receipt>
       )}
 
-      {all.length === 0 && <Receipt><p className="text-sm text-ink-2">Link a card and every clothing charge shows up here. Charges with a matching receipt email resolve on their own; the rest ask one question. <Link href="/wardrobe" className="underline">Wardrobe</Link></p></Receipt>}
+      {all.length === 0 && <Receipt><p className="text-sm text-ink-2">Link a card. Clothing charges land here; the ones with receipts resolve themselves. <Link href="/wardrobe" className="underline">Wardrobe</Link></p></Receipt>}
     </div>
   );
 }
