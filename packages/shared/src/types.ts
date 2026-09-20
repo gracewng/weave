@@ -19,7 +19,15 @@ export interface Profile {
   sizes: Record<string, string>;
   voice_persona: VoicePersona;
   invite_code: string | null;
+  /** Onboarding basics — image matching + mismatch flags only. Never shown to friends. */
+  age_range: AgeRange | null;
+  gender: Gender | null;
+  shops_department: Department | null;
+  onboarded_at: string | null;
 }
+export type AgeRange = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_plus' | 'prefer_not';
+export type Gender = 'woman' | 'man' | 'non_binary' | 'prefer_not';
+export type Department = 'womens' | 'mens' | 'both' | 'kids';
 
 export interface Item {
   id: string;
@@ -47,6 +55,8 @@ export interface Item {
   refunded_at: string | null;
   sold_cents: number | null;
   sold_at: string | null;
+  department: 'womens' | 'mens' | 'unisex' | 'kids' | 'unknown' | null;
+  profile_mismatch: boolean;
   shareable: boolean;
   lendable: boolean;
   est_resale_cents: number | null;
@@ -137,7 +147,7 @@ export interface Hold {
   outcome_confirmed_at: string | null;
   actual_paid_cents: number | null;
   loan_id: string | null;
-  wore_item_id: string | null;
+  owned_item_id: string | null;
   /** Money Kept — valid only when outcome_confirmed_at is set. */
   kept_cents: number;
   for_other: boolean;

@@ -104,7 +104,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
           {/* 1. You already own this */}
           {!forOther && (
             <Receipt print>
-              <ReceiptHeader title="1 · You already own this" subtitle={local.owned.length ? `${local.owned.length} SIMILAR · SORTED BY FEWEST WEARS` : undefined} />
+              <ReceiptHeader title="1 · You already own this" subtitle={local.owned.length ? `${local.owned.length} SIMILAR ITEMS` : undefined} />
               <ReceiptRule />
               {local.owned.length === 0 && <ReceiptLine label="NOTHING OWNED" value="that's fine" muted />}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -112,9 +112,9 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
                   <div key={o.id} className="cutout p-2">
                     <Link href={`/wardrobe/${o.id}`} className="block aspect-[3/4] w-full bg-paper-2">{o.image_url ? <img src={o.image_url} alt={o.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center text-[10px] text-ink-3">NO IMAGE</div>}</Link>
                     <div className="mt-1 truncate text-sm">{o.name}</div>
-                    <div className="mono text-[10px] text-ink-3">{Math.round(o.similarity * 100)}% · {o.wears} WEAR{o.wears === 1 ? '' : 'S'}{o.cpw != null ? ` · ${usd(o.cpw)}/WEAR` : ''}{o.price_cents != null ? ` · PAID ${usd(o.price_cents)}` : ''}</div>
-                    <button className="btn btn-save mt-2 w-full !py-1 !text-[10px]" disabled={busy || !!decided} onClick={() => decide({ ...base(), decision: 'wear_mine', woreItemId: o.id },
-                      { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'STOOD IN', value: o.name.toUpperCase().slice(0, 22) }, { label: 'PAID', value: '$0.00' }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'ESTIMATED AGAINST YOUR INTENDED PRICE' : 'COUNTED AS AN ACTION, NO DOLLARS CLAIMED' })}>Wear mine</button>
+                    <div className="mono text-[10px] text-ink-3">{Math.round(o.similarity * 100)}%{o.price_cents != null ? ` · PAID ${usd(o.price_cents)}` : ''}</div>
+                    <button className="btn btn-save mt-2 w-full !py-1 !text-[10px]" disabled={busy || !!decided} onClick={() => decide({ ...base(), decision: 'use_mine', ownedItemId: o.id },
+                      { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'STOOD IN', value: o.name.toUpperCase().slice(0, 22) }, { label: 'PAID', value: '$0.00' }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'ESTIMATED AGAINST YOUR INTENDED PRICE' : 'COUNTED AS AN ACTION, NO DOLLARS CLAIMED' })}>Use mine</button>
                   </div>
                 ))}
               </div>
@@ -173,7 +173,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
                   <div className="flex flex-wrap items-center gap-3">
                     <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'skip' }, { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'PAID', value: '$0.00' }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: unpriced ? 'COUNTED AS AN ACTION, NO DOLLARS CLAIMED' : 'ESTIMATED AGAINST YOUR INTENDED PRICE' })}>Skip</button>
                     <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'hold' }, { title: 'Purchase paused', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'NEXT CHECK', value: 'IN 48 HOURS', muted: true }, { label: 'POTENTIAL KEPT', value: priceLabel ?? '—', muted: true }], footer: 'A HOLD IS NOT YET KEPT MONEY' })}>Hold 48h</button>
-                    <button className="mono text-[11px] uppercase text-ink-3 hover:text-ink" disabled={busy} onClick={() => decide({ ...base(), decision: 'buy' }, { title: 'Noted', lines: [{ label: 'PAID', value: priceLabel ?? '—' }, { label: 'COST PER WEAR', value: `${priceLabel ?? '—'} / 0 WEARS`, muted: true }], footer: 'LOG THE FIRST WEAR WHEN IT ARRIVES' })}>Buy anyway</button>
+                    <button className="mono text-[11px] uppercase text-ink-3 hover:text-ink" disabled={busy} onClick={() => decide({ ...base(), decision: 'buy' }, { title: 'Noted', lines: [{ label: 'PAID', value: priceLabel ?? '—' }], footer: 'CONFIRMED BY YOU' })}>Buy anyway</button>
                   </div>
                 )}
               </>

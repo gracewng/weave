@@ -8,8 +8,8 @@ Fill this in as PRs land; it becomes a slide for the Devin judges.
 | 1 | Retailer data (`/packages/data`) | | | ~3h (60 retailers + 25 return policies with sources) | |
 | 2 | API clients + mocks (`/packages/clients`) | #4 | ~40m | ~4h | eBay Browse (client-credentials OAuth, token cached) + ElevenLabs TTS (sha256(text+voice) cache, injectable store) are real; SerpAPI and Plaid keep the working app implementations and are injected into `getClients({ serp, plaid })`. Every real client is proxied so a throw falls back to the fixture per call — the demo cannot die on an external service. eBay has no sold-price endpoint outside limited-release Marketplace Insights, so `soldMedianCents` uses the median asking price of the cheapest 50 used listings, documented in code. |
 | 3 | Fixtures + seed script (`/apps/web/fixtures`, `/scripts/seed-demo.ts`) | | | ~4h | |
-| 4 | Tests (matcher, return dates, verdicts, budget math, price memory, wears) | | | ~2.5h | |
-| 5 | Marketplace links + money alternatives (`/packages/data`) | | | ~1.5h | |
+| 4 | Tests (matcher, return dates, verdicts, budget math, price memory, wears) | #3 | ~35m | ~2.5h | 101 tests over the 6 pure modules. Three first-run failures were wrong expectations, not bugs: the matcher's 10% amount tolerance is measured against the larger amount, `normalizeMerchant` only strips 3+ digit runs (so `2K4L9` survives), and a wear exactly on the dormancy cutoff still counts as active. `returns.ts` does not exist yet — return-date math lives in `@weave/data`, already covered by task 1. |
+| 5 | Marketplace links + money alternatives (`/packages/data`) | #2 | ~15m | ~1.5h | 9 marketplaces (8 secondhand + Google Shopping), 11 sourced alternatives. Each search URL shape was checked by request; Depop/Mercari/RealReal answer 403 to any script (bot protection), so those three are unverified and want one click each. |
 
 ## How we split the work
 - **Claude Code** (interactive, with the lead): schema, app, LLM router, search + budget logic — the parts that need

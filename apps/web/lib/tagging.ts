@@ -19,6 +19,8 @@ export async function tagAndEmbed(userId: string, opts: { limit?: number } = {})
   const out: TagSummary = { tagged: 0, embedded: 0, costUsd: 0, calls: 0, skipped: 0 };
 
   // ── tag ─────────────────────────────────────────────────────────────────────
+  const { data: prof } = await admin.from('profiles').select('shops_department').eq('id', userId).maybeSingle();
+  const shops = (prof as { shops_department: string | null } | null)?.shops_department ?? null;
   const { data: untagged } = await admin.from('items').select('id,name,brand,color,retailer,category')
     .eq('user_id', userId).or('description.is.null,slot.is.null').limit(opts.limit ?? 200);
   const rows = (untagged ?? []) as Array<{ id: string; name: string; brand: string | null; color: string | null; retailer: string | null; category: string | null }>;
@@ -28,7 +30,7 @@ export async function tagAndEmbed(userId: string, opts: { limit?: number } = {})
       const r = await callLLM<TagItemsResult>({
         task: 'tag_items', system: TAG_ITEMS_SYSTEM, schema: TagItemsSchema, schemaName: 'tag_items',
         input: tagItemsInput(batch), userId,
-        fixture: () => ({ items: batch.map((b) => ({ id: b.id, category: (b.category as never) ?? 'other', slot: 'top', color: b.color ?? 'unknown', formality: 2, description: `${b.color ?? ''} ${b.name}, casual, ${b.brand ?? b.retailer ?? ''}`.trim() })) }),
+        fixture: () => ({ items: batch.map((b) => ({ id: b.id, category: (b.category as never) ?? 'other', slot: 'top' as const, color: b.color ?? 'unknown', formality: 2, description: `${b.color ?? ''} ${b.name}, casual, ${b.brand ?? b.retailer ?? ''}`.trim(), department: 'unknown' as const })) }),
       });
       out.calls++; out.costUsd += r.costUsd;
       const byId = new Map(batch.map((b) => [b.id, b]));
@@ -36,7 +38,9 @@ export async function tagAndEmbed(userId: string, opts: { limit?: number } = {})
         const src = byId.get(t.id); if (!src) continue;
         // Keep an insert-time intimates guess (privacy) even if the model says otherwise.
         const category = src.category === 'intimates' ? 'intimates' : t.category;
-        const { error } = await admin.from('items').update({ category, slot: t.slot, color: t.color, formality: t.formality, description: t.description }).eq('id', t.id).eq('user_id', userId);
+        // Mismatch flag: the garment's department contradicts the account holder's usual department (deterministic; profile used for nothing else).
+        const mismatch = !!shops && shops !== 'both' && t.department !== 'unknown' && t.department !== 'unisex' && t.department !== shops;
+        const { error } = await admin.from('items').update({ category, slot: t.slot, color: t.color, formality: t.formality, description: t.description, department: t.department, profile_mismatch: mismatch }).eq('id', t.id).eq('user_id', userId);
         if (!error) out.tagged++;
       }
     } catch (err) {
