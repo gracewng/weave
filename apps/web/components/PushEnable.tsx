@@ -24,7 +24,7 @@ export function PushEnable({ compact = false }: { compact?: boolean }) {
     } catch { setState('idle'); }
   }
   if (state === 'unsupported') return compact ? null : <div className="text-xs text-ink-3">Push isn’t supported in this browser. On iPhone, add Weave to your home screen first.</div>;
-  if (state === 'on') return <div className="flex flex-wrap items-center gap-2 text-xs text-ink-2"><Badge tone="save">Notifications on</Badge><span>New charge · return window · 48h check-in</span></div>;
+  if (state === 'on') return <div className="flex flex-wrap items-center gap-2 text-xs text-ink-2"><Badge tone="save">Notifications on</Badge><span>New charge · return window</span></div>;
   if (state === 'denied') return <div className="text-xs text-ink-3">Notifications are blocked in your browser settings.</div>;
   return <button className={`btn ${compact ? 'btn-sm btn-outline' : ''}`} disabled={state === 'busy'} onClick={enable}>{state === 'busy' ? 'Enabling…' : 'Turn on notifications'}</button>;
 }
