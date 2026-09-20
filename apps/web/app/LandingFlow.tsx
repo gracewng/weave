@@ -22,7 +22,7 @@ const INTRO: Block[] = [
 const SIGNIN: Block[] = [
 	{ t: "title", text: "Before we read anything" },
 	{ t: "rule" },
-	{ t: "line", label: "Gmail", value: "read-only" },
+	{ t: "line", label: "Gmail", value: "optional · read-only" },
 	{ t: "line", label: "Kept from emails", value: "item · price · size · date" },
 	{ t: "line", label: "Friends see prices", value: "never" },
 	{ t: "rule" },

@@ -68,8 +68,10 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
   if (compact && !open) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dust px-4 py-3 text-sm text-ink-2">
-        <span>{itemCount} item{itemCount === 1 ? '' : 's'} · {hasGmail ? 'Gmail connected' : 'Gmail not connected'}</span>
-        <button className="btn btn-sm" onClick={start}><Icon name="refresh" size={12} />Rescan inbox</button>
+        <span>{itemCount} item{itemCount === 1 ? '' : 's'}{hasGmail ? ' · Gmail connected' : ''}</span>
+        {hasGmail
+          ? <button className="btn btn-sm" onClick={start}><Icon name="refresh" size={12} />Rescan inbox</button>
+          : <a href="/auth/gmail?next=/wardrobe" className="btn btn-sm"><Icon name="link" size={12} />Connect Gmail</a>}
       </div>
     );
   }
@@ -82,8 +84,10 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
           <p className="mt-1 text-sm text-ink-2">Order emails become items with price, size and return window. The email itself is never kept.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge>{hasGmail ? 'Gmail read-only' : 'Connect Gmail by signing in with Google'}</Badge>
-          <button className="btn btn-primary" onClick={start} disabled={!hasGmail}>Scan my inbox</button>
+          <Badge>Read-only · optional</Badge>
+          {hasGmail
+            ? <button className="btn btn-primary" onClick={start}>Scan my inbox</button>
+            : <a href="/auth/gmail?next=/wardrobe" className="btn btn-primary"><Icon name="link" size={14} />Connect Gmail</a>}
         </div>
       </div>
     );
