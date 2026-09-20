@@ -45,7 +45,10 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
   });
 
   const paid = items.reduce((s, i) => s + (i.price_cents ?? 0), 0);
-  const returnable = items.filter((i) => i.status === 'owned' && i.return_by && i.return_by >= today).length;
+  const since = new Date(); since.setUTCDate(since.getUTCDate() - 30); const sinceISO = since.toISOString().slice(0, 10);
+  const spent30 = items.filter((i) => i.purchase_date && i.purchase_date >= sinceISO).reduce((s, i) => s + (i.price_cents ?? 0), 0);
+  const returnableItems = items.filter((i) => i.return_by && i.return_by >= today);
+  const atStake = returnableItems.reduce((s, i) => s + (i.price_cents ?? 0), 0);
   const returnsPending = items.filter((i) => i.status === 'returning').length;
 
   return (
@@ -54,9 +57,10 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
       <Receipt>
         <ReceiptHeader title="Wardrobe" subtitle={`${items.length} ITEMS`} />
         <ReceiptRule />
-        <ReceiptLine label="PAID IN TOTAL" value={usd(paid)} />
-        <ReceiptLine label="STILL RETURNABLE" value={String(returnable)} muted />
-        {returnsPending > 0 && <ReceiptLine label="RETURNS PENDING" value={String(returnsPending)} muted />}
+        <ReceiptLine label="SPENT, LAST 30 DAYS" value={usd(spent30)} />
+        <ReceiptLine label="PAID IN TOTAL" value={usd(paid)} muted />
+        {returnableItems.length > 0 && <ReceiptLine label={<Link href="/returns" className="underline">RETURNABLE</Link>} value={`${returnableItems.length} · ${usd(atStake)} AT STAKE`} />}
+        {returnsPending > 0 && <ReceiptLine label={<Link href="/returns" className="underline">RETURNS PENDING</Link>} value={String(returnsPending)} muted />}
       </Receipt>
 
       <div className="mono flex flex-wrap gap-x-4 gap-y-1 text-[11px] uppercase tracking-wider text-ink-3">

@@ -6,7 +6,7 @@ import { ShareToggles } from './ShareToggles';
 import { daysBetween } from '@/lib/returns';
 import { similarOwned } from '@/lib/tagging';
 import { candidatesFor } from '@/lib/identify';
-import { Candidates } from './Candidates';
+import { ImageOptions } from './ImageOptions';
 import { EditDetails } from './EditDetails';
 import { ItemTools } from './ItemTools';
 import { MismatchBanner } from './MismatchBanner';
@@ -39,8 +39,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           <div className="mt-2 flex flex-wrap gap-2">
             {((stoodIn ?? []) as Array<{ title: string; price_cents: number; created_at: string }>).map((h, i) => <span key={`s${i}`} className="stamp saved">STOOD IN FOR {h.price_cents > 0 ? usd(h.price_cents) : 'A'} {h.title.toUpperCase().slice(0, 18)} · {h.created_at.slice(5, 10).replace('-', '/')}</span>)}
           </div>
-          <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} imageSource={it.image_source} />
-          <div className="mt-3 border-t border-dashed border-rule pt-2"><ItemTools itemId={it.id} name={it.name} hasImage={!!it.image_url} /></div>
+          <ImageOptions itemId={it.id} initial={candidates} hasImage={!!it.image_url} />
         </div>
         <div className="mono mt-3 text-[11px] text-ink-3"><Link href="/wardrobe" className="hover:text-ink">← WARDROBE</Link></div>
       </div>
@@ -50,7 +49,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         <Receipt>
           <ReceiptHeader title={it.name} subtitle={[it.brand, it.size ? `SIZE ${it.size}` : null, it.color].filter(Boolean).join(' · ').toUpperCase()} />
           <ReceiptRule />
-          <div className="mb-2"><EditDetails itemId={it.id} name={it.name} brand={it.brand} color={it.color} size={it.size} /></div>
+          <div className="mb-2 flex flex-wrap gap-2"><EditDetails itemId={it.id} name={it.name} brand={it.brand} color={it.color} size={it.size} /><ItemTools itemId={it.id} name={it.name} /></div>
           <ReceiptLine label="PAID" value={usd(it.price_cents)} />
           <ReceiptLine label="BOUGHT" value={it.purchase_date ?? '—'} muted />
           <ReceiptLine label="AT" value={it.retailer ?? '—'} muted />
@@ -59,9 +58,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           {it.identifier && <ReceiptLine label="ITEM NO." value={it.identifier} muted />}
           {it.image_url && it.image_source && <ReceiptLine label="IMAGE FROM" value={it.image_source.replace('_', ' ').toUpperCase()} muted />}
           <ReceiptRule />
-          {returnOpen
-            ? <ReceiptLine label="RETURN WINDOW" value={`OPEN · ${daysBetween(today, it.return_by!)} DAYS LEFT`} />
-            : <ReceiptLine label="RETURN WINDOW" value={it.return_by ? `CLOSED ${it.return_by}` : 'UNKNOWN'} muted />}
+          {returnOpen && <ReceiptLine label="RETURNABLE" value={`${daysBetween(today, it.return_by!)} DAYS LEFT · ${usd(it.price_cents)} AT STAKE`} />}
           {returnOpen && <div className="mono mt-1 text-[11px] text-ink-3">STILL RETURNABLE · {usd(it.price_cents)} AT STAKE</div>}
           <ReceiptRule />
           <ShareToggles itemId={it.id} shareable={it.shareable} lendable={it.lendable} intimates={it.category === 'intimates'} />
@@ -75,11 +72,18 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         </Receipt>
 
         {similar.length > 0 && (
-          <Receipt>
-            <ReceiptHeader title="Similar in your wardrobe" />
-            <ReceiptRule />
-            {similar.map((s) => <ReceiptLine key={s.id} label={<Link href={`/wardrobe/${s.id}`} className="hover:underline">{s.name.slice(0, 34)}</Link>} value={`${Math.round(s.similarity * 100)}%`} muted />)}
-          </Receipt>
+          <div>
+            <div className="mono mb-2 text-[10px] uppercase tracking-wider text-ink-3">Similar in your wardrobe</div>
+            <div className="flex gap-2 overflow-x-auto">
+              {similar.map((s) => (
+                <Link key={s.id} href={`/wardrobe/${s.id}`} className="cutout w-24 shrink-0 p-1 hover:border-ink">
+                  <div className="aspect-[3/4] w-full bg-paper-2">{s.image_url ? <img src={s.image_url} alt={s.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center text-[9px] text-ink-3">NO IMAGE</div>}</div>
+                  <div className="mt-1 truncate text-[11px]">{s.name}</div>
+                  <div className="mono text-[9px] text-ink-3">{Math.round(s.similarity * 100)}%</div>
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
