@@ -458,8 +458,10 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       separately; "kept + recovered" labeled; spent on you vs on others; envelope when a budget exists; % worn 90d,
       best/worst cost per wear, dormant $). `/stats` now shows your AI spend, per-email and per-search cost, your
       confirmed Money Kept / Recovered, **kept per $1 of your AI spend** (N/A at zero), and live call count.
-- [ ] **Phase 10 — Hardening, then voice.** Fixtures complete, fallback mode visible, 90-second recording, empty and
-      loading states, reduced motion; ElevenLabs only after all P0 acceptance passes.
+- [~] **Phase 10 — Hardening, then voice.** **Done:** production deploy at https://weave-phi.vercel.app (health green,
+      Google sign-in redirect verified, cron authenticates). **Left:** web push (VAPID + service worker), 48h hold cron,
+      fixture completeness (Devin task 3), empty/loading states, reduced-motion pass, language-guide pass, 90-second
+      recording; ElevenLabs only after all of that.
 
 ## Demo — 90 seconds, one changed purchase at a time
 Live vs fixture is always labeled; the recorded fallback is ready.
@@ -484,7 +486,9 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - Stopgaps Claude owns until Devin's PRs land: `apps/web/lib/ingest/retailers-fallback.ts` (35 retailers +
   return windows) and `apps/web/lib/ingest/sample-emails.ts` (5 demo emails). `prefilter.ts` switches to
   `@weave/data` automatically once it has retailers; `pipeline.ts` prefers `fixtures.emails` when present.
-- Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). No Vercel deployment yet.
+- Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). **Deployed:** https://weave-phi.vercel.app (Vercel project `weave`,
+  root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
+  daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
 - `judge_images` can be refused by the model for intimates imagery (lingerie thumbnails); the lookup then
   falls back to the unjudged ranking, which may pick a model shot. Intimates are private anyway. Regular garments judge fine.
