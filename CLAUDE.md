@@ -467,9 +467,11 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       best/worst cost per wear, dormant $). `/stats` now shows your AI spend, per-email and per-search cost, your
       confirmed Money Kept / Recovered, **kept per $1 of your AI spend** (N/A at zero), and live call count.
 - [~] **Phase 10 — Hardening, then voice.** **Done:** production deploy at https://weave-phi.vercel.app (health green,
-      Google sign-in redirect verified, cron authenticates). **Left:** web push (VAPID + service worker), 48h hold cron,
-      fixture completeness (Devin task 3), empty/loading states, reduced-motion pass, language-guide pass, 90-second
-      recording; ElevenLabs only after all of that.
+      Google sign-in redirect verified, cron authenticates). **Done:** web push (VAPID keys local + Vercel, `public/sw.js`, `POST /api/push/subscribe`,
+      `PushEnable` on Settings + Charges; sends: new unmatched clothing charge, return window at 4 days (daily cron),
+      48h hold check-in (hourly `/api/cron/holds`); each once), live inbox scan capped to Vercel's 60s function
+      limit (80 messages/run, resumable), `(app)/loading.tsx` printing skeleton, language-guide pass.
+      **Left:** fixture completeness (Devin task 3), 90-second recording (Grace), ElevenLabs only after that.
 
 ## Demo — 90 seconds, one changed purchase at a time
 Live vs fixture is always labeled; the recorded fallback is ready.
