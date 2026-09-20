@@ -87,7 +87,7 @@ export function WelcomeFlow({ name, initial, next, edit, startAtBank, demo }: { 
 
   const overlay = (
     <Stage id={String(step)}>
-      {step === 0 && <button className="btn btn-ink w-full" onClick={() => setStep(1)}>Let's go</button>}
+      {step === 0 && <button className="btn btn-ink mx-auto !flex w-fit !px-8" onClick={() => setStep(1)}>Let's go</button>}
       {s && (
         <div>
           <div className="flex flex-wrap justify-center gap-2">
@@ -100,7 +100,7 @@ export function WelcomeFlow({ name, initial, next, edit, startAtBank, demo }: { 
       )}
       {step === BANK && (
         <div className="space-y-2 text-center">
-          <button className="btn btn-ink w-full" disabled={pending} onClick={() => connect(openPlaidLink)}>Connect with Plaid</button>
+          <button className="btn btn-ink mx-auto !flex w-fit !px-8" disabled={pending} onClick={() => connect(openPlaidLink)}>Connect with Plaid</button>
           {demo && <button className="btn-text" disabled={pending} onClick={() => connect(linkTestBank)}>Use test bank (demo)</button>}
           {err && <div className="mono text-xs text-warn">{err}</div>}
           <div><button className="btn-text" disabled={pending} onClick={() => finish('skipped')}>Skip for now</button></div>
