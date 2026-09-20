@@ -262,3 +262,22 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 @media (prefers-reduced-motion: reduce) {
   .print-line, .tape.torn, .cursor, .printer .slot.busy::before { animation: none !important; clip-path: none; }
 }
+
+/* ─── Toolbar: search, segmented control, filter chip ───────────────────── */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.toolbar .search { display: flex; align-items: center; gap: .5rem; flex: 0 1 300px; min-width: 180px; height: 36px; padding: 0 .75rem; border-radius: 999px; background: var(--mist); color: var(--ink-3); transition: background .15s ease, box-shadow .15s ease; }
+.toolbar .search:focus-within { background: var(--paper); box-shadow: 0 0 0 1.5px var(--fern); color: var(--ink-2); }
+.toolbar .search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-size: .875rem; color: var(--ink); font-family: var(--font-sans); }
+.toolbar .search input::placeholder { color: var(--ink-3); }
+.toolbar .search button { display: inline-flex; color: var(--ink-3); background: none; border: 0; cursor: pointer; padding: 2px; border-radius: 999px; }
+.toolbar .search button:hover { color: var(--ink); }
+.seg { display: inline-flex; align-items: center; gap: 2px; height: 36px; padding: 3px; border-radius: 999px; background: var(--mist); }
+.seg > button { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; height: 30px; min-width: 30px; padding: 0 .8rem; border-radius: 999px; border: 0; background: transparent; color: var(--ink-2); font-family: var(--font-display); font-size: .68rem; cursor: pointer; transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
+.seg > button[aria-label] { padding: 0 .55rem; }
+.seg > button:hover { color: var(--ink); }
+.seg > button[data-on="true"] { background: var(--paper); color: var(--pine); box-shadow: 0 1px 2px rgba(31, 42, 36, .12), 0 0 0 1px rgba(31, 42, 36, .04); }
+.filter-chip { display: inline-flex; align-items: center; gap: .4rem; height: 36px; padding: 0 .9rem 0 .6rem; border-radius: 999px; border: 1.5px solid var(--dust); background: transparent; color: var(--ink-2); font-family: var(--font-display); font-size: .68rem; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.filter-chip .tick { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 999px; border: 1.5px solid var(--dust); color: transparent; transition: inherit; }
+.filter-chip:hover { border-color: var(--sage); color: var(--ink); }
+.filter-chip[data-on="true"] { background: var(--sprout); border-color: var(--sprout); color: var(--pine); }
+.filter-chip[data-on="true"] .tick { background: var(--pine); border-color: var(--pine); color: #fff; }

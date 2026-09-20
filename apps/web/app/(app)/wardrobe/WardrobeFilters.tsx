@@ -6,7 +6,8 @@ import { Icon } from '@/components/Icon';
 export type Sort = 'newest' | 'price';
 export type View = 'rack' | 'summary';
 
-/* One bar, URL-driven so every state is a link: search · sort · returnable · rack/summary. */
+/* One quiet toolbar, URL-driven so every state is a link.
+   Search on the left; sort as a segmented control, Returnable as a filter chip, and an icon-only layout switch on the right. */
 export function WardrobeFilters({ q, sort, returnable, view, count }: { q: string; sort: Sort; returnable: boolean; view: View; count: number }) {
   const router = useRouter();
   const path = usePathname();
@@ -31,32 +32,29 @@ export function WardrobeFilters({ q, sort, returnable, view, count }: { q: strin
     timer.current = setTimeout(() => go({ q: v }), 250);
   };
 
-  const seg = (on: boolean) => `chip !py-1.5 !px-3 !text-[11px] ${on ? '' : 'bg-transparent hover:bg-mist'}`;
-
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <label className="relative min-w-[160px] flex-1">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3"><Icon name="search" size={14} /></span>
-        <input value={text} onChange={(e) => onText(e.target.value)} placeholder="Search your wardrobe" className="input !pl-9 !pr-9" aria-label="Search your wardrobe" />
-        {text && <button type="button" onClick={() => onText('')} className="absolute right-2 top-1/2 -translate-y-1/2 btn-icon" aria-label="Clear search"><Icon name="x" size={14} /></button>}
+    <div className="toolbar">
+      <label className="search">
+        <Icon name="search" size={14} />
+        <input value={text} onChange={(e) => onText(e.target.value)} placeholder="Search" aria-label="Search your wardrobe" />
+        {text && <button type="button" onClick={() => onText('')} aria-label="Clear search"><Icon name="x" size={12} /></button>}
       </label>
 
-      <div className="flex items-center gap-0.5 rounded-full border border-dust p-0.5" role="group" aria-label="Sort">
-        <button type="button" className={seg(sort === 'newest')} data-on={sort === 'newest'} onClick={() => go({ sort: 'newest' })}>Newest</button>
-        <button type="button" className={seg(sort === 'price')} data-on={sort === 'price'} onClick={() => go({ sort: 'price' })}>Price</button>
+      <div className="seg" role="group" aria-label="Sort">
+        <button type="button" data-on={sort === 'newest'} onClick={() => go({ sort: 'newest' })}>Newest</button>
+        <button type="button" data-on={sort === 'price'} onClick={() => go({ sort: 'price' })}>Price</button>
       </div>
 
-      <label className="flex cursor-pointer items-center gap-2 px-1 text-sm text-ink-2">
-        <input type="checkbox" checked={returnable} onChange={(e) => go({ returnable: e.target.checked })} />
-        Returnable
-      </label>
+      <button type="button" className="filter-chip" data-on={returnable} aria-pressed={returnable} onClick={() => go({ returnable: !returnable })}>
+        <span className="tick"><Icon name="check" size={10} /></span>Returnable
+      </button>
 
-      <div className="ml-auto flex items-center gap-0.5 rounded-full border border-dust p-0.5" role="group" aria-label="Layout">
-        <button type="button" className={seg(view === 'rack')} data-on={view === 'rack'} onClick={() => go({ view: 'rack' })} title="Hang tags on a rail"><Icon name="wardrobe" size={12} className="mr-1" />Rack</button>
-        <button type="button" className={seg(view === 'summary')} data-on={view === 'summary'} onClick={() => go({ view: 'summary' })} title="One receipt, month by month"><Icon name="receipt" size={12} className="mr-1" />Summary</button>
+      <div className="seg ml-auto" role="group" aria-label="Layout">
+        <button type="button" data-on={view === 'rack'} onClick={() => go({ view: 'rack' })} title="Rack" aria-label="Rack"><Icon name="wardrobe" size={15} /></button>
+        <button type="button" data-on={view === 'summary'} onClick={() => go({ view: 'summary' })} title="Summary" aria-label="Summary"><Icon name="receipt" size={15} /></button>
       </div>
 
-      {q && <div className="w-full text-xs text-ink-3">{count === 0 ? `Nothing matches “${q}”.` : `${count} match${count === 1 ? '' : 'es'} for “${q}”`}</div>}
+      {q && <div className="w-full text-xs text-ink-3">{count === 0 ? `Nothing matches “${q}”.` : `${count} match${count === 1 ? '' : 'es'}`}</div>}
     </div>
   );
 }
