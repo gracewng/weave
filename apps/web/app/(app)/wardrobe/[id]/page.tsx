@@ -45,7 +45,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             {wears.slice(0, 12).map((w, i) => <span key={i} className="stamp">WORN {w.worn_on.slice(5).replace('-', '/')}</span>)}
             {((stoodIn ?? []) as Array<{ title: string; price_cents: number; created_at: string }>).map((h, i) => <span key={`s${i}`} className="stamp saved">STOOD IN FOR {h.price_cents > 0 ? usd(h.price_cents) : 'A'} {h.title.toUpperCase().slice(0, 18)} · {h.created_at.slice(5, 10).replace('-', '/')}</span>)}
           </div>
-          <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} />
+          <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} imageSource={it.image_source} />
         </div>
         <div className="mono mt-3 text-[11px] text-ink-3"><Link href="/wardrobe" className="hover:text-ink">← WARDROBE</Link></div>
       </div>
@@ -60,6 +60,8 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           <ReceiptLine label="AT" value={it.retailer ?? '—'} muted />
           <ReceiptLine label="SOURCE" value={it.source === 'email' ? 'ORDER EMAIL' : it.source.toUpperCase()} muted />
           {it.receipt_url && <ReceiptLine label="RECEIPT" value="ON FILE" muted />}
+          {it.identifier && <ReceiptLine label="ITEM NO." value={it.identifier} muted />}
+          {it.image_url && it.image_source && <ReceiptLine label="IMAGE FROM" value={it.image_source.replace('_', ' ').toUpperCase()} muted />}
           <ReceiptRule />
           <div className="flex items-center gap-4">
             <WearRing wears={n} />

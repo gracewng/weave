@@ -2,7 +2,7 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ShoppingResult } from '@weave/shared/contracts';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { storeImageFromUrl } from '@/lib/ingest/persist';
+import { storeImageFromUrl, fetchProductPageImage } from '@/lib/ingest/persist';
 import { callLLM } from '@weave/shared';
 import { JUDGE_IMAGES_SYSTEM, JudgeImagesSchema, type JudgeImagesResult } from '@weave/shared/prompts';
 import { ensureLLM } from '@/lib/llm';
@@ -14,6 +14,27 @@ import { ensureLLM } from '@/lib/llm';
  */
 
 const STOP = /\b(women'?s|men'?s|womens|mens|unisex|pack|of|the|and|with|for|size|sz|color)\b/gi;
+
+/** School/team/custom merch has no retail product image. Don't guess; a photo is the right source. */
+const CUSTOM_RE = /\b(class of|senior|homecoming|team|custom|personali[sz]ed|school|club|fundraiser|spirit wear|jersey #|snack fee|fee)\b/i;
+export function isCustomItem(name: string): boolean { return CUSTOM_RE.test(name); }
+
+/**
+ * Real UPC/EAN codes (8–14 digits) resolve in a public barcode database (free trial endpoint, no key, ~100/day).
+ * Retailer-internal item numbers (e.g. Victoria's Secret receipts) do not — verified 2026-09-19 — so we return null
+ * and fall through to the name search. Google Shopping/web search by number returned nothing useful; not used.
+ */
+export async function lookupByBarcode(identifier: string | null | undefined): Promise<{ title: string; brand: string | null; imageUrl: string } | null> {
+  const id = identifier?.replace(/\s+/g, '').trim();
+  if (!id || !/^\d{8,14}$/.test(id)) return null;
+  try {
+    const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${id}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { items?: Array<{ title?: string; brand?: string; images?: string[] }> };
+    const it = d.items?.[0]; const img = it?.images?.find((u) => /^https?:\/\//.test(u));
+    return it?.title && img ? { title: it.title, brand: it.brand ?? null, imageUrl: img } : null;
+  } catch { return null; }
+}
 
 export function buildQuery(item: { name: string; brand?: string | null; color?: string | null; retailer?: string | null }): string {
   const brand = (item.brand ?? '').trim();
@@ -33,6 +54,32 @@ function tokens(s: string): Set<string> { return new Set(s.toLowerCase().split(/
 
 /** Deterministic rank: brand present, name-token overlap, has thumbnail. Higher is better. */
 const RESALE = /\b(ebay|poshmark|mercari|depop|thredup|vinted|grailed|etsy)\b/i;
+
+/** Name-token overlap of a candidate with the query, 0..1. The confidence gate uses it. */
+export function overlapScore(query: string, title: string): number {
+  const q = tokens(query); const t = tokens(title); let n = 0; for (const tok of q) if (t.has(tok)) n++; return q.size ? n / q.size : 0;
+}
+
+/** Overlap on the *distinctive* words only (brand/retailer words removed), so "Victoria's Secret" can't carry a wrong style. */
+export function distinctiveOverlap(query: string, title: string, brand?: string | null, retailer?: string | null): number {
+  const drop = tokens(`${brand ?? ''} ${retailer ?? ''}`);
+  const q = [...tokens(query)].filter((t) => !drop.has(t)); const t = tokens(title);
+  if (q.length === 0) return 0;
+  return q.filter((tok) => t.has(tok)).length / q.length;
+}
+
+/**
+ * Auto-assign only when we're sure. Sold by the retailer/brand itself → distinctive overlap ≥ 0.5.
+ * Anyone else → every distinctive word must appear (≥ 0.99) and the brand must be in the title. Otherwise: no image, user picks.
+ */
+export function confident(query: string, brand: string | null | undefined, retailer: string | null | undefined, c: ShoppingResult, byIdentifier: boolean): boolean {
+  if (byIdentifier) return true;
+  const sellers = [brand, retailer].filter((x): x is string => !!x).map((x) => x.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const src = (c.merchant ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const d = distinctiveOverlap(query, c.title, brand, retailer);
+  if (sellers.some((s) => s && src.includes(s))) return d >= 0.5;
+  return d >= 0.99 && !!brand && c.title.toLowerCase().includes(brand.toLowerCase());
+}
 
 /** Deterministic rank: sold by the retailer/brand itself > name-token overlap > brand in title > has image. Resale marketplaces last. */
 export function rankCandidates(query: string, brand: string | null | undefined, results: ShoppingResult[], retailer?: string | null): ShoppingResult[] {
@@ -124,12 +171,27 @@ export async function lookupMissingImages(userId: string, opts: { limit?: number
   const out: LookupSummary = { looked_up: 0, imaged: 0, searches: 0, cached: 0, skipped: 0 };
   if (!process.env.SERPAPI_KEY) return out;
   const maxSearches = opts.maxSearches ?? 20;
-  let sel = admin.from('items').select('id,name,brand,color,retailer').eq('user_id', userId).is('image_url', null).eq('status', 'owned').limit(opts.limit ?? 50);
+  let sel = admin.from('items').select('id,name,brand,color,retailer,identifier,product_url,image_source').eq('user_id', userId).is('image_url', null).eq('status', 'owned').limit(opts.limit ?? 50);
   if (opts.itemIds?.length) sel = sel.in('id', opts.itemIds);
   const { data } = await sel;
-  const items = (data ?? []) as Array<{ id: string; name: string; brand: string | null; color: string | null; retailer: string | null }>;
-  const imageByQuery = new Map<string, string | null>();
+  const items = (data ?? []) as Array<{ id: string; name: string; brand: string | null; color: string | null; retailer: string | null; identifier: string | null; product_url: string | null; image_source: string | null }>;
+  const imageByQuery = new Map<string, { url: string | null; source: string }>();
   for (const it of items) {
+    if (it.image_source === 'none') { out.skipped++; continue; }          // user cleared a wrong image: leave it alone
+    if (isCustomItem(it.name)) { out.skipped++; continue; }                // no retail image exists for custom merch
+    // 1. The product page linked from the order email (exact).
+    if (it.product_url) {
+      const og = await fetchProductPageImage(it.product_url);
+      const stored = og ? await storeImageFromUrl(admin, userId, og) : null;
+      if (stored) { const { error } = await admin.from('items').update({ image_url: stored, image_source: 'product_page' }).eq('id', it.id); if (!error) { out.imaged++; out.looked_up++; continue; } }
+    }
+    // 2. Barcode database for real UPC/EAN codes (free, exact).
+    if (it.identifier) {
+      const bc = await lookupByBarcode(it.identifier);
+      const stored = bc ? await storeImageFromUrl(admin, userId, bc.imageUrl) : null;
+      if (stored) { const { error } = await admin.from('items').update({ image_url: stored, image_source: 'identifier' }).eq('id', it.id); if (!error) { out.imaged++; out.looked_up++; continue; } }
+    }
+    // 3. Name search, gated by confidence: sold by the retailer itself, or strong name + brand overlap. Else no image.
     const q = buildQuery(it);
     if (!q) { out.skipped++; continue; }
     out.looked_up++;
@@ -140,13 +202,14 @@ export async function lookupMissingImages(userId: string, opts: { limit?: number
         if (cached) out.cached++; else out.searches++;
         const ranked = rankCandidates(q, it.brand, results, it.retailer);
         const judged = preferProductOnly(await judgeProductOnly(judgeLabel(it), ranked, userId));
-        const best = judged[0];
-        imageByQuery.set(q, best ? await storeImageFromUrl(admin, userId, best.imageUrl) : null);
-      } catch (err) { console.warn('[identify] lookup failed', q, err instanceof Error ? err.message : err); imageByQuery.set(q, null); }
+        const best = judged.find((c) => confident(q, it.brand, it.retailer, c, false));
+        imageByQuery.set(q, { url: best ? await storeImageFromUrl(admin, userId, best.imageUrl) : null, source: 'shopping' });
+        if (!best) console.log('[identify] no confident match for', q, '— left without image; candidates cached');
+      } catch (err) { console.warn('[identify] lookup failed', q, err instanceof Error ? err.message : err); imageByQuery.set(q, { url: null, source: 'shopping' }); }
     }
-    const url = imageByQuery.get(q);
-    if (url) {
-      const { error } = await admin.from('items').update({ image_url: url, image_source: 'shopping' }).eq('id', it.id);
+    const hit = imageByQuery.get(q);
+    if (hit?.url) {
+      const { error } = await admin.from('items').update({ image_url: hit.url, image_source: hit.source }).eq('id', it.id);
       if (!error) out.imaged++;
     }
   }

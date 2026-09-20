@@ -33,6 +33,19 @@ export async function storeImageFromUrl(admin: SupabaseClient, userId: string, u
   }
 }
 
+/** Read the product page's own image (og:image / twitter:image). Best possible source for online orders. */
+export async function fetchProductPageImage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(7000), redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36', Accept: 'text/html' } });
+    if (!res.ok) return null;
+    const html = (await res.text()).slice(0, 400_000);
+    const m = /<meta[^>]+(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image)["'][^>]+content=["']([^"']+)["']/i.exec(html)
+      ?? /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i.exec(html);
+    const img = m?.[1]?.replace(/&amp;/g, '&');
+    return img && /^https?:\/\//i.test(img) ? img : null;
+  } catch { return null; }
+}
+
 export function addDays(iso: string, days: number): string {
   const d = new Date(iso + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + days);
@@ -51,6 +64,7 @@ export interface PersistContext {
   /** null = final sale / unknown → no return_by */
   returnWindowDays: number | null;
   imageUrls: string[];
+  linkUrls?: string[];
 }
 
 /**
@@ -97,16 +111,21 @@ export async function insertExtractedItems(
 
     let image_url: string | null = null;
     let image_source: string | null = null;
+    const product_url = it.link_index != null ? ctx.linkUrls?.[it.link_index] ?? null : null;
     if (it.image_index != null && ctx.imageUrls[it.image_index]) {
       if (!imageCache.has(it.image_index)) imageCache.set(it.image_index, await storeImageFromUrl(admin, userId, ctx.imageUrls[it.image_index]!));
       image_url = imageCache.get(it.image_index) ?? null;
       image_source = image_url ? 'email' : null;
     }
+    if (!image_url && product_url) {
+      const og = await fetchProductPageImage(product_url);
+      if (og) { image_url = await storeImageFromUrl(admin, userId, og); image_source = image_url ? 'product_page' : null; }
+    }
     for (let i = have; i < have + toInsert; i++) {
       rows.push({
         user_id: userId, name, brand: it.brand, size: it.size, color: it.color ? titleCase(it.color) : null,
         price_cents: it.price_cents, purchase_date: purchaseDate, retailer, image_url, image_source, line_index: i,
-        category: guessIntimates(name),
+        category: guessIntimates(name), identifier: it.identifier?.trim() || null, product_url,
         source: 'email', return_by: purchaseDate && ctx.returnWindowDays != null ? addDays(purchaseDate, ctx.returnWindowDays) : null,
       });
     }

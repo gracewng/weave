@@ -59,3 +59,11 @@ export async function updateDetails(itemId: string, input: { name: string; brand
   revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe');
   return { ok: true, relookup };
 }
+
+/** "That's not it": drop the image and stop auto-lookup for this item (image_source = none). Candidates stay pickable. */
+export async function clearImage(itemId: string): Promise<boolean> {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from('items').update({ image_url: null, image_source: 'none' }).eq('id', itemId).eq('user_id', user.id);
+  revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe');
+  return !error;
+}

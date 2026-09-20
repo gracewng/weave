@@ -24,6 +24,25 @@ export function extractImageUrls(html: string, cap = 12): string[] {
   return urls;
 }
 
+const LINK_SKIP = /(unsubscribe|preferences|privacy|terms|help|support|contact|track|order-status|orders?\/|account|login|signin|app\.link|apps\.apple|play\.google|facebook|instagram|twitter|tiktok|pinterest|youtube|mailto:|tel:)/i;
+const LINK_PRODUCT = /(\/products?\/|\/p\/|\/dp\/|\/item\/|\/items\/|\/pd\/|\/shop\/|\/style\/|\/prod|productId=|pid=|sku=|\/s\/|\/d\/)/i;
+
+/** Links that look like product pages (retailer-hosted or tracked), in document order, deduped, capped. */
+export function extractProductLinks(html: string, cap = 12): string[] {
+  const out: string[] = []; const seen = new Set<string>();
+  const re = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const href = m[1]!.replace(/&amp;/g, '&');
+    if (!/^https?:\/\//i.test(href) || LINK_SKIP.test(href) || !LINK_PRODUCT.test(href)) continue;
+    const key = href.split('#')[0]!;
+    if (seen.has(key)) continue;
+    seen.add(key); out.push(key);
+    if (out.length >= cap) break;
+  }
+  return out;
+}
+
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', '#39': "'", '#34': '"', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', hellip: '…', mdash: '—', ndash: '–', copy: '©', reg: '®', trade: '™' };
 
 function decodeEntities(s: string): string {
@@ -59,7 +78,7 @@ export function cleanEmailText(text: string, maxChars = 6000): string {
 }
 
 /** Convenience: full email → {images, text}. Prefers HTML (has images); falls back to plain text. */
-export function prepareEmail(input: { html: string | null; text: string | null }): { imageUrls: string[]; text: string } {
-  if (input.html) return { imageUrls: extractImageUrls(input.html), text: cleanEmailText(htmlToText(input.html)) };
-  return { imageUrls: [], text: cleanEmailText(input.text ?? '') };
+export function prepareEmail(input: { html: string | null; text: string | null }): { imageUrls: string[]; linkUrls: string[]; text: string } {
+  if (input.html) return { imageUrls: extractImageUrls(input.html), linkUrls: extractProductLinks(input.html), text: cleanEmailText(htmlToText(input.html)) };
+  return { imageUrls: [], linkUrls: [], text: cleanEmailText(input.text ?? '') };
 }

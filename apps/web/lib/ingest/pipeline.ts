@@ -124,7 +124,7 @@ export async function runIngestion(opts: RunOptions): Promise<Counters> {
       c.sent++;
       const r = await callLLM<ExtractEmailResult>({
         task: 'extract_email', system: EXTRACT_EMAIL_SYSTEM, schema: ExtractEmailSchema, schemaName: 'extract_email',
-        input: extractEmailInput({ from: email.from, subject: email.subject, date: email.date.slice(0, 10), text: prepared.text, imageUrls: prepared.imageUrls }),
+        input: extractEmailInput({ from: email.from, subject: email.subject, date: email.date.slice(0, 10), text: prepared.text, imageUrls: prepared.imageUrls, linkUrls: prepared.linkUrls }),
         userId: opts.userId,
         fixture: email.expected ? () => email.expected! : () => ({ is_clothing_order: false, retailer: pf.retailer?.name ?? '', order_date: email.date.slice(0, 10), items: [] }),
       });
@@ -135,7 +135,7 @@ export async function runIngestion(opts: RunOptions): Promise<Counters> {
         c.clothingOrders++;
         const res = await insertExtractedItems(admin, opts.userId, result, {
           messageId: email.id, retailerName: pf.retailer?.name ?? result.retailer ?? '',
-          returnWindowDays: pf.retailer ? pf.retailer.returnWindowDays : 30, imageUrls: prepared.imageUrls,
+          returnWindowDays: pf.retailer ? pf.retailer.returnWindowDays : 30, imageUrls: prepared.imageUrls, linkUrls: prepared.linkUrls,
         });
         inserted = res.inserted; c.duplicates += res.duplicates; c.itemsFound += inserted.length;
       }

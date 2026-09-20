@@ -20,6 +20,10 @@ export const ExtractedItemSchema = z.object({
   price_cents: z.number().int(),
   quantity: z.number().int(),
   image_index: z.number().int().nullable(),
+  /** Index into the numbered product-link list, or null. */
+  link_index: z.number().int().nullable(),
+  /** UPC/EAN/SKU/style/item number exactly as printed, or null. */
+  identifier: z.string().nullable(),
 });
 
 export const ExtractEmailSchema = z.object({
@@ -30,14 +34,13 @@ export const ExtractEmailSchema = z.object({
 });
 export type ExtractEmailResult = z.infer<typeof ExtractEmailSchema>;
 
-export const EXTRACT_EMAIL_SYSTEM = `You extract clothing purchases from order confirmation emails. Include only apparel, shoes, and wearable accessories; exclude beauty, home, electronics, gift cards, and shipping fees. If the email is a shipping or delivery update rather than an order/receipt, set is_clothing_order to false and return no items. Prices are per-unit in cents after discounts, before tax. Match each item to the most likely product image from the numbered list, or null. Never invent fields — use null when unsure. order_date must be YYYY-MM-DD.`;
+export const EXTRACT_EMAIL_SYSTEM = `You extract clothing purchases from order confirmation emails. Include only apparel, shoes, and wearable accessories; exclude beauty, home, electronics, gift cards, and shipping fees. If the email is a shipping or delivery update rather than an order/receipt, set is_clothing_order to false and return no items. Prices are per-unit in cents after discounts, before tax. Match each item to the most likely product image from the numbered IMAGES list, and to the most likely product page from the numbered LINKS list, or null. Copy any UPC, EAN, SKU, style or item number printed for the item into identifier, exactly as printed, or null. Never invent fields — use null when unsure. order_date must be YYYY-MM-DD.`;
 
 /** Variable part goes LAST so the static prefix above stays cache-identical. */
-export function extractEmailInput(args: { from: string; subject: string; date: string; text: string; imageUrls: string[] }): string {
-  const images = args.imageUrls.length
-    ? args.imageUrls.map((u, i) => `${i}: ${u}`).join('\n')
-    : '(none)';
-  return `IMAGES:\n${images}\n\nFROM: ${args.from}\nSUBJECT: ${args.subject}\nDATE: ${args.date}\n\nEMAIL TEXT:\n${args.text}`;
+export function extractEmailInput(args: { from: string; subject: string; date: string; text: string; imageUrls: string[]; linkUrls?: string[] }): string {
+  const images = args.imageUrls.length ? args.imageUrls.map((u, i) => `${i}: ${u}`).join('\n') : '(none)';
+  const links = args.linkUrls?.length ? args.linkUrls.map((u, i) => `${i}: ${u}`).join('\n') : '(none)';
+  return `IMAGES:\n${images}\n\nLINKS:\n${links}\n\nFROM: ${args.from}\nSUBJECT: ${args.subject}\nDATE: ${args.date}\n\nEMAIL TEXT:\n${args.text}`;
 }
 
 // ─── tag_items ────────────────────────────────────────────────────────────────
@@ -73,6 +76,8 @@ export const ReadCaptureSchema = z.object({
     color: z.string().nullable(),
     price_cents: z.number().int().nullable(),
     category: z.enum(CATEGORIES),
+    /** UPC/SKU/style number if printed on the receipt or tag. */
+    identifier: z.string().nullable(),
   })),
   confidence: z.number().min(0).max(1),
 });
