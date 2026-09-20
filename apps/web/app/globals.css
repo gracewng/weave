@@ -248,3 +248,17 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
   .tag, .tag:hover { transition: none !important; transform: none !important; }
   .tape.feed { animation: none; clip-path: none; }
 }
+
+/* ─── Printer at work: blinking light, progress along the slot, lines feeding out, tear-off ─────────── */
+.printer .slot { overflow: hidden; }
+.printer .slot .slot-progress { position: absolute; left: 14px; top: 5px; height: 4px; border-radius: 2px; background: var(--sprout); max-width: calc(100% - 28px); transition: width .4s ease; z-index: 1; }
+.printer .slot.busy::before { content: ''; position: absolute; right: 10px; top: 4px; width: 6px; height: 6px; border-radius: 50%; background: #9fe3b4; box-shadow: 0 0 6px #9fe3b4; animation: blink 1s ease-in-out infinite; z-index: 2; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.print-line { animation: printline .35s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes printline { from { clip-path: inset(0 0 100% 0); transform: translateY(-4px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+.tape.torn { animation: feed 1.4s cubic-bezier(.2, .7, .2, 1) both, tear .6s ease-in 1.4s both; }
+@keyframes tear { 0% { transform: none; } 40% { transform: translateY(2px) rotate(-.4deg); } 100% { transform: translateY(6px) rotate(.3deg); } }
+.cursor { display: inline-block; width: 6px; height: 10px; background: var(--fern); vertical-align: -1px; animation: blink .8s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .print-line, .tape.torn, .cursor, .printer .slot.busy::before { animation: none !important; clip-path: none; }
+}
