@@ -489,10 +489,12 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 ### Done
 - Phase 1 code (see checklist), re-planned 2026-09-19; accounting/coverage schema fields added 2026-09-19.
 ### Mocked / not yet live
-- `@weave/data` and `@weave/clients` are stubs (Devin tasks 1–2). `fixtures/index.ts` exports `null` (Devin task 3).
-- Stopgaps Claude owns until Devin's PRs land: `apps/web/lib/ingest/retailers-fallback.ts` (35 retailers +
-  return windows) and `apps/web/lib/ingest/sample-emails.ts` (5 demo emails). `prefilter.ts` switches to
-  `@weave/data` automatically once it has retailers; `pipeline.ts` prefers `fixtures.emails` when present.
+- **All five Devin tasks merged 2026-09-20** (#1 retailer data, #9 marketplaces + alternatives, #3 tests, #4 eBay +
+  ElevenLabs clients, #5 fixtures + seed). `prefilter.ts`/`returns.ts` now use `@weave/data` (66 retailers);
+  `pipeline.ts` uses `fixtures.emails`. **Follow-up:** switch `lib/search/run.ts` to `@weave/data` marketplaces and
+  `lib/alternatives.ts` → `@weave/data` alternatives, then delete the stopgaps (`retailers-fallback.ts`,
+  `sample-emails.ts`, `lib/search/marketplaces.ts`, `lib/alternatives.ts`). eBay client not yet wired into search
+  (SerpAPI resale results stand in). 175 tests on `main`.
 - Supabase project `kwvllecqmgoqfjzpqfkp` ("Weave Users", us-east-2) has all migrations applied (2026-09-19) and Google auth enabled. Keys live in `apps/web/.env.local` (gitignored). **Deployed:** https://weave-phi.vercel.app (Vercel project `weave`,
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
