@@ -117,6 +117,17 @@ async function serpShopping(query: string, limit: number): Promise<ShoppingResul
  * Vision judge: which of the top candidates show ONLY the garment? One low-detail call per item (~$0.001).
  * Sets `productOnly` on the candidates (null → true/false). Failures leave them null; ranking still works.
  */
+/** Compact profile line for the judge. Only department/age/gender; used for image matching and nothing else. */
+export async function profileLine(userId: string | null | undefined): Promise<string> {
+  if (!userId) return '';
+  const admin = createAdminClient(); if (!admin) return '';
+  const { data } = await admin.from('profiles').select('age_range,gender,shops_department').eq('id', userId).maybeSingle();
+  const p = data as { age_range: string | null; gender: string | null; shops_department: string | null } | null;
+  if (!p) return '';
+  const parts = [p.shops_department ? `shops ${p.shops_department.replace('womens', "women's").replace('mens', "men's")}` : null, p.gender && p.gender !== 'prefer_not' ? p.gender.replace('_', '-') : null, p.age_range && p.age_range !== 'prefer_not' ? `age ${p.age_range.replace('_', '–').replace('under–18', 'under 18').replace('55–plus', '55+')}` : null].filter(Boolean);
+  return parts.length ? `ACCOUNT HOLDER: ${parts.join(', ')}` : '';
+}
+
 export async function judgeProductOnly(itemName: string, candidates: ShoppingResult[], userId?: string | null, limit = 6): Promise<ShoppingResult[]> {
   const top = candidates.slice(0, limit);
   if (top.length === 0) return candidates;
@@ -125,17 +136,17 @@ export async function judgeProductOnly(itemName: string, candidates: ShoppingRes
     const r = await callLLM<JudgeImagesResult>({
       task: 'judge_images', system: JUDGE_IMAGES_SYSTEM, schema: JudgeImagesSchema, schemaName: 'judge_images', userId,
       input: [{ role: 'user', content: [
-        { type: 'text', text: `ITEM: ${itemName}\nIMAGES (numbered):` },
+        { type: 'text', text: `ITEM: ${itemName}\n${await profileLine(userId)}\nIMAGES (numbered):` },
         ...top.flatMap((c, i): Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string; detail: 'low' } }> => [
           { type: 'text', text: `${i}:` }, { type: 'image_url', image_url: { url: c.imageUrl, detail: 'low' } },
         ]),
       ] }],
-      fixture: () => ({ images: top.map((_, i) => ({ index: i, product_only: false, matches_item: true })) }),
+      fixture: () => ({ images: top.map((_, i) => ({ index: i, product_only: false, matches_item: true, fits_profile: true })) }),
     });
     const verdicts = new Map(r.data.images.map((v) => [v.index, v]));
     return candidates.map((c, i) => {
       const v = verdicts.get(i);
-      return v ? { ...c, productOnly: v.product_only, ...(v.matches_item ? {} : { title: c.title }) , matchesItem: v.matches_item } as ShoppingResult & { matchesItem?: boolean } : c;
+      return v ? { ...c, productOnly: v.product_only, matchesItem: v.matches_item, fitsProfile: v.fits_profile } as ShoppingResult & { matchesItem?: boolean; fitsProfile?: boolean } : c;
     });
   } catch (err) {
     console.warn('[identify] judge failed', err instanceof Error ? err.message : err);
@@ -144,8 +155,8 @@ export async function judgeProductOnly(itemName: string, candidates: ShoppingRes
 }
 
 /** Product-only + matches first, then the deterministic rank order. */
-export function preferProductOnly(ranked: Array<ShoppingResult & { matchesItem?: boolean }>): ShoppingResult[] {
-  const score = (c: ShoppingResult & { matchesItem?: boolean }) => (c.matchesItem === false ? -2 : 0) + (c.productOnly === true ? 2 : c.productOnly === false ? 0 : 1);
+export function preferProductOnly(ranked: Array<ShoppingResult & { matchesItem?: boolean; fitsProfile?: boolean }>): ShoppingResult[] {
+  const score = (c: ShoppingResult & { matchesItem?: boolean; fitsProfile?: boolean }) => (c.matchesItem === false ? -2 : 0) + (c.fitsProfile === false ? -1 : 0) + (c.productOnly === true ? 2 : c.productOnly === false ? 0 : 1);
   return [...ranked].map((c, i) => ({ c, i })).sort((a, b) => score(b.c) - score(a.c) || a.i - b.i).map((x) => x.c);
 }
 
@@ -217,7 +228,7 @@ export async function lookupMissingImages(userId: string, opts: { limit?: number
 }
 
 /** Candidate strip for the item page: cached results for this item's query (no new search unless `allowSearch`). */
-export async function candidatesFor(item: { name: string; brand?: string | null; color?: string | null; retailer?: string | null }, allowSearch = false): Promise<{ query: string; results: ShoppingResult[] }> {
+export async function candidatesFor(item: { name: string; brand?: string | null; color?: string | null; retailer?: string | null }, allowSearch = false, userId?: string | null): Promise<{ query: string; results: ShoppingResult[] }> {
   const admin = createAdminClient(); if (!admin) return { query: '', results: [] };
   const q = buildQuery(item);
   const { data: hit } = await admin.from('product_lookups').select('results').eq('query', q).maybeSingle();
@@ -225,7 +236,7 @@ export async function candidatesFor(item: { name: string; brand?: string | null;
   if (!allowSearch) return { query: q, results: [] };
   const { results } = await searchProducts(q, 8);
   const ranked = rankCandidates(q, item.brand, results, item.retailer);
-  return { query: q, results: preferProductOnly(await judgeProductOnly(judgeLabel(item), ranked)).slice(0, 6) };
+  return { query: q, results: preferProductOnly(await judgeProductOnly(judgeLabel(item), ranked, userId)).slice(0, 6) };
 }
 
 export async function applyCandidateImage(admin: SupabaseClient, userId: string, itemId: string, imageUrl: string): Promise<boolean> {

@@ -50,7 +50,7 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
       else if (e.type === 'images') { setImages(e); src.close(); router.refresh(); }
       else if (e.type === 'error') { setC(e.counters); setError(e.message); setState('error'); src.close(); router.refresh(); }
     };
-    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Items found so far are saved — scan again to continue.'); setState('error'); } src.close(); };
+    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Items found so far are recorded — scan again to continue.'); setState('error'); } src.close(); };
   }
 
   const pct = total > 0 ? Math.min(100, Math.round((c.scanned / total) * 100)) : 0;

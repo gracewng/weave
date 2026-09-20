@@ -190,7 +190,6 @@ export interface Fixtures {
 
 export interface VerdictInputs {
   topOwnedSimilarity: number | null;
-  topOwnedWears: number | null;
   topFriendSimilarity: number | null;
   friendItemLendable: boolean;
   oneTimeNeedSignal: boolean;

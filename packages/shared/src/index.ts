@@ -3,7 +3,6 @@ export * from './models';
 export * from './llm';
 export * from './prompts';
 export * from './types';
-export * from './wears';
 export * from './verdict';
 export * from './budget';
 export * from './kept';

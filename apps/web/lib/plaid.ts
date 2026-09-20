@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { matchTransaction } from '@weave/shared/matcher';
 import { FALLBACK_RETAILERS } from '@/lib/ingest/retailers-fallback';
 import { retailerData } from '@weave/data';
+import { sendPush } from '@/lib/push';
 
 /** Plaid sandbox wrapper. Devin's @weave/clients may replace this; shapes match the PlaidClient contract. */
 export function plaidConfigured(): boolean { return !!(process.env.PLAID_CLIENT_ID && process.env.PLAID_SECRET); }
@@ -86,5 +87,12 @@ export async function insertCharges(admin: SupabaseClient, userId: string, charg
     return { user_id: userId, external_id: c.externalId, merchant: c.merchant, amount_cents: c.amountCents, date: c.date, is_clothing: clothing, match_status: status,
       item_ids: m ? byOrder.get(m.orderId)!.itemIds : [], plaid_category: c.category, pending: c.pending, source: c.source };
   });
-  if (rows.length) { const { data } = await admin.from('transactions').upsert(rows, { onConflict: 'external_id', ignoreDuplicates: true }).select('id'); out.added += data?.length ?? 0; }
+  if (rows.length) {
+    const { data } = await admin.from('transactions').upsert(rows, { onConflict: 'external_id', ignoreDuplicates: true }).select('id,merchant,amount_cents,match_status,is_clothing');
+    out.added += data?.length ?? 0;
+    // Notification kind 1 of 3: a new clothing charge with no receipt email (only fresh ones, never the backfill).
+    for (const t of ((data ?? []) as Array<{ id: string; merchant: string; amount_cents: number; match_status: string; is_clothing: boolean }>).filter((t) => t.is_clothing && t.match_status === 'unmatched').slice(0, 3)) {
+      await sendPush(admin, userId, { title: `New clothing charge · $${(t.amount_cents / 100).toFixed(2)}`, body: `${t.merchant} — no receipt email. Snap the receipt?`, url: `/capture/${t.id}`, tag: `charge-${t.id}` }).catch(() => 0);
+    }
+  }
 }
