@@ -99,16 +99,16 @@ export const fixtureParseQuery: Record<string, ParseQueryResult> = {
 
 /** One line above the results. Never contradicts the verdict, always carries a number or a name. */
 export const fixtureSearchNote: Record<string, string> = {
-  skip: 'You already own a close match — the black Uniqlo crew tee, worn 14 times at $1.06 a wear.',
+  skip: 'You already own a close match — the black Uniqlo crew tee you paid $14.90 for in March.',
   borrow: 'Maya has a black slip dress in your size and it is lendable — asking is free.',
   secondhand: 'Three used ones start at $22, about 85% off the $148 you were about to spend.',
   wait: 'This is $148 against $62 left in your September envelope — a 48-hour hold costs nothing.',
-  buy: 'Nothing close in your closet; your median dress purchase is $96 across 5 confirmed buys.',
+  buy: 'Nothing close in your closet, and your median dress purchase is $96 across 5 confirmed buys.',
 };
 
 /** The spoken version of the same beat, for the ElevenLabs persona read. */
 export const fixtureSpokenLine: Record<string, string> = {
-  skip: 'You already own this one — the black crew tee, fourteen wears and counting. Wear that instead.',
+  skip: 'You already own this one — the black crew tee, fourteen dollars ninety. Wear that instead.',
   borrow: 'Maya has the slip dress in your size. One message and the hundred and forty-eight dollars stays put.',
   secondhand: 'The same dress is twenty-two dollars used. That is a hundred and twenty-six dollars kept.',
   wait: 'You have sixty-two dollars left this month and this is a hundred and forty-eight. Give it two days.',

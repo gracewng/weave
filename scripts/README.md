@@ -3,8 +3,9 @@
 ## seed-demo.ts — the demo database
 
 Creates everything the 90-second demo needs in a Supabase project: a demo user with a 45-item closet, three
-friends with their own closets, 18 months of transactions, wear logs, a budget, the Ghost Rack lifecycle, a past
-loan, one pending return and one confirmed refund.
+friends with their own closets, 18 months of transactions, a budget, the Ghost Rack lifecycle, a past loan, one
+pending return and one confirmed refund. Wear tracking was dropped from the schema in migration 0012, so nothing
+is seeded into `wears`.
 
 ```bash
 export NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
@@ -12,7 +13,7 @@ export SUPABASE_SERVICE_ROLE_KEY=<service role key>      # never the anon key, n
 pnpm tsx scripts/seed-demo.ts --reset
 ```
 
-`--reset` deletes the four demo users first; the schema's cascades remove their items, wears, transactions,
+`--reset` deletes the four demo users first; the schema's cascades remove their items, transactions,
 holds and loans, so the script is safe to re-run. Without `--reset` it fails on the second run, because the demo
 users already exist.
 
@@ -20,7 +21,7 @@ Accounts (all with password `weave-demo-2026`):
 
 | Email | Who | Closet |
 |---|---|---|
-| `demo@weave.app` | the demo user | 45 items, 130 wear logs, 8 items never worn |
+| `demo@weave.app` | the demo user | 45 items spread over 18 months |
 | `maya@weave.app` | friend, same sizes | 34 items — **owns the black silk slip dress in the demo user's size** |
 | `jordan@weave.app` | friend, larger sizes | 28 items |
 | `priya@weave.app` | friend, smaller sizes | 38 items |

@@ -55,11 +55,13 @@ export const TaggedItemSchema = z.object({
   formality: z.number().int().min(1).max(5),
   /** Normalized, e.g. "black cotton crew-neck t-shirt, casual, Uniqlo". Used for embeddings. */
   description: z.string(),
+  /** Who the garment is cut/marketed for, from the name and brand line. unknown when it can't be told. */
+  department: z.enum(['womens', 'mens', 'unisex', 'kids', 'unknown']),
 });
 export const TagItemsSchema = z.object({ items: z.array(TaggedItemSchema) });
 export type TagItemsResult = z.infer<typeof TagItemsSchema>;
 
-export const TAG_ITEMS_SYSTEM = `You normalize clothing items. For each item return: category (top, bottom, dress, outerwear, shoes, accessory, intimates, other), slot (top, bottom, one_piece, outer, shoes, accessory), a single dominant color word, formality 1-5 (1 gym/loungewear, 2 casual, 3 smart casual, 4 business/cocktail, 5 black tie), and a compact description: "<color> <material> <garment>, <formality word>, <brand>" (omit the color word entirely when it is not known — never write "unknown"). Underwear, bras, socks and sleepwear are intimates. Keep the same ids. Never add items.`;
+export const TAG_ITEMS_SYSTEM = `You normalize clothing items. For each item return: category (top, bottom, dress, outerwear, shoes, accessory, intimates, other), slot (top, bottom, one_piece, outer, shoes, accessory), a single dominant color word, formality 1-5 (1 gym/loungewear, 2 casual, 3 smart casual, 4 business/cocktail, 5 black tie), and a compact description: "<color> <material> <garment>, <formality word>, <brand>" (omit the color word entirely when it is not known — never write "unknown"). Underwear, bras, socks and sleepwear are intimates. Also set department: womens, mens, unisex, kids, or unknown, from explicit words only ("Women's", "Men's", "Boys'", bra, dress, boxers, etc.) — never guess from the brand alone. Keep the same ids. Never add items.`;
 
 export function tagItemsInput(items: Array<{ id: string; name: string; brand?: string | null; color?: string | null; retailer?: string | null }>): string {
   return items.map((i) => `${i.id} | ${i.name} | brand: ${i.brand ?? '?'} | color: ${i.color ?? '?'} | retailer: ${i.retailer ?? '?'}`).join('\n');
@@ -96,11 +98,13 @@ export const JudgeImagesSchema = z.object({
     product_only: z.boolean(),
     /** The image plausibly shows the named item (right garment type). */
     matches_item: z.boolean(),
+    /** The garment shown is plausible for the account holder's profile line (department/age), when one is given. */
+    fits_profile: z.boolean(),
   })),
 });
 export type JudgeImagesResult = z.infer<typeof JudgeImagesSchema>;
 
-export const JUDGE_IMAGES_SYSTEM = `You look at numbered product thumbnails for one clothing item. For each image report: product_only = true only when no person or body part is visible (flat lay, ghost mannequin, hanger, or plain product shot); matches_item = true when the picture shows the same kind of garment as the item name AND, if the item line states a color, the garment is that color. Return every index you were given.`;
+export const JUDGE_IMAGES_SYSTEM = `You look at numbered product thumbnails for one clothing item. For each image report: product_only = true only when no person or body part is visible (flat lay, ghost mannequin, hanger, or plain product shot); matches_item = true when the picture shows the same kind of garment as the item name AND, if the item line states a color, the garment is that color; fits_profile = true when the garment shown is plausible for the ACCOUNT HOLDER line if one is given (e.g. a men's cut for someone who shops men's; kids' sizing for kids), else true. Return every index you were given.`;
 
 // ─── parse_query (search bar) ─────────────────────────────────────────────────
 
@@ -123,12 +127,12 @@ export const PARSE_QUERY_SYSTEM = `You parse a clothing shopping query into stru
 
 // ─── search_note ──────────────────────────────────────────────────────────────
 
-export const SEARCH_NOTE_SYSTEM = `You write the one line shown above shopping search results in a wardrobe app. The verdict is already decided and you must not contradict it. One sentence, under 25 words, plain text, no emojis. Mention one concrete number (a count, a price, a wear count) or the friend's name. If OWNED SIMILAR lists items, name the closest one and its wear count even when the verdict is buy — never say nothing matches when something is listed. Never shame the user.`;
+export const SEARCH_NOTE_SYSTEM = `You write the one line shown above shopping search results in a wardrobe app. The verdict is already decided and you must not contradict it. One sentence, under 25 words, plain text, no emojis. Mention one concrete number (a count or price) or the friend's name. If OWNED SIMILAR lists items, name the closest one even when the verdict is buy — never say nothing matches when something is listed. Never shame the user.`;
 
 export function searchNoteInput(args: {
   verdict: (typeof VERDICTS)[number];
   query: string;
-  ownedSimilar: Array<{ name: string; wears: number; price_cents: number | null }>;
+  ownedSimilar: Array<{ name: string; price_cents: number | null }>;
   friendItem?: { name: string; friendName: string } | null;
   cheapestUsedCents?: number | null;
   usualPriceCents?: number | null;
@@ -138,7 +142,7 @@ export function searchNoteInput(args: {
   return [
     `VERDICT (fixed): ${args.verdict}`,
     `QUERY: ${args.query}`,
-    `OWNED SIMILAR: ${args.ownedSimilar.length ? args.ownedSimilar.map((i) => `${i.name} (worn ${i.wears}x${i.price_cents != null ? `, paid ${usd(i.price_cents)}` : ''})`).join('; ') : 'none'}`,
+    `OWNED SIMILAR: ${args.ownedSimilar.length ? args.ownedSimilar.map((i) => `${i.name}${i.price_cents != null ? ` (paid ${usd(i.price_cents)})` : ''}`).join('; ') : 'none'}`,
     `FRIEND CAN LEND: ${args.friendItem ? `${args.friendItem.friendName}'s ${args.friendItem.name}` : 'none'}`,
     `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,
     `USER USUALLY PAYS: ${args.usualPriceCents != null ? usd(args.usualPriceCents) : 'unknown'}`,
@@ -151,17 +155,17 @@ export function searchNoteInput(args: {
 export const PERSONA_STYLE: Record<(typeof PERSONAS)[number], string> = {
   bestie: 'Warm, hype, a little funny, gently talks the user down. Sounds like a best friend texting.',
   stylist: 'Blunt, fashion-literate, opinionated about fit and fabric. No fluff.',
-  cfo: 'Dry, all numbers, mildly amused. Talks in dollars and cost-per-wear.',
+  cfo: 'Dry, all numbers, mildly amused. Talks in dollars and budgets.',
 };
 
-export const SPOKEN_LINE_SYSTEM = `You write the one spoken line a wardrobe copilot says about a purchase or a monthly statement. The verdict is already decided and you must not contradict it. One or two sentences, under 30 words. Mention at least one concrete number (a price, a wear count, a budget figure) or a friend's name. Never shame the user. Output plain text only, no quotes, no emojis.`;
+export const SPOKEN_LINE_SYSTEM = `You write the one spoken line a wardrobe copilot says about a purchase or a monthly statement. The verdict is already decided and you must not contradict it. One or two sentences, under 30 words. Mention at least one concrete number (a price or budget figure) or a friend's name. Never shame the user. Output plain text only, no quotes, no emojis.`;
 
 export function spokenLineInput(args: {
   persona: (typeof PERSONAS)[number];
   verdict: (typeof VERDICTS)[number];
   productTitle: string;
   priceCents: number;
-  similarOwned?: { name: string; wears: number } | null;
+  similarOwned?: { name: string } | null;
   friendItem?: { name: string; friendName: string } | null;
   cheapestUsedCents?: number | null;
   budgetRemainingCents?: number | null;
@@ -171,7 +175,7 @@ export function spokenLineInput(args: {
     `PERSONA: ${args.persona} — ${PERSONA_STYLE[args.persona]}`,
     `VERDICT (fixed): ${args.verdict}`,
     `PRODUCT: ${args.productTitle} at ${usd(args.priceCents)}`,
-    `MOST SIMILAR OWNED: ${args.similarOwned ? `${args.similarOwned.name} (worn ${args.similarOwned.wears}x)` : 'none'}`,
+    `MOST SIMILAR OWNED: ${args.similarOwned?.name ?? 'none'}`,
     `FRIEND CAN LEND: ${args.friendItem ? `${args.friendItem.friendName}'s ${args.friendItem.name}` : 'none'}`,
     `BUDGET LEFT THIS MONTH: ${args.budgetRemainingCents != null ? usd(args.budgetRemainingCents) : 'unknown'}`,
     `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,

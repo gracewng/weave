@@ -1,7 +1,7 @@
 /**
  * DEVIN-OWNED (task 3). Seed a demo-ready Supabase project: one demo user with a 45-item closet, three friends,
- * 18 months of transactions, wear logs, a budget, the full Ghost Rack lifecycle, one loan, one pending return and
- * one confirmed refund.
+ * 18 months of transactions, a budget, the full Ghost Rack lifecycle, one loan, one pending return and one
+ * confirmed refund. (Wear tracking was removed from the schema in migration 0012, so no wear logs.)
  *
  *   pnpm tsx scripts/seed-demo.ts [--reset]
  *
@@ -188,7 +188,12 @@ function buildItem(userId: string, bp: Blueprint, daysAgo: number, sizeOverride?
   };
 }
 
-async function createUser(email: string, displayName: string, sizes: Record<string, string>): Promise<string> {
+async function createUser(
+  email: string,
+  displayName: string,
+  sizes: Record<string, string>,
+  shopsDepartment: 'womens' | 'mens' | 'both' | 'kids' = 'womens',
+): Promise<string> {
   const { data, error } = await db.auth.admin.createUser({
     email,
     password: DEMO_PASSWORD,
@@ -198,7 +203,15 @@ async function createUser(email: string, displayName: string, sizes: Record<stri
   if (error || !data.user) throw new Error(`createUser ${email}: ${error?.message}`);
   const { error: pErr } = await db
     .from('profiles')
-    .upsert({ id: data.user.id, display_name: displayName, sizes, invite_code: displayName.toLowerCase().slice(0, 8) });
+    .upsert({
+      id: data.user.id,
+      display_name: displayName,
+      sizes,
+      invite_code: displayName.toLowerCase().slice(0, 8),
+      shops_department: shopsDepartment,
+      // Set so the app layout does not bounce the demo accounts into /welcome.
+      onboarded_at: stamp(30),
+    });
   if (pErr) throw new Error(`profile ${email}: ${pErr.message}`);
   return data.user.id;
 }
@@ -252,12 +265,13 @@ interface FriendSpec {
   sizes: Record<string, string>;
   itemCount: number;
   seed: number;
+  shopsDepartment: 'womens' | 'mens' | 'both' | 'kids';
 }
 
 const FRIENDS: FriendSpec[] = [
-  { email: 'maya@weave.app', name: 'Maya', sizes: { top: 'S', bottom: '27', shoes: '8' }, itemCount: 34, seed: 11 },
-  { email: 'jordan@weave.app', name: 'Jordan', sizes: { top: 'M', bottom: '31', shoes: '10' }, itemCount: 28, seed: 22 },
-  { email: 'priya@weave.app', name: 'Priya', sizes: { top: 'XS', bottom: '25', shoes: '7' }, itemCount: 38, seed: 33 },
+  { email: 'maya@weave.app', name: 'Maya', sizes: { top: 'S', bottom: '27', shoes: '8' }, itemCount: 34, seed: 11, shopsDepartment: 'womens' },
+  { email: 'jordan@weave.app', name: 'Jordan', sizes: { top: 'M', bottom: '31', shoes: '10' }, itemCount: 28, seed: 22, shopsDepartment: 'both' },
+  { email: 'priya@weave.app', name: 'Priya', sizes: { top: 'XS', bottom: '25', shoes: '7' }, itemCount: 38, seed: 33, shopsDepartment: 'womens' },
 ];
 
 const DEMO_EMAIL = 'demo@weave.app';
@@ -271,7 +285,7 @@ async function main(): Promise<void> {
   console.log('creating users…');
   const demoId = await createUser(DEMO_EMAIL, 'Demo', { top: 'S', bottom: '27', shoes: '8' });
   const friendIds: Record<string, string> = {};
-  for (const f of FRIENDS) friendIds[f.name] = await createUser(f.email, f.name, f.sizes);
+  for (const f of FRIENDS) friendIds[f.name] = await createUser(f.email, f.name, f.sizes, f.shopsDepartment);
 
   // ── demo closet: 45 items, spread over 18 months ───────────────────────────
   const closet = CLOSET.map((bp, i) => buildItem(demoId, bp, Math.round(20 + (i / CLOSET.length) * 500)));
@@ -377,7 +391,7 @@ async function main(): Promise<void> {
     {
       user_id: demoId, title: 'The Cotton Box-Cut Tee', url: fixtures.productPages[0]!.url, image_url: fixtures.productPages[0]!.imageUrl,
       price_cents: 3_000, intended_source: 'Everlane', query: 'plain black tee', verdict: 'skip',
-      status: 'skipped', outcome_confirmed_at: stamp(9), wore_item_id: items[0]!.id, kept_cents: 3_000,
+      status: 'skipped', outcome_confirmed_at: stamp(9), owned_item_id: items[0]!.id, kept_cents: 3_000,
     },
     {
       user_id: demoId, title: 'Kourtney Silk Slip Dress', url: fixtures.productPages[1]!.url, image_url: fixtures.productPages[1]!.imageUrl,
@@ -390,17 +404,6 @@ async function main(): Promise<void> {
       status: 'bought_used', outcome_confirmed_at: stamp(31), actual_paid_cents: 4_200, cheapest_used_cents: 4_200, kept_cents: 5_600,
     },
   ]);
-
-  // ── wears: 6 months of logs, ~8 items left unworn on purpose ───────────────
-  const rand = rng(7);
-  const wearable = items.slice(0, items.length - 8);
-  const wears: Array<{ item_id: string; worn_on: string }> = [];
-  while (wears.length < 130) {
-    const item = wearable[Math.floor(rand() * wearable.length)]!;
-    wears.push({ item_id: item.id, worn_on: iso(Math.floor(rand() * 180)) });
-  }
-  await insert('wears', wears);
-  console.log(`  ${wears.length} wear logs across ${wearable.length} items (${items.length - wearable.length} never worn)`);
 
   await embedDescriptions(closet.map((row, i) => ({ id: items[i]!.id, description: row.description })));
 

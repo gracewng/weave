@@ -7,7 +7,7 @@ import { ensureLLM } from '@/lib/llm';
 import { searchProducts } from '@/lib/identify';
 import { secondhandLinks, retailLinks, type Link } from './marketplaces';
 
-export interface OwnedHit { id: string; name: string; brand: string | null; image_url: string | null; price_cents: number | null; size: string | null; similarity: number; wears: number; cpw: number | null }
+export interface OwnedHit { id: string; name: string; brand: string | null; image_url: string | null; price_cents: number | null; size: string | null; similarity: number }
 export interface FriendHit { id: string; owner_id: string; owner_name: string | null; name: string; image_url: string | null; size: string | null; similarity: number }
 export interface Listing extends ShoppingResult { kind: 'used' | 'new' }
 
@@ -62,14 +62,8 @@ export async function runLocalStage(userId: string, q: string, forOther: boolean
     admin.from('items').select('price_cents').eq('user_id', userId).gte('purchase_date', new Date().toISOString().slice(0, 8) + '01'),
   ]);
   const ownedRaw = (ownedRes.data ?? []) as Array<{ id: string; name: string; brand: string | null; image_url: string | null; price_cents: number | null; size: string | null; similarity: number }>;
-  let wears = new Map<string, number>();
-  if (ownedRaw.length) {
-    const { data: w } = await admin.from('wears').select('item_id').in('item_id', ownedRaw.map((o) => o.id));
-    for (const r of (w ?? []) as Array<{ item_id: string }>) wears.set(r.item_id, (wears.get(r.item_id) ?? 0) + 1);
-  }
   const owned: OwnedHit[] = ownedRaw
-    .map((o) => { const n = wears.get(o.id) ?? 0; return { ...o, wears: n, cpw: o.price_cents != null && n > 0 ? Math.round(o.price_cents / n) : null }; })
-    .sort((a, b) => b.similarity - a.similarity || a.wears - b.wears);   // most similar, then fewest wears (rediscovery)
+    .sort((a, b) => b.similarity - a.similarity);
   // Friends' items are shown only when plausibly the same kind of garment; the borrow *rule* needs ≥ 0.55.
   const FRIEND_DISPLAY_FLOOR = 0.45;
   const friends = ((friendRes.data ?? []) as Array<{ id: string; owner_id: string; owner_name: string | null; name: string; image_url: string | null; size: string | null; similarity: number }>).filter((f) => f.similarity >= FRIEND_DISPLAY_FLOOR);
@@ -82,7 +76,7 @@ export async function runLocalStage(userId: string, q: string, forOther: boolean
     dayOfMonth: now.getUTCDate(), daysInMonth: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate() }) : null;
 
   const top = owned[0]; const topF = friends[0];
-  const provisionalInputs: VerdictInputs = { topOwnedSimilarity: top?.similarity ?? null, topOwnedWears: top?.wears ?? null, topFriendSimilarity: topF?.similarity ?? null,
+  const provisionalInputs: VerdictInputs = { topOwnedSimilarity: top?.similarity ?? null, topFriendSimilarity: topF?.similarity ?? null,
     friendItemLendable: !!topF, oneTimeNeedSignal: parsed.one_time_need || !!parsed.occasion, priceCents: 0, cheapestUsedCents: null, budgetRemainingCents: null, forOther };
   const v = decideVerdict(provisionalInputs);
   return { q, forOther, parsed, embedText, owned, friends, memory, budgetRemainingCents: budget?.remainingCents ?? null, provisional: v === 'skip' || v === 'borrow' ? v : null, costUsd: cost };
@@ -102,14 +96,14 @@ export async function runMarketStage(userId: string, local: LocalStage, userPric
   const cheapestUsedCents = used.find((u) => u.priceCents != null)?.priceCents ?? null;
 
   const top = local.owned[0]; const topF = local.friends[0];
-  const inputs: VerdictInputs = { topOwnedSimilarity: top?.similarity ?? null, topOwnedWears: top?.wears ?? null, topFriendSimilarity: topF?.similarity ?? null,
+  const inputs: VerdictInputs = { topOwnedSimilarity: top?.similarity ?? null, topFriendSimilarity: topF?.similarity ?? null,
     friendItemLendable: !!topF, oneTimeNeedSignal: local.parsed.one_time_need || !!local.parsed.occasion, priceCents: priceCents ?? 0, cheapestUsedCents,
     budgetRemainingCents: local.budgetRemainingCents, forOther: local.forOther };
   const verdict = decideVerdict(inputs);
   const reason = verdictReason(verdict, inputs);
 
   const FIXTURE_NOTES: Record<Verdict, string> = {
-    skip: top ? `You already own ${top.name}, worn ${top.wears} time${top.wears === 1 ? '' : 's'}.` : 'You already own something like this.',
+    skip: top ? `You already own ${top.name}.` : 'You already own something like this.',
     borrow: topF ? `${topF.owner_name ?? 'A friend'} has a ${topF.name} in your size.` : 'A friend can lend you this.',
     secondhand: cheapestUsedCents != null ? `A used one is $${(cheapestUsedCents / 100).toFixed(0)} instead of $${((priceCents ?? 0) / 100).toFixed(0)}.` : 'A used one costs less.',
     wait: 'This is over what is left in this month\'s envelope.',
@@ -119,7 +113,7 @@ export async function runMarketStage(userId: string, local: LocalStage, userPric
   try {
     const r = await callLLM<string>({
       task: 'search_note', system: SEARCH_NOTE_SYSTEM, userId,
-      input: searchNoteInput({ verdict, query: local.q, ownedSimilar: local.owned.slice(0, 3).map((o) => ({ name: o.name, wears: o.wears, price_cents: o.price_cents })),
+      input: searchNoteInput({ verdict, query: local.q, ownedSimilar: local.owned.slice(0, 3).map((o) => ({ name: o.name, price_cents: o.price_cents })),
         friendItem: topF ? { name: topF.name, friendName: topF.owner_name ?? 'a friend' } : null, cheapestUsedCents, usualPriceCents: local.memory?.medianCents ?? null, budgetRemainingCents: local.budgetRemainingCents })
         + (local.forOther ? '\nSHOPPING FOR: someone else (do not mention the user\'s own wardrobe)' : ''),
       fixture: () => FIXTURE_NOTES[verdict], allowFixtureOutsideDemo: true,

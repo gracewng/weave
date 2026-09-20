@@ -86,7 +86,7 @@ export const TASKS: Record<Task, TaskConfig> = {
   search_note: {
     provider: 'openai', fallback: 'meta', structured: false,
     timeoutMs: 8000, maxOutputTokens: 80,
-    why: 'One line above search results: "You own 3 black tees, worn 2x total." Verdict is rule-based.',
+    why: 'One line above search results: "You own 3 black tees." Verdict is rule-based.',
   },
   borrow_message: {
     provider: 'meta', fallback: 'openai', reasoningEffort: 'minimal', structured: false,

@@ -8,9 +8,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function ReturnsPage() {
   const { supabase, user } = await requireUser();
-  const { open, pending, recovered, closedUnworn } = await returnBoard(supabase, user.id);
+  const { open, pending, recovered } = await returnBoard(supabase, user.id);
   const atStake = open.reduce((s, r) => s + r.atStakeCents, 0);
-  const unwornAtStake = open.filter((r) => r.wears === 0).reduce((s, r) => s + r.atStakeCents, 0);
   const recoveredCents = recovered.reduce((s, i) => s + (i.refund_cents ?? 0), 0);
 
   return (
@@ -20,10 +19,8 @@ export default async function ReturnsPage() {
         <ReceiptRule />
         <ReceiptLine label="RETURN WINDOWS OPEN" value={String(open.length)} />
         <ReceiptLine label="  AT STAKE" value={usd(atStake)} />
-        <ReceiptLine label="  UNWORN, STILL RETURNABLE" value={`${open.filter((r) => r.wears === 0).length} · ${usd(unwornAtStake)}`} />
         <ReceiptLine label="RETURN PENDING" value={String(pending.length)} muted />
         <ReceiptLine label="REFUND CONFIRMED" value={`${recovered.length} · ${usd(recoveredCents)}`} valueClass={recoveredCents > 0 ? 'saved' : ''} />
-        {closedUnworn > 0 && <ReceiptLine label="WINDOW CLOSED, NEVER WORN" value={String(closedUnworn)} muted />}
         <ReceiptRule />
         <div className="mono text-[10px] text-ink-3">MONEY RECOVERED COUNTS CONFIRMED REFUNDS ONLY. A REMINDER IS NOT A RETURN; A RETURN IS NOT A REFUND.</div>
       </Receipt>
@@ -42,7 +39,6 @@ export default async function ReturnsPage() {
                   </div>
                   <ReceiptLine label="AT STAKE" value={usd(r.atStakeCents)} />
                   <ReceiptLine label="RETURN BY" value={`${r.item.return_by}${r.policyDays != null ? ` · ${r.item.retailer ?? ''} ${r.policyDays}-DAY POLICY` : r.item.retailer ? ` · ${r.item.retailer}` : ''}`} muted />
-                  <ReceiptLine label="WEARS" value={r.wears === 0 ? 'NONE LOGGED' : String(r.wears)} muted />
                   <ReceiptLine label="RECEIPT" value={r.item.receipt_url ? 'ON FILE' : r.item.source === 'email' ? 'ORDER EMAIL' : 'NOT ON FILE'} muted />
                   <ReturnActions itemId={r.item.id} name={r.item.name} priceCents={r.item.price_cents} status="owned" />
                 </div>
