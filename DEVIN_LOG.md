@@ -7,7 +7,7 @@ Fill this in as PRs land; it becomes a slide for the Devin judges.
 |---|------|----|-----------------|-----------------|------------------------------------------|
 | 1 | Retailer data (`/packages/data`) | | | ~3h (60 retailers + 25 return policies with sources) | |
 | 2 | API clients + mocks (`/packages/clients`) | | | ~4h | |
-| 3 | Fixtures + seed script (`/apps/web/fixtures`, `/scripts/seed-demo.ts`) | | | ~4h | |
+| 3 | Fixtures + seed script (`/apps/web/fixtures`, `/scripts/seed-demo.ts`) | #5 | ~1h | ~4h | Emails/charges are generated from one spec table, so HTML, expected extraction and the matching charge can't drift; all dates are relative to today so the demo never goes stale. 18 tests validate every LLM fixture against the zod schemas. Seed images are remote placeholders, not `items`-bucket uploads. |
 | 4 | Tests (matcher, return dates, verdicts, budget math, price memory, wears) | | | ~2.5h | |
 | 5 | Marketplace links + money alternatives (`/packages/data`) | | | ~1.5h | |
 
