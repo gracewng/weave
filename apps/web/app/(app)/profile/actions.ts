@@ -12,5 +12,5 @@ export async function updateSettings(formData: FormData) {
   }
   const display_name = String(formData.get('display_name') ?? '').trim() || null;
   await supabase.from('profiles').update({ voice_persona: persona, sizes, display_name }).eq('id', user.id);
-  revalidatePath('/settings');
+  revalidatePath('/profile');
 }

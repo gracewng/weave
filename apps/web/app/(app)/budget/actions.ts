@@ -14,5 +14,5 @@ export async function saveBudget(formData: FormData) {
     envelope_override_cents: override ? Math.round(Number(override) * 100) : null,
     updated_at: new Date().toISOString(),
   });
-  revalidatePath('/budget'); revalidatePath('/statement'); revalidatePath('/search');
+  revalidatePath('/budget'); revalidatePath('/profile'); revalidatePath('/statement'); revalidatePath('/search');
 }

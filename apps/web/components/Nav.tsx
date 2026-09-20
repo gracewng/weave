@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const LINKS: Array<[string, string]> = [
-  ['/wardrobe', 'Wardrobe'], ['/search', 'Search'], ['/charges', 'Charges'], ['/friends', 'Friends'], ['/settings', 'Settings'],
+  ['/wardrobe', 'Wardrobe'], ['/search', 'Search'], ['/charges', 'Charges'], ['/friends', 'Friends'], ['/profile', 'Profile'],
 ];
 
 export function Nav({ name, demo }: { name: string; demo: boolean }) {
