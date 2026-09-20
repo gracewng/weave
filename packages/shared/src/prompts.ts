@@ -55,11 +55,13 @@ export const TaggedItemSchema = z.object({
   formality: z.number().int().min(1).max(5),
   /** Normalized, e.g. "black cotton crew-neck t-shirt, casual, Uniqlo". Used for embeddings. */
   description: z.string(),
+  /** Who the garment is cut/marketed for, from the name and brand line. unknown when it can't be told. */
+  department: z.enum(['womens', 'mens', 'unisex', 'kids', 'unknown']),
 });
 export const TagItemsSchema = z.object({ items: z.array(TaggedItemSchema) });
 export type TagItemsResult = z.infer<typeof TagItemsSchema>;
 
-export const TAG_ITEMS_SYSTEM = `You normalize clothing items. For each item return: category (top, bottom, dress, outerwear, shoes, accessory, intimates, other), slot (top, bottom, one_piece, outer, shoes, accessory), a single dominant color word, formality 1-5 (1 gym/loungewear, 2 casual, 3 smart casual, 4 business/cocktail, 5 black tie), and a compact description: "<color> <material> <garment>, <formality word>, <brand>" (omit the color word entirely when it is not known — never write "unknown"). Underwear, bras, socks and sleepwear are intimates. Keep the same ids. Never add items.`;
+export const TAG_ITEMS_SYSTEM = `You normalize clothing items. For each item return: category (top, bottom, dress, outerwear, shoes, accessory, intimates, other), slot (top, bottom, one_piece, outer, shoes, accessory), a single dominant color word, formality 1-5 (1 gym/loungewear, 2 casual, 3 smart casual, 4 business/cocktail, 5 black tie), and a compact description: "<color> <material> <garment>, <formality word>, <brand>" (omit the color word entirely when it is not known — never write "unknown"). Underwear, bras, socks and sleepwear are intimates. Also set department: womens, mens, unisex, kids, or unknown, from explicit words only ("Women's", "Men's", "Boys'", bra, dress, boxers, etc.) — never guess from the brand alone. Keep the same ids. Never add items.`;
 
 export function tagItemsInput(items: Array<{ id: string; name: string; brand?: string | null; color?: string | null; retailer?: string | null }>): string {
   return items.map((i) => `${i.id} | ${i.name} | brand: ${i.brand ?? '?'} | color: ${i.color ?? '?'} | retailer: ${i.retailer ?? '?'}`).join('\n');
@@ -96,11 +98,13 @@ export const JudgeImagesSchema = z.object({
     product_only: z.boolean(),
     /** The image plausibly shows the named item (right garment type). */
     matches_item: z.boolean(),
+    /** The garment shown is plausible for the account holder's profile line (department/age), when one is given. */
+    fits_profile: z.boolean(),
   })),
 });
 export type JudgeImagesResult = z.infer<typeof JudgeImagesSchema>;
 
-export const JUDGE_IMAGES_SYSTEM = `You look at numbered product thumbnails for one clothing item. For each image report: product_only = true only when no person or body part is visible (flat lay, ghost mannequin, hanger, or plain product shot); matches_item = true when the picture shows the same kind of garment as the item name AND, if the item line states a color, the garment is that color. Return every index you were given.`;
+export const JUDGE_IMAGES_SYSTEM = `You look at numbered product thumbnails for one clothing item. For each image report: product_only = true only when no person or body part is visible (flat lay, ghost mannequin, hanger, or plain product shot); matches_item = true when the picture shows the same kind of garment as the item name AND, if the item line states a color, the garment is that color; fits_profile = true when the garment shown is plausible for the ACCOUNT HOLDER line if one is given (e.g. a men's cut for someone who shops men's; kids' sizing for kids), else true. Return every index you were given.`;
 
 // ─── parse_query (search bar) ─────────────────────────────────────────────────
 

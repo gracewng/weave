@@ -1,6 +1,8 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
+import { randomUUID } from 'node:crypto';
+import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { applyCandidateImage, candidatesFor, lookupMissingImages } from '@/lib/identify';
 import type { ShoppingResult } from '@weave/shared/contracts';
@@ -28,7 +30,7 @@ export async function findCandidates(itemId: string): Promise<ShoppingResult[]> 
   const { supabase, user } = await requireUser();
   const { data: item } = await supabase.from('items').select('name,brand,color,retailer').eq('id', itemId).eq('user_id', user.id).maybeSingle();
   if (!item) return [];
-  const { results } = await candidatesFor(item, true);
+  const { results } = await candidatesFor(item, true, user.id);
   return results;
 }
 
@@ -66,4 +68,45 @@ export async function clearImage(itemId: string): Promise<boolean> {
   const { error } = await supabase.from('items').update({ image_url: null, image_source: 'none' }).eq('id', itemId).eq('user_id', user.id);
   revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe');
   return !error;
+}
+
+/** Remove the item from the wardrobe. Wears cascade; holds that pointed at it keep their record (wore_item_id → null). */
+export async function removeItem(itemId: string): Promise<void> {
+  const { supabase, user } = await requireUser();
+  await supabase.from('items').delete().eq('id', itemId).eq('user_id', user.id);
+  revalidatePath('/wardrobe'); revalidatePath('/returns'); revalidatePath('/statement');
+  redirect('/wardrobe');
+}
+
+/** Replace (or add) the item's picture with the user's own photo. Stored in the same `items` bucket; auto-lookup stops. */
+export async function uploadOwnPhoto(itemId: string, form: FormData): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, user } = await requireUser();
+  const admin = createAdminClient(); if (!admin) return { ok: false, error: 'storage not configured' };
+  const file = form.get('photo') as File | null;
+  if (!file || file.size === 0) return { ok: false, error: 'choose a photo' };
+  if (file.size > 8 * 1024 * 1024) return { ok: false, error: 'photo is over 8 MB' };
+  const type = file.type || 'image/jpeg'; if (!type.startsWith('image/')) return { ok: false, error: 'not an image' };
+  const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : type.includes('heic') ? 'heic' : 'jpg';
+  const path = `${user.id}/photos/${randomUUID()}.${ext}`;
+  const { error } = await admin.storage.from('items').upload(path, Buffer.from(await file.arrayBuffer()), { contentType: type });
+  if (error) return { ok: false, error: error.message };
+  const url = admin.storage.from('items').getPublicUrl(path).data.publicUrl;
+  const { error: e2 } = await supabase.from('items').update({ image_url: url, image_source: 'user_photo' }).eq('id', itemId).eq('user_id', user.id);
+  if (e2) return { ok: false, error: e2.message };
+  revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe');
+  return { ok: true };
+}
+
+/** "Not mine": move a flagged item out of the wardrobe as bought for someone else. */
+export async function markNotMine(itemId: string): Promise<void> {
+  const { supabase, user } = await requireUser();
+  await supabase.from('items').update({ status: 'gifted', profile_mismatch: false }).eq('id', itemId).eq('user_id', user.id);
+  revalidatePath('/wardrobe'); revalidatePath('/statement');
+  redirect('/wardrobe');
+}
+
+export async function dismissMismatch(itemId: string): Promise<void> {
+  const { supabase, user } = await requireUser();
+  await supabase.from('items').update({ profile_mismatch: false }).eq('id', itemId).eq('user_id', user.id);
+  revalidatePath(`/wardrobe/${itemId}`); revalidatePath('/wardrobe');
 }

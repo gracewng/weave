@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { IngestPanel } from '@/components/IngestPanel';
+import { CardMenu } from '@/components/CardMenu';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
 import { costPerWear, summarizeWears, wornShare, type WearRow } from '@weave/shared/wears';
 import type { Item } from '@weave/shared/types';
@@ -77,10 +78,12 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         {sorted.map((i) => {
           const w = wears.get(i.id); const cpw = costPerWear(i.price_cents, w?.count ?? 0);
           return (
-            <Link key={i.id} href={`/wardrobe/${i.id}`} className="cutout block p-2 hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,.4)]">
+            <Link key={i.id} href={`/wardrobe/${i.id}`} className="cutout group relative block p-2 hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,.4)]">
+              <CardMenu itemId={i.id} name={i.name} hasImage={!!i.image_url} />
               <div className="relative aspect-[3/4] w-full bg-paper-2">
                 {i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center px-2 text-center text-[10px] text-ink-3">NO IMAGE YET</div>}
                 {!i.shareable && <span className="mono absolute left-1 top-1 bg-paper px-1 text-[9px] text-ink-3">PRIVATE</span>}
+                {i.profile_mismatch && <span className="mono absolute bottom-1 left-1 bg-paper px-1 text-[9px] text-warn">YOURS?</span>}
               </div>
               <div className="mt-2 truncate text-sm" title={i.name}>{i.name}</div>
               <div className="mono flex justify-between text-[11px] text-ink-3"><span className="truncate">{i.brand ?? i.retailer ?? ''}{i.size ? ` · ${i.size}` : ''}</span><span>{usd(i.price_cents)}</span></div>

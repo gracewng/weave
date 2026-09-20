@@ -45,6 +45,7 @@ export default async function SettingsPage() {
         <ReceiptRule />
         <div className="mono text-[11px] text-ink-3">
           <div>INVITE CODE · {profile?.invite_code ?? '—'}</div>
+          <div className="mt-1">PROFILE BASICS (AGE · GENDER · DEPARTMENT) · <a href="/welcome?edit=1&next=/settings" className="underline">EDIT</a> · USED ONLY FOR IMAGE MATCHING</div>
           <div className="mt-1">PRIVACY · Friends see shareable items only. Prices, purchase dates, stores and return windows are never shared. Intimates are hidden by default.</div>
         </div>
         <button className="btn btn-primary" type="submit">Save</button>

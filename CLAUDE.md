@@ -229,6 +229,10 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 ## Hard constraints
 - **Demo reliability beats completeness.** Every external dependency has a mock behind `DEMO_MODE=true` or automatic
   fallback on error. Live vs fixture is always visibly labeled.
+- **Onboarding basics are scoped.** `profiles.age_range / gender / shops_department` (asked once at `/welcome`, gated by
+  `onboarded_at`) are used ONLY by the image judge (`ACCOUNT HOLDER` line → `fits_profile`) and the deterministic
+  `items.profile_mismatch` flag (tagged department ≠ what the user shops). Never in search, styling, friends, or the
+  `friend_items` view.
 - **Privacy by design.** Never persist raw email bodies. Only `gmail.readonly`. Friends see only `shareable` items via
   the `friend_items` view — never `price_cents`, `purchase_date`, `retailer`, `return_by`, `est_resale_cents`,
   `receipt_url`, `refund_cents`. Intimates default to not shareable (DB trigger). Say this in onboarding UI.
@@ -381,6 +385,10 @@ change); receipts are real text. Primitives: `apps/web/components/Receipt.tsx`.
    Purchase.
 7. **Slash command bar.** `/` anywhere; owned matches appear from a lexical index as you type, before the semantic
    search runs; typing "$45" prints purchase memory beside it.
+
+**Item tools.** Every item page (and the ⋯ hover/long-press menu on wardrobe cards) offers *Use my own photo* (any
+image → `items` bucket, `image_source = user_photo`, auto-lookup stops) and *Remove from wardrobe* (confirm first).
+A `profile_mismatch` item shows a "Might not be yours?" banner with *Not mine* (→ `gifted`) / *It's mine*.
 
 **Decision-surface rules.** Owned alternative is the largest image; pending holds are text-only; "Buy anyway" is
 plain text, same size, last; one primary action per section; every printed receipt shows VOID for ten seconds.

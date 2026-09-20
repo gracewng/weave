@@ -10,6 +10,8 @@ import { similarOwned } from '@/lib/tagging';
 import { candidatesFor } from '@/lib/identify';
 import { Candidates } from './Candidates';
 import { EditDetails } from './EditDetails';
+import { ItemTools } from './ItemTools';
+import { MismatchBanner } from './MismatchBanner';
 import type { Item } from '@weave/shared/types';
 
 export const dynamic = 'force-dynamic';
@@ -46,11 +48,13 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             {((stoodIn ?? []) as Array<{ title: string; price_cents: number; created_at: string }>).map((h, i) => <span key={`s${i}`} className="stamp saved">STOOD IN FOR {h.price_cents > 0 ? usd(h.price_cents) : 'A'} {h.title.toUpperCase().slice(0, 18)} · {h.created_at.slice(5, 10).replace('-', '/')}</span>)}
           </div>
           <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} imageSource={it.image_source} />
+          <div className="mt-3 border-t border-dashed border-rule pt-2"><ItemTools itemId={it.id} name={it.name} hasImage={!!it.image_url} /></div>
         </div>
         <div className="mono mt-3 text-[11px] text-ink-3"><Link href="/wardrobe" className="hover:text-ink">← WARDROBE</Link></div>
       </div>
 
       <div className="space-y-4">
+        {it.profile_mismatch && <MismatchBanner itemId={it.id} department={it.department} />}
         <Receipt>
           <ReceiptHeader title={it.name} subtitle={[it.brand, it.size ? `SIZE ${it.size}` : null, it.color].filter(Boolean).join(' · ').toUpperCase()} />
           <ReceiptRule />
