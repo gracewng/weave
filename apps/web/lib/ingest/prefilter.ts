@@ -29,7 +29,12 @@ export function resolveRetailer(domain: string): RetailerMatch | undefined {
 }
 
 const ORDER_RE = /\b(order|receipt|purchase|invoice|confirmation|thank you for (your|shopping))\b/i;
-const NOT_ORDER_RE = /(\b(shipped|shipping update|out for delivery|delivered|on its way|has arrived|tracking|return (started|received|label)|refund|cancel+ed|password|verify|newsletter|sale ends?|last chance|survey|review your|pre-?order|promo|deal|hrs? left|hours left|ends (tonight|tomorrow|soon)|extended|daily digest|wishlist|back in stock|price drop)\b|% off|\$\d+ off|off your (next |entire )?order)/i;
+const NOT_ORDER_RE = /(\b(shipped|shipping update|out for delivery|delivered|on its way|has arrived|tracking|return (started|received|label)|refund|cancel+ed|password|verify|newsletter|sale ends?|last chance|survey|review your|arriving|itinerary|e-?ticket|boarding pass|flight|reservation|pre-?order|promo|deal|hrs? left|hours left|ends (tonight|tomorrow|soon)|extended|daily digest|wishlist|back in stock|price drop)\b|% off|\$\d+ off|off your (next |entire )?order)/i;
+/** Transactional signals: an order confirmation almost always has one of these in the body. Marketing rarely does. */
+const ORDER_BODY_RE = /(order\s*(number|no\.?|#|id)|order\s*confirmation|order\s*total|subtotal|grand total|total\s*\$?\s*\d|thank you for (your )?(order|purchase|shopping)|payment (method|received)|billing address|shipping address|qty|quantity|items? ordered|your receipt|e-?receipt)/i;
+/** Marketing subdomains: not a rejection on their own, but they must show order signals in the body. */
+const MARKETING_SUB_RE = /^(mkt|em|e|news|promo|marketing|info|hello|s|t|go|mail|email|newsletter|offers?|deals?)\d*\./i;
+
 const CLOTHING_RE = /\b(shirt|t-?shirt|tee|top|blouse|sweater|hoodie|sweatshirt|cardigan|jacket|coat|blazer|dress|skirt|pants|trousers|jeans|denim|shorts|leggings|joggers|sneakers?|shoes?|boots?|sandals?|heels|loafers|bra|underwear|socks|scarf|hat|cap|beanie|bag|tote|belt|size\s*[:\-]?\s*(xs|s|m|l|xl|xxl|\d{1,2}))\b/i;
 
 export interface PrefilterInput { from: string; subject: string; text: string }
@@ -44,8 +49,15 @@ export function prefilter(input: PrefilterInput): PrefilterResult {
   const domain = senderDomain(input.from);
   const retailer = resolveRetailer(domain);
   if (NOT_ORDER_RE.test(input.subject)) return { pass: false, reason: 'subject:not-order', retailer, domain };
-  if (retailer) return { pass: true, reason: 'allowlist', retailer, domain };
+  if (retailer) {
+    // Allowlisted sender: still needs to look transactional. Retailers send far more marketing than receipts.
+    const subjectOrder = ORDER_RE.test(input.subject);
+    const bodyOrder = ORDER_BODY_RE.test(input.text);
+    if (subjectOrder || bodyOrder) return { pass: true, reason: subjectOrder ? 'allowlist:subject' : 'allowlist:body', retailer, domain };
+    return { pass: false, reason: MARKETING_SUB_RE.test(domain) ? 'allowlist:marketing-subdomain' : 'allowlist:no-order-signals', retailer, domain };
+  }
   if (!ORDER_RE.test(input.subject)) return { pass: false, reason: 'unknown-sender:subject', domain };
+  if (!ORDER_BODY_RE.test(input.text)) return { pass: false, reason: 'unknown-sender:no-order-signals', domain };
   if (!CLOTHING_RE.test(input.text)) return { pass: false, reason: 'unknown-sender:no-clothing-words', domain };
   return { pass: true, reason: 'keyword', domain };
 }
