@@ -72,7 +72,8 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
     <div className="space-y-6">
       <IngestPanel hasGmail={hasGmail} itemCount={items.length} compact />
 
-      <Tape className="mx-auto max-w-md">
+      <div className="mx-auto w-full max-w-md space-y-4">
+      <Tape>
         <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} brand />
         <TapeRule />
         <TapeLine label="Spent, last 30 days" value={usd(spent30)} />
@@ -81,7 +82,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
       </Tape>
 
-      <div className="mono flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-wider text-ink-3">
+      <div className="mono flex flex-wrap items-center justify-between gap-x-5 gap-y-2 text-[11px] uppercase tracking-wider text-ink-3">
         <span className="flex items-center gap-2">
           <span>View</span>
           <Link href={href({ view: 'rack' })} className={`flex items-center gap-1 ${view === 'rack' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="Hang tags on a rail"><Icon name="wardrobe" size={12} />Rack</Link>
@@ -92,6 +93,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
           {SORTS.map(([k, label]) => <Link key={k} href={href({ sort: k })} className={k === sort ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}>{label}</Link>)}
         </span>
         <Link href={href({ returnable: !retOnly })} className={`flex items-center gap-1 ${retOnly ? 'text-save' : 'hover:text-ink'}`} title="Only items still inside their return window"><Icon name="undo" size={12} />Returnable{retOnly ? ' · on' : ''}</Link>
+      </div>
       </div>
 
       {view === 'rack' ? (

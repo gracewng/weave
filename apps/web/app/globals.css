@@ -186,7 +186,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 .tape {
   position: relative; background: var(--tape); color: var(--tape-ink);
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
-  padding: 1.25rem 1.25rem 1.4rem; margin: 8px 0;
+  padding: 1.25rem 1.25rem 1.4rem; margin-block: 8px;
   background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, .014) 0 1px, transparent 1px 3px);
   box-shadow: 0 14px 30px -20px rgba(52, 78, 65, .55);
 }
