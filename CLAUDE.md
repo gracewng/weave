@@ -431,7 +431,11 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       → Identify the item (`read_capture` + Shopping/Lens + candidate strip + `rembg` fallback); Mystery Purchases stack with Closet
       Coverage fraction; `POST /api/demo/charge`; demo panel. Accept: mock charge → notification < 5s → snapped
       receipt → item < 15s; resolving one mystery changes coverage from data.
-- [ ] **Phase 5 — Budget** (2h). Envelope, live spend, projection, alternatives, over-budget state.
+- [x] **Phase 5 — Budget** (2h). `/budget`: take-home × % (or a flat override) → envelope; live spend from items dated
+      this month (on you vs on others; refunds excluded); projection; **the envelope drawn as a strip of paper**
+      (remaining = remaining paper, dotted line = projection, over = "RAN OUT", no red); "What this could be
+      instead" from `lib/alternatives.ts` (stopgap until Devin task 5) + invested-10y scenario. Zero model calls.
+      Activates search rule 4 (over what's left → hold 48h) and the Statement's envelope lines.
 - [x] **Phase 6 — Return board** (2h). `lib/returns.ts`, `/returns` (open windows soonest-first with days-left stamp,
       $ at stake, policy days, wears, receipt-on-file; Return Pending → Refund Confirmed with the actual amount →
       Money Recovered; "keeping it after all"), `GET /api/cron/returns` (daily 14:00 UTC via `vercel.json`; lists
