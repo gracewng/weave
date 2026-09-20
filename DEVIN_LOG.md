@@ -9,7 +9,7 @@ Fill this in as PRs land; it becomes a slide for the Devin judges.
 | 2 | API clients + mocks (`/packages/clients`) | | | ~4h | |
 | 3 | Fixtures + seed script (`/apps/web/fixtures`, `/scripts/seed-demo.ts`) | | | ~4h | |
 | 4 | Tests (matcher, return dates, verdicts, budget math, price memory, wears) | | | ~2.5h | |
-| 5 | Marketplace links + money alternatives (`/packages/data`) | | | ~1.5h | |
+| 5 | Marketplace links + money alternatives (`/packages/data`) | #2 | ~15m | ~1.5h | 9 marketplaces (8 secondhand + Google Shopping), 11 sourced alternatives. Each search URL shape was checked by request; Depop/Mercari/RealReal answer 403 to any script (bot protection), so those three are unverified and want one click each. |
 
 ## How we split the work
 - **Claude Code** (interactive, with the lead): schema, app, LLM router, search + budget logic — the parts that need
