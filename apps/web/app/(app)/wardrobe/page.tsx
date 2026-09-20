@@ -92,6 +92,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
                   <span className="font-sans text-[15px]">Add your own</span>
                   <span className="text-[11px] text-ink-3">Photo or name</span>
                 </div>
+              </Link>
             </div>
           )}
           {sorted.map((i) => <HangTag key={i.id} item={i} today={today} showReturnable={!retOnly} />)}
