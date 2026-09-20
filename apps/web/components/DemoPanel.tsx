@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { demoAdvance48h, demoResetHolds, demoFriendAccepts, demoSeedRefund } from '@/app/demo-actions';
+import { demoFriendAccepts, demoSeedRefund } from '@/app/demo-actions';
 import { printReceipt } from '@/lib/printer';
 import { Badge } from '@/components/ui';
 
@@ -25,11 +25,9 @@ export function DemoPanel() {
     <div className="card card-paper fixed bottom-4 right-4 z-40 w-64 !p-4 shadow-lg">
       <div className="mb-3 flex items-center justify-between"><Badge tone="warn">Demo</Badge><button className="btn-text" onClick={() => setOpen(false)}>Close</button></div>
       <div className="flex flex-col gap-2">
-        <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => run('Holds advanced 48h', demoAdvance48h)}>Advance 48h (holds)</button>
         <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => start(async () => { const r = await fetch('/api/demo/charge', { method: 'POST' }); const j = await r.json(); printReceipt({ title: 'Demo trigger', lines: [{ label: 'Mock charge', value: r.ok ? '$42.00 Uniqlo' : 'Failed' }], footer: 'Labeled demo action, not live data', ttlMs: 3000 }); router.refresh(); void j; })}>Fire mock charge ($42 Uniqlo)</button>
         <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => run('Friend accepted and handed over', demoFriendAccepts)}>Friend accepts my request</button>
         <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => run('Refund seeded (cents)', demoSeedRefund)}>Seed confirmed refund</button>
-        <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => { if (confirm('Delete all of your holds?')) run('Holds deleted', demoResetHolds); }}>Reset my holds</button>
       </div>
     </div>
   );

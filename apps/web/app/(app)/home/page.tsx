@@ -15,15 +15,17 @@ function greeting() {
 
 export default async function HomePage() {
   const { supabase: db, user } = await requireUser();
-  const [{ data: profile }, { data: itemsData }, { count: holdsHeld }, board] = await Promise.all([
+  const ym = new Date().toISOString().slice(0, 7);
+  const [{ data: profile }, { data: itemsData }, board] = await Promise.all([
     db.from('profiles').select('display_name').eq('id', user.id).maybeSingle(),
-    db.from('items').select('id,name,brand,image_url,created_at,purchase_date').eq('user_id', user.id).in('status', ['owned', 'returning']).order('created_at', { ascending: false }),
-    db.from('holds').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'held'),
+    db.from('items').select('id,name,brand,image_url,created_at,purchase_date,price_cents,status').eq('user_id', user.id).in('status', ['owned', 'returning']).order('created_at', { ascending: false }),
     returnBoard(db, user.id),
   ]);
-  const items = (itemsData ?? []) as Pick<Item, 'id' | 'name' | 'brand' | 'image_url' | 'created_at' | 'purchase_date'>[];
+  const items = (itemsData ?? []) as Pick<Item, 'id' | 'name' | 'brand' | 'image_url' | 'created_at' | 'purchase_date' | 'price_cents' | 'status'>[];
   const name = profile?.display_name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'there';
   const soonest = board.open[0];
+  const spentMonth = items.filter((i) => i.purchase_date?.startsWith(ym)).reduce((s, i) => s + (i.price_cents ?? 0), 0);
+  const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long' });
 
   return (
     <Page>
@@ -31,8 +33,8 @@ export default async function HomePage() {
 
       <StatGrid>
         <Stat value={items.length} label="items owned" href="/wardrobe" />
+        <Stat value={usd(spentMonth)} label={`spent in ${monthLabel}`} href="/profile#budget" />
         <Stat value={soonest ? `${soonest.daysLeft}d` : '—'} label={soonest ? 'until a return closes' : 'no returns open'} href="/returns" />
-        <Stat value={holdsHeld ?? 0} label="holds waiting" href="/ghosts" />
       </StatGrid>
 
       <section>
@@ -55,9 +57,9 @@ export default async function HomePage() {
 
       <StatGrid>
         {[
-          ['/search', 'Shop', IconBag],
+          ['/search', 'Search before you buy', IconBag],
           ['/wardrobe', 'Scan my inbox', IconEnvelope],
-          ['/charges', 'Spending', IconCard],
+          ['/charges', 'Charges', IconCard],
         ].map(([href, label, Icon]) => {
           const I = Icon as typeof IconBag;
           return (

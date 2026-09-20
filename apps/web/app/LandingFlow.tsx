@@ -16,9 +16,8 @@ const INTRO: Block[] = [
 	{ t: "rule" },
 	{ t: "line", label: "Wardrobe rebuilt from receipts", value: "✓" },
 	{ t: "line", label: "Before you buy: own › borrow › used", value: "✓" },
-	{ t: "line", label: "The clothes you almost owned", value: "✓" },
 	{ t: "rule" },
-	{ t: "space", h: 200 }
+	{ t: "space", h: 320 }
 ];
 const SIGNIN: Block[] = [
 	{ t: "title", text: "Before we read anything" },
@@ -27,7 +26,7 @@ const SIGNIN: Block[] = [
 	{ t: "line", label: "Kept from emails", value: "item · price · size · date" },
 	{ t: "line", label: "Friends see prices", value: "never" },
 	{ t: "rule" },
-	{ t: "space", h: 240 }
+	{ t: "space", h: 360 }
 ];
 
 export function LandingFlow({

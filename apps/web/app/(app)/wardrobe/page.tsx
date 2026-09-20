@@ -4,7 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { IngestPanel } from '@/components/IngestPanel';
 import { CardMenu } from '@/components/CardMenu';
 import { Tape, TapeHeader, TapeLine, TapeRule, TapeTotal, Barcode, Stamp, usd } from '@/components/Tape';
-import type { Item } from '@weave/shared/types';
+import type { Item, Hold } from '@weave/shared/types';
+import { summarizeKept } from '@weave/shared/kept';
 import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
@@ -22,10 +23,19 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
   const view: View = viewParam === 'tape' ? 'tape' : 'rack';
   const { supabase, user } = await requireUser();
   const admin = createAdminClient();
-  const [{ data: itemsData }, { data: tok }] = await Promise.all([
+  const [{ data: itemsData }, { data: tok }, { data: holdsData }, { data: returnedData }] = await Promise.all([
     supabase.from('items').select('id,user_id,name,brand,category,slot,color,formality,size,price_cents,purchase_date,retailer,image_url,image_source,receipt_url,source,return_by,status,shareable,lendable,description,profile_mismatch,created_at').eq('user_id', user.id).in('status', ['owned', 'returning']),
     admin ? admin.from('gmail_tokens').select('user_id').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
+    supabase.from('holds').select('id,status,price_cents,actual_paid_cents,outcome_confirmed_at').eq('user_id', user.id),
+    supabase.from('items').select('id,status,refund_cents').eq('user_id', user.id).eq('status', 'returned'),
   ]);
+  // "You saved": confirmed Money Kept (used mine / borrowed / bought used) + confirmed refunds. Never a bank balance.
+  const kept = summarizeKept({
+    holds: ((holdsData ?? []) as Pick<Hold, 'id' | 'status' | 'price_cents' | 'actual_paid_cents' | 'outcome_confirmed_at'>[]).map((h) => ({ id: h.id, status: h.status, priceCents: h.price_cents > 0 ? h.price_cents : null, actualPaidCents: h.actual_paid_cents, outcomeConfirmedAt: h.outcome_confirmed_at })),
+    returns: ((returnedData ?? []) as Array<{ id: string; status: string; refund_cents: number | null }>).map((i) => ({ itemId: i.id, status: 'returned' as const, refundCents: i.refund_cents })),
+  });
+  const recovered = ((returnedData ?? []) as Array<{ refund_cents: number | null }>).reduce((s, i) => s + (i.refund_cents ?? 0), 0);
+  const saved = kept.keptCents + recovered;
   const items = (itemsData ?? []) as Item[];
   const hasGmail = !!tok;
   const today = new Date().toISOString().slice(0, 10);
@@ -40,7 +50,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
           <TapeRule />
           <TapeLine label="Items" value="0" muted />
           <TapeLine label="Paid in total" value="$0.00" muted />
-          <TapeLine label="Closet coverage" value="No history yet" muted />
+          <TapeTotal label="You saved" value="$0.00" />
           <TapeRule />
           <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
         </Tape>
@@ -60,7 +70,6 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
   const returnableItems = items.filter((i) => i.status === 'owned' && i.return_by && i.return_by >= today);
   const atStake = returnableItems.reduce((s, i) => s + (i.price_cents ?? 0), 0);
   const returnsPending = items.filter((i) => i.status === 'returning').length;
-  const withImage = items.filter((i) => i.image_url).length;
 
   const href = (o: { sort?: Sort; returnable?: boolean; view?: View }) => {
     const q = new URLSearchParams();
@@ -82,9 +91,12 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         <Tape>
           <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} brand />
           <TapeRule />
+          <TapeTotal label="You saved" value={usd(saved)} valueClass={saved > 0 ? 'text-save' : ''} />
+          <TapeLine label="By not buying" value={usd(kept.keptCents)} muted sub />
+          <TapeLine label="By returning" value={usd(recovered)} muted sub />
+          <TapeRule />
           <TapeLine label="Spent, last 30 days" value={usd(spent30)} />
           <TapeLine label="Paid in total" value={usd(paid)} muted />
-          <TapeLine label="With a product photo" value={`${withImage} of ${items.length}`} muted />
           {returnableItems.length > 0 && <TapeLine label={<Link href="/returns" className="underline">Returnable</Link>} value={`${returnableItems.length} · ${usd(atStake)} at stake`} />}
           {returnsPending > 0 && <TapeLine label={<Link href="/returns" className="underline">Returns pending</Link>} value={String(returnsPending)} muted />}
           <TapeRule />
@@ -106,7 +118,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
       </div>
 
       {view === 'rack' ? (
-        <div className="rack grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {sorted.map((i) => {
             const returnableNow = i.status === 'owned' && !!i.return_by && i.return_by >= today;
             return (
@@ -121,9 +133,9 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
                       {i.status === 'returning' && <Stamp className="absolute bottom-1 right-1">Returning</Stamp>}
                       {returnableNow && !retOnly && <span className="absolute bottom-1 right-1 bg-white/90 p-1 text-ink-3" title={`Returnable until ${i.return_by}`}><Icon name="undo" size={12} /></span>}
                     </div>
-                    <div className="mt-2 truncate font-sans text-[13px] leading-tight" title={i.name}>{i.name}</div>
+                    <div className="mt-2 truncate font-sans text-[15px] leading-tight" title={i.name}>{i.name}</div>
                     <div className="leader muted mt-0.5"><span className="l">{i.brand ?? i.retailer ?? 'Unknown'}{i.size ? ` · ${i.size}` : ''}</span><span className="dots" /><span className="v text-ink">{usd(i.price_cents)}</span></div>
-                    <Barcode seed={i.id} height={12} className="mt-1.5 opacity-80" />
+                    <Barcode seed={i.id} height={16} className="mt-2 opacity-80" />
                     <div className="mt-0.5 flex justify-between text-[9px] tracking-wider text-ink-3"><span>{shortDate(i.purchase_date)}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
                   </Link>
                 </div>

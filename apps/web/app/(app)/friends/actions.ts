@@ -41,7 +41,7 @@ export async function requestLoan(i: RequestLoanInput): Promise<{ ok: boolean; l
       verdict: 'borrow', friend_item_ids: [i.itemId], status: 'held', loan_id: loan.id, note: 'borrow requested',
     });
   }
-  revalidatePath('/friends'); revalidatePath('/ghosts');
+  revalidatePath('/friends');
   return { ok: true, loanId: loan.id };
 }
 
@@ -65,6 +65,6 @@ export async function setLoanStatus(loanId: string, status: 'accepted' | 'declin
     }
   }
   if (status === 'declined') { const admin = createAdminClient(); if (admin) await admin.from('holds').update({ status: 'released', note: 'borrow declined' }).eq('loan_id', loanId).eq('status', 'held'); }
-  revalidatePath('/friends'); revalidatePath('/ghosts'); revalidatePath('/statement');
+  revalidatePath('/friends'); revalidatePath('/statement');
   return { ok: true };
 }

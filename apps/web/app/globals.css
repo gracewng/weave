@@ -230,7 +230,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 .tag::after { content: ''; position: absolute; top: 4px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--paper); box-shadow: inset 0 0 0 1px rgba(31, 42, 36, .3); }
 .hook:nth-child(odd) .tag:hover { transform: rotate(-1.5deg) translateY(1px); box-shadow: 0 16px 24px -16px rgba(31, 42, 36, .7); }
 .hook:nth-child(even) .tag:hover { transform: rotate(1.5deg) translateY(1px); box-shadow: 0 16px 24px -16px rgba(31, 42, 36, .7); }
-.tag .leader { font-size: 10.5px; line-height: 1.5; }
+.tag .leader { font-size: 12px; line-height: 1.6; }
+.tape .total.text-save, .tape .total .text-save { color: var(--save); }
 
 @media (prefers-reduced-motion: reduce) {
   .tag, .tag:hover { transition: none !important; transform: none !important; }

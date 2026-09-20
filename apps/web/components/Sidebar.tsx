@@ -8,7 +8,7 @@ import { IconHome, IconHanger, IconSearch, IconCard, IconFriends, IconCog, IconS
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 type Entry = { href: string; label: string; icon: Icon };
 
-/* Five tabs plus Home. Budget, statement, returns and stats live under Profile; the Ghost Rack under Search. */
+/* Five tabs plus Home. Budget, statement, returns and stats live under Profile. */
 const NAV: Entry[] = [
   { href: '/home', label: 'Home', icon: IconHome },
   { href: '/wardrobe', label: 'Wardrobe', icon: IconHanger },

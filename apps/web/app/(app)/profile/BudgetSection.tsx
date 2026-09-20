@@ -43,7 +43,6 @@ export async function BudgetSection({ supabase, userId }: { supabase: SupabaseCl
       <div className="mono flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase text-ink-3">
         <Link href="/statement" className="underline hover:text-ink">Monthly statement</Link>
         <Link href="/returns" className="underline hover:text-ink">Returns</Link>
-        <Link href="/ghosts" className="underline hover:text-ink">Almost bought</Link>
         <Link href="/stats" className="underline hover:text-ink">AI spend</Link>
       </div>
     </div>

@@ -351,8 +351,8 @@ maps to a known effect; every rule below closes a known failure mode.
 treat, wishlist, missing, gap, saved for later, wasted, frugal, score, streak. "Buy anyway" is the neutral label;
 "Skip" is the neutral opposite.
 
-**Notification policy.** Exactly three kinds, each at most once per event: a new clothing charge (immediate), a
-return window at 4 days (once), a hold check-in at 48h (once). Never marketing, never nudges to shop.
+**Notification policy.** Exactly two kinds, each at most once per event: a new clothing charge (immediate), a
+return window at 4 days (once). (The 48h hold check-in went with the Ghost Rack, 2026-09-20.) Never marketing, never nudges to shop.
 
 ## Design direction
 **Redesign merged 2026-09-20 (Toryn's `toryn/redesign`, reconciled with `main` on `toryn/redesign-merge`).** Aesthetic
@@ -512,6 +512,11 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
+- 2026-09-20 (lead): **Ghost Rack removed from the UI** — `/ghosts`, the search HoldsPanel, the hourly hold cron and
+  the demo "advance 48h / reset holds" triggers are gone. `holds` rows still record confirmed outcomes (Use mine,
+  borrow instead) because Money Kept on the Statement and the wardrobe's "You saved" line are computed from them.
+  Notifications are now two kinds: new clothing charge, return window at 4 days. Home shows this month's spend
+  instead of holds. Wardrobe header receipt: **You saved** (confirmed kept + refunds) as the double-ruled total.
 - 2026-09-20 redesign merge (Toryn): `main` merged into `toryn/redesign` with 36 conflicts resolved — Toryn's visual
   layer + main's features/IA. Decisions taken without the lead: keep Toryn's `/home` page as a sixth tab; keep the
   optional bank-link step at the end of the welcome flow (skippable; sets `profiles.onboarding_complete`, migration
