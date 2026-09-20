@@ -13,7 +13,7 @@ export function GhostActions({ id, priceCents }: { id: string; priceCents: numbe
     const actual = outcome === 'bought_used' && paid ? Math.round(Number(paid) * 100) : null;
     const r = await resolveHold(id, outcome, actual);
     if (!r.ok) return;
-    printReceipt({ title, lines: [{ label: 'INTENDED', value: usd(priceCents) }, ...(actual != null ? [{ label: 'PAID', value: usd(actual) }] : []), { label: 'MONEY KEPT', value: usd(r.keptCents), saved: r.keptCents > 0 }], footer: outcome === 'bought' ? 'LOG THE FIRST WEAR WHEN IT ARRIVES' : 'CONFIRMED BY YOU', ttlMs: 5000 });
+    printReceipt({ title, lines: [{ label: 'INTENDED', value: usd(priceCents) }, ...(actual != null ? [{ label: 'PAID', value: usd(actual) }] : []), { label: 'MONEY KEPT', value: usd(r.keptCents), saved: r.keptCents > 0 }], footer: 'CONFIRMED BY YOU', ttlMs: 5000 });
     router.refresh();
   });
   return (

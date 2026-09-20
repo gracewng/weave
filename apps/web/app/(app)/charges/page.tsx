@@ -6,6 +6,7 @@ import { summarizeCoverage } from '@weave/shared/coverage';
 import type { Transaction } from '@weave/shared/types';
 import { ChargeActions } from './ChargeActions';
 import { ChargesLive } from './ChargesLive';
+import { PushEnable } from '@/components/PushEnable';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,7 @@ export default async function ChargesPage() {
         <ReceiptHeader title="Charges" subtitle="THE CARD IS THE SOURCE OF TRUTH" />
         <ReceiptRule />
         <ChargesLive userId={user.id} linked={(linked ?? []).length} />
+        <div className="mt-2"><PushEnable compact /></div>
         <ReceiptRule />
         <ReceiptLine label="NEW CHARGES TO CONFIRM" value={String(fresh.length)} valueClass={fresh.length ? '' : ''} />
         <ReceiptLine label="MYSTERY PURCHASES" value={String(mystery.length)} />
