@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { printReceipt } from '@/lib/printer';
+import { Icon } from '@/components/Icon';
 
 /** New clothing charge → receipt prints (in-app banner; web push lands in Phase 10). Also hosts Link + sync buttons. */
 export function ChargesLive({ userId, linked }: { userId: string; linked: number }) {
@@ -33,9 +34,9 @@ export function ChargesLive({ userId, linked }: { userId: string; linked: number
   });
   return (
     <div className="mono flex flex-wrap items-center gap-2 text-[10px] uppercase text-ink-3">
-      <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={linkReal}>Link a card</button>
-      <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={linkSandbox} title="Skips the Link UI using Plaid's test bank">Test bank (demo)</button>
-      {linked > 0 && <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={sync}>Sync</button>}
+      <button className="btn flex items-center gap-1 !py-1 !text-[10px]" disabled={busy} onClick={linkReal}><Icon name="link" size={12} />Link a card</button>
+      <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={linkSandbox} title="Skips the Link UI using Plaid's test bank">Test bank</button>
+      {linked > 0 && <button className="btn flex items-center gap-1 !py-1 !text-[10px]" disabled={busy} onClick={sync}><Icon name="refresh" size={12} />Sync</button>}
       {msg && <span className="normal-case">{msg}</span>}
     </div>
   );

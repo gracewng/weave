@@ -15,7 +15,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   const first = !profile?.onboarded_at;
   return (
     <main className="mx-auto max-w-md px-4 py-10">
-      <Receipt print>
+      <Receipt>
         <ReceiptHeader title={first ? 'Before we start' : 'Profile basics'} subtitle="ONCE · 10 SECONDS" />
         <ReceiptRule />
         <p className="text-sm text-ink-2">Helps pick the right product photos and flag purchases that aren&apos;t yours.</p>

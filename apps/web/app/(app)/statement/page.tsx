@@ -24,7 +24,7 @@ export default async function StatementPage({ searchParams }: { searchParams: Pr
         <Link href={`/statement?m=${shiftMonth(ym, 1)}`} className="hover:text-ink">{MONTHS[Number(shiftMonth(ym, 1).slice(5)) - 1]} →</Link>
       </div>
 
-      <Receipt print>
+      <Receipt>
         <ReceiptHeader title="Statement" subtitle={`${label} · ${(user.email ?? '').toUpperCase()}`} />
         <ReceiptRule />
         {s.timeline.length === 0 ? (

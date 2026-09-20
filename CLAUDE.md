@@ -363,7 +363,8 @@ the wardrobe is a rack of cutouts, money is always ink on paper. Off-white therm
 accent: savings green (`--save`) **only for confirmed** kept/recovered money. No red anywhere; over-budget is the
 receipt running out of paper. IBM Plex Mono for numbers, IBM Plex Sans for body; tabular numerals. Carbon-copy dark
 mode with slightly blue ink. Respect `prefers-reduced-motion` (every animation degrades to an instant state
-change); receipts are real text. Primitives: `apps/web/components/Receipt.tsx`.
+change); receipts are real text. Primitives: `apps/web/components/Receipt.tsx`; icons: `components/Icon.tsx` (inline SVG, stroke currentColor —
+use an icon + one word on buttons, never a sentence). Receipt headers show the WEAVE wordmark only on the landing page.
 
 **Signature interactions (build in this order; each phase inherits the earlier ones)**
 1. **Printer slot.** A dark slit fixed at the top; every action's receipt prints from it line by line, then settles.

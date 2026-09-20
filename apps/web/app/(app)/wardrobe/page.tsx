@@ -5,7 +5,7 @@ import { IngestPanel } from '@/components/IngestPanel';
 import { CardMenu } from '@/components/CardMenu';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
 import type { Item } from '@weave/shared/types';
-import { ReturnActions } from '../returns/ReturnActions';
+import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,28 +72,23 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {sorted.map((i) => {
           const returnableNow = i.status === 'owned' && !!i.return_by && i.return_by >= today;
+          const daysLeft = returnableNow ? Math.max(0, Math.round((new Date(i.return_by! + 'T00:00:00Z').getTime() - new Date(today + 'T00:00:00Z').getTime()) / 86400000)) : null;
           return (
             <div key={i.id} className="cutout group relative p-2 hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,.4)]">
               <CardMenu itemId={i.id} name={i.name} hasImage={!!i.image_url} />
               <Link href={`/wardrobe/${i.id}`} className="block">
                 <div className="relative aspect-[3/4] w-full bg-paper-2">
-                  {i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center px-2 text-center text-[10px] text-ink-3">NO IMAGE YET</div>}
-                  {!i.shareable && <span className="mono absolute left-1 top-1 bg-paper px-1 text-[9px] text-ink-3">PRIVATE</span>}
+                  {i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-ink-3"><Icon name="image" size={22} /></div>}
+                  {!i.shareable && <span className="absolute left-1 top-1 bg-paper p-1 text-ink-3" title="Private"><Icon name="lock" size={12} /></span>}
                   {i.profile_mismatch && <span className="mono absolute bottom-1 left-1 bg-paper px-1 text-[9px] text-warn">YOURS?</span>}
-                  <span className={`stamp absolute right-1 top-1 ${i.status === 'returning' ? '' : returnableNow ? 'saved' : 'opacity-60'}`}>
-                    {i.status === 'returning' ? 'RETURN PENDING' : returnableNow ? 'RETURNABLE' : 'NOT RETURNABLE'}
-                  </span>
+                  {i.status === 'returning' && <span className="mono absolute bottom-1 right-1 bg-paper px-1 text-[9px] text-ink-3">RETURNING</span>}
                 </div>
                 <div className="mt-2 truncate text-sm" title={i.name}>{i.name}</div>
-                <div className="mono flex justify-between text-[11px] text-ink-3"><span className="truncate">{i.brand ?? i.retailer ?? ''}{i.size ? ` · ${i.size}` : ''}</span><span>{usd(i.price_cents)}</span></div>
-                <div className="mono flex justify-between text-[10px] text-ink-3">
-                  <span>{i.purchase_date ? `BOUGHT ${i.purchase_date.slice(5)}` : ''}</span>
-                  {returnableNow && <span>RETURN BY {i.return_by!.slice(5)}</span>}
+                <div className="mono flex items-center justify-between text-[11px] text-ink-3">
+                  <span className="truncate">{i.brand ?? i.retailer ?? ''}{i.size ? ` · ${i.size}` : ''}</span>
+                  <span className="flex items-center gap-1.5">{returnableNow && <span className="flex items-center gap-0.5 text-save" title={`Returnable · ${daysLeft} days left`}><Icon name="undo" size={11} />{daysLeft}d</span>}{usd(i.price_cents)}</span>
                 </div>
               </Link>
-              {returnableNow
-                ? <ReturnActions itemId={i.id} name={i.name} priceCents={i.price_cents} status="owned" />
-                : i.status === 'returning' && <ReturnActions itemId={i.id} name={i.name} priceCents={i.price_cents} status="returning" />}
             </div>
           );
         })}

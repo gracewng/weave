@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen">
       <PrinterSlot />
       <DemoPanel />
-      <Nav name={name} demo={isDemoMode()} />
+      <Nav name={name} demo={isDemoMode()} avatar={profile?.avatar_url ?? null} />
       <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
     </div>
   );

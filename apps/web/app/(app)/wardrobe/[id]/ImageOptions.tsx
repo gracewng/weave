@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { chooseImage, findCandidates, clearImage, uploadOwnPhoto } from './actions';
 import type { ShoppingResult } from '@weave/shared/contracts';
 import { printReceipt } from '@/lib/printer';
+import { Icon } from '@/components/Icon';
 
 /** One row: Clear image · Other options · My own photo. Candidates open underneath. */
 export function ImageOptions({ itemId, initial, hasImage }: { itemId: string; initial: ShoppingResult[]; hasImage: boolean }) {
@@ -16,9 +17,9 @@ export function ImageOptions({ itemId, initial, hasImage }: { itemId: string; in
   return (
     <div className="mt-2 space-y-2">
       <div className="flex flex-wrap gap-2">
-        {hasImage && <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { if (await clearImage(itemId)) { printReceipt({ title: 'Image cleared', lines: [{ label: 'LOOKUP', value: 'STOPPED', muted: true }], ttlMs: 2500 }); router.refresh(); } })}>Clear image</button>}
-        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { if (!list.length) setList(await findCandidates(itemId)); setOpen((o) => !o); })}>{pending && !open ? 'Searching…' : open ? 'Hide options' : 'Other image options'}</button>
-        <label className="btn !py-1 !text-[10px] cursor-pointer">{hasImage ? 'My own photo' : 'Add my own photo'}
+        {hasImage && <button className="btn flex items-center gap-1 !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { if (await clearImage(itemId)) { printReceipt({ title: 'Image cleared', lines: [{ label: 'LOOKUP', value: 'STOPPED', muted: true }], ttlMs: 2500 }); router.refresh(); } })}><Icon name="x" size={12} />Clear</button>}
+        <button className="btn flex items-center gap-1 !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { if (!list.length) setList(await findCandidates(itemId)); setOpen((o) => !o); })}><Icon name="image" size={12} />{pending && !open ? 'Searching…' : open ? 'Hide' : 'Options'}</button>
+        <label className="btn flex cursor-pointer items-center gap-1 !py-1 !text-[10px]"><Icon name="camera" size={12} />{hasImage ? 'My photo' : 'Add photo'}
           <input ref={fileRef} type="file" accept="image/*" className="sr-only" disabled={pending} onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.set('photo', f); start(async () => { const r = await uploadOwnPhoto(itemId, fd); if (r.ok) { setErr(''); printReceipt({ title: 'Photo replaced', lines: [{ label: 'IMAGE FROM', value: 'YOUR PHOTO' }], ttlMs: 3000 }); router.refresh(); } else setErr(r.error ?? 'failed'); if (fileRef.current) fileRef.current.value = ''; }); }} />
         </label>
         {err && <span className="mono text-[10px] text-warn">{err}</span>}
