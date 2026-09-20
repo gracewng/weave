@@ -34,8 +34,8 @@ export function ChargesLive({ userId, linked }: { userId: string; linked: number
   return (
     <div className="mono flex flex-wrap items-center gap-2 text-[10px] uppercase text-ink-3">
       <span>{linked ? `${linked} ACCOUNT${linked === 1 ? '' : 'S'} LINKED` : 'NO CARD LINKED'}</span>
-      <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={linkReal}>Link a card (Plaid sandbox)</button>
-      <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={linkSandbox} title="Skips the Link UI using Plaid's test bank">Link test bank (demo)</button>
+      <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={linkReal}>Link a card</button>
+      <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={linkSandbox} title="Skips the Link UI using Plaid's test bank">Test bank (demo)</button>
       {linked > 0 && <button className="btn !py-1 !text-[10px]" disabled={busy} onClick={sync}>Sync</button>}
       {msg && <span className="normal-case">{msg}</span>}
     </div>

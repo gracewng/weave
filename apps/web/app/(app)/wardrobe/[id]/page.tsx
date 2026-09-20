@@ -80,13 +80,13 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           {returnOpen
             ? <ReceiptLine label="RETURN WINDOW" value={`OPEN · ${daysBetween(today, it.return_by!)} DAYS LEFT`} />
             : <ReceiptLine label="RETURN WINDOW" value={it.return_by ? `CLOSED ${it.return_by}` : 'UNKNOWN'} muted />}
-          {returnOpen && n === 0 && <div className="mono mt-1 text-[11px] text-ink-3">UNWORN AND STILL RETURNABLE · {usd(it.price_cents)} AT STAKE</div>}
+          {returnOpen && n === 0 && <div className="mono mt-1 text-[11px] text-ink-3">UNWORN · {usd(it.price_cents)} AT STAKE</div>}
           <ReceiptRule />
           <ShareToggles itemId={it.id} shareable={it.shareable} lendable={it.lendable} intimates={it.category === 'intimates'} />
         </Receipt>
 
         <Receipt>
-          <ReceiptHeader title="Purchase autopsy" subtitle="WHAT THIS ITEM HAS COST YOU SO FAR" />
+          <ReceiptHeader title="Purchase autopsy" />
           <ReceiptRule />
           <ReceiptLine label="DAYS OWNED" value={owned != null ? String(owned) : '—'} />
           <ReceiptLine label="DAYS SINCE LAST WEAR" value={sinceWorn != null ? String(sinceWorn) : 'NO WEARS LOGGED'} />
@@ -97,7 +97,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
 
         {similar.length > 0 && (
           <Receipt>
-            <ReceiptHeader title="Similar in your wardrobe" subtitle="SEMANTIC NEIGHBORS · THE 'YOU ALREADY OWN THIS' SIGNAL" />
+            <ReceiptHeader title="Similar in your wardrobe" />
             <ReceiptRule />
             {similar.map((s) => <ReceiptLine key={s.id} label={<Link href={`/wardrobe/${s.id}`} className="hover:underline">{s.name.slice(0, 34)}</Link>} value={`${Math.round(s.similarity * 100)}%`} muted />)}
           </Receipt>

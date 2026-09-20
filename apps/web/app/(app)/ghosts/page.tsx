@@ -25,8 +25,8 @@ export default async function GhostsPage() {
         <ReceiptRule />
         <ReceiptLine label="PENDING (HELD)" value="0" muted /><ReceiptLine label="CONFIRMED OUTCOMES" value="0" muted /><ReceiptLine label="ESTIMATED MONEY KEPT*" value="$0.00" muted />
         <ReceiptRule />
-        <p className="text-sm text-ink-2">Every purchase you pause or skip from <Link href="/search" className="underline">search</Link> prints a stub here with the intended price, what stood in for it, and the outcome.</p>
-        <p className="mono mt-3 text-[11px] text-ink-3">*Estimated against confirmed purchase intentions. Never a bank balance.</p>
+        <p className="text-sm text-ink-2">Pause or skip a purchase in <Link href="/search" className="underline">search</Link> and its stub prints here.</p>
+        <p className="mono mt-3 text-[11px] text-ink-3">*Estimate from confirmed decisions.</p>
       </Receipt>
     );
   }
@@ -37,20 +37,20 @@ export default async function GhostsPage() {
         <ReceiptHeader title="The clothes you almost owned" subtitle={`${holds.length} INTENTIONS`} />
         <ReceiptRule />
         <ReceiptLine label="PENDING (HELD)" value={String(pending.length)} muted />
-        <ReceiptLine label="POTENTIAL, NOT YET KEPT" value={usd(kept.potentialKeptCents)} muted />
+        <ReceiptLine label="POTENTIAL" value={usd(kept.potentialKeptCents)} muted />
         <ReceiptLine label="CONFIRMED OUTCOMES" value={String(kept.actionsCount)} />
         <ReceiptLine label="  SKIPPED / WORE MINE" value={usd(kept.byOutcome.skipped)} />
         <ReceiptLine label="  BORROWED INSTEAD" value={usd(kept.byOutcome.borrowed)} />
         <ReceiptLine label="  BOUGHT USED" value={usd(kept.byOutcome.boughtUsed)} />
-        {kept.unpricedActions > 0 && <ReceiptLine label="  WITHOUT A PRICE (NOT COUNTED)" value={String(kept.unpricedActions)} muted />}
+        {kept.unpricedActions > 0 && <ReceiptLine label="  UNPRICED" value={String(kept.unpricedActions)} muted />}
         <ReceiptRule />
         <ReceiptLine label="ESTIMATED MONEY KEPT*" value={usd(kept.keptCents)} valueClass="saved" />
-        <div className="mono mt-2 text-[10px] text-ink-3">*ESTIMATED AGAINST CONFIRMED PURCHASE INTENTIONS. NEVER A BANK BALANCE.</div>
+        <div className="mono mt-2 text-[10px] text-ink-3">*ESTIMATE FROM CONFIRMED DECISIONS.</div>
       </Receipt>
 
       {pending.length > 0 && (
         <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Paused · waiting on you</div>
+          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Paused</div>
           {pending.map((h) => {
             const hrs = h.release_at ? Math.round((new Date(h.release_at).getTime() - now) / 3600000) : null;
             return (
@@ -62,7 +62,7 @@ export default async function GhostsPage() {
                     <ReceiptLine label="INTENDED" value={h.price_cents > 0 ? usd(h.price_cents) : 'NO PRICE'} />
                     <ReceiptLine label="NEXT CHECK" value={hrs == null ? '—' : hrs <= 0 ? 'NOW' : `IN ${hrs}H`} muted />
                     <ReceiptLine label="POTENTIAL KEPT" value={h.price_cents > 0 ? usd(h.price_cents) : '—'} muted />
-                    {h.loan_id ? <div className="mono mt-2 text-[10px] text-ink-3">WAITING ON THE LOAN · <Link href="/friends" className="underline">FRIENDS</Link> · CREDITED WHEN THE ITEM IS HANDED OVER</div> : <GhostActions id={h.id} priceCents={h.price_cents} />}
+                    {h.loan_id ? <div className="mono mt-2 text-[10px] text-ink-3">WAITING ON THE <Link href="/friends" className="underline">LOAN</Link></div> : <GhostActions id={h.id} priceCents={h.price_cents} />}
                   </div>
                 </div>
               </Receipt>
@@ -73,7 +73,7 @@ export default async function GhostsPage() {
 
       {done.length > 0 && (
         <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Stubs · confirmed outcomes</div>
+          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Confirmed</div>
           {done.map((h) => (
             <Receipt key={h.id} className={h.status === 'bought' ? 'opacity-70' : ''}>
               <div className="flex items-start justify-between gap-3">

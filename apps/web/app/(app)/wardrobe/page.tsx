@@ -35,7 +35,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
           <ReceiptRule />
           <ReceiptLine label="ITEMS" value="0" muted />
           <ReceiptLine label="PAID IN TOTAL" value="$0.00" muted />
-          <ReceiptLine label="CLOSET COVERAGE" value="Not enough purchase history" muted />
+          <ReceiptLine label="CLOSET COVERAGE" value="No history yet" muted />
         </Receipt>
       </div>
     );
@@ -63,10 +63,10 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         <ReceiptHeader title="Wardrobe" subtitle={`${items.length} ITEMS`} />
         <ReceiptRule />
         <ReceiptLine label="PAID IN TOTAL" value={usd(paid)} />
-        <ReceiptLine label="WORN IN THE LAST 90 DAYS" value={`${Math.round(worn * 100)}%`} />
+        <ReceiptLine label="WORN, LAST 90 DAYS" value={`${Math.round(worn * 100)}%`} />
         <ReceiptLine label="NO WEARS LOGGED" value={String(neverWorn)} muted />
         <ReceiptLine label="STILL RETURNABLE" value={String(returnable)} muted />
-        <ReceiptLine label="WITH PRODUCT IMAGE" value={`${withImages} / ${items.length}`} muted />
+        <ReceiptLine label="WITH IMAGE" value={`${withImages} / ${items.length}`} muted />
       </Receipt>
 
       <div className="mono flex flex-wrap gap-x-4 gap-y-1 text-[11px] uppercase tracking-wider text-ink-3">

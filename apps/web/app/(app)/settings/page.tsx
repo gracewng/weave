@@ -22,7 +22,7 @@ export default async function SettingsPage() {
           <input name="display_name" defaultValue={profile?.display_name ?? ''} className="mt-1 w-full border border-rule bg-paper p-2 text-sm" />
         </label>
         <fieldset>
-          <legend className="mono text-xs uppercase text-ink-3">Voice persona (spoken statement, optional)</legend>
+          <legend className="mono text-xs uppercase text-ink-3">Voice (optional)</legend>
           <div className="mt-2 space-y-2">
             {PERSONAS.map(([v, label, desc]) => (
               <label key={v} className="flex items-start gap-2 text-sm">
@@ -33,7 +33,7 @@ export default async function SettingsPage() {
           </div>
         </fieldset>
         <fieldset>
-          <legend className="mono text-xs uppercase text-ink-3">Sizes (shown to friends for borrow matching)</legend>
+          <legend className="mono text-xs uppercase text-ink-3">Sizes (for borrowing)</legend>
           <div className="mt-2 grid grid-cols-3 gap-2">
             {(['top', 'bottom', 'shoes'] as const).map((k) => (
               <label key={k} className="block">
@@ -46,15 +46,15 @@ export default async function SettingsPage() {
         <ReceiptRule />
         <div className="mono text-[11px] text-ink-3">
           <div>INVITE CODE · {profile?.invite_code ?? '—'}</div>
-          <div className="mt-1">PROFILE BASICS (AGE · GENDER · DEPARTMENT) · <a href="/welcome?edit=1&next=/settings" className="underline">EDIT</a> · USED ONLY FOR IMAGE MATCHING</div>
-          <div className="mt-1">PRIVACY · Friends see shareable items only. Prices, purchase dates, stores and return windows are never shared. Intimates are hidden by default.</div>
+          <div className="mt-1">PROFILE BASICS · <a href="/welcome?edit=1&next=/settings" className="underline">EDIT</a> · IMAGE MATCHING ONLY</div>
+          <div className="mt-1">FRIENDS NEVER SEE PRICES, DATES OR STORES.</div>
         </div>
         <button className="btn btn-primary" type="submit">Save</button>
       </form>
       <ReceiptRule />
       <div className="mono mb-1 text-xs uppercase text-ink-3">Notifications</div>
       <PushEnable />
-      <div className="mono mt-1 text-[10px] text-ink-3">EXACTLY THREE KINDS, EACH ONCE: A NEW CLOTHING CHARGE · A RETURN WINDOW AT 4 DAYS · A 48H HOLD CHECK-IN. NEVER MARKETING.</div>
+      <div className="mono mt-1 text-[10px] text-ink-3">NEW CHARGE · RETURN WINDOW · 48H CHECK-IN. EACH ONCE.</div>
     </Receipt>
   );
 }

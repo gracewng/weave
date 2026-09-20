@@ -7,7 +7,7 @@ import { recordDecision, type DecisionInput } from './actions';
 import type { LocalStage, MarketStage, Listing } from '@/lib/search/run';
 
 type Stage = 'idle' | 'local' | 'market' | 'done' | 'error';
-const VERDICT_LABEL: Record<string, string> = { skip: 'You already own this', borrow: 'Borrow it', secondhand: 'Buy it used', wait: 'Hold 48 hours', buy: 'Buying is allowed' };
+const VERDICT_LABEL: Record<string, string> = { skip: 'You already own this', borrow: 'Borrow it', secondhand: 'Buy it used', wait: 'Hold 48 hours', buy: 'Your call' };
 
 export function SearchClient({ initialQ, initialForOther }: { initialQ: string; initialForOther: boolean }) {
   const [q, setQ] = useState(initialQ);
@@ -67,11 +67,11 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
         <ReceiptHeader title="Before you buy" subtitle={forOther ? 'SHOPPING FOR SOMEONE ELSE' : 'YOUR WARDROBE · FRIENDS · SECONDHAND · NEW'} />
         <ReceiptRule />
         <div className="flex flex-col gap-2 sm:flex-row">
-          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="black slip dress for a wedding   (press / anywhere)" className="mono flex-1 border border-rule bg-paper p-2 text-sm" />
+          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="black slip dress for a wedding" className="mono flex-1 border border-rule bg-paper p-2 text-sm" />
           <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$ price (optional)" inputMode="decimal" className="mono w-full border border-rule bg-paper p-2 text-sm sm:w-36" />
           <button className="btn btn-primary" type="submit" disabled={stage === 'local' || stage === 'market'}>Check</button>
         </div>
-        <label className="mono mt-2 flex items-center gap-2 text-[11px] uppercase text-ink-3"><input type="checkbox" checked={forOther} onChange={(e) => setForOther(e.target.checked)} /> For someone else (skips your wardrobe and friends)</label>
+        <label className="mono mt-2 flex items-center gap-2 text-[11px] uppercase text-ink-3"><input type="checkbox" checked={forOther} onChange={(e) => setForOther(e.target.checked)} /> For someone else</label>
         {error && <div className="mono mt-2 text-[11px] text-warn">{error}</div>}
       </form>
 
@@ -86,25 +86,25 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
                 <div className="mono mt-1 text-center text-[11px] text-ink-3">{market.reason}</div>
                 <ReceiptRule />
                 <p className="text-center text-sm">{market.note}</p>
-                <div className="mono mt-2 text-center text-[10px] text-ink-3">{market.noteProvider === 'fixture' ? 'NOTE: FIXTURE' : `NOTE: ${market.noteProvider.toUpperCase()}`} · {priceLabel ? `PRICE ${priceLabel} (${market.priceSource === 'user' ? 'YOU ENTERED' : 'FROM RETAIL RESULT'})` : 'NO PRICE KNOWN — NO DOLLAR AMOUNT WILL BE CLAIMED'}</div>
+                <div className="mono mt-2 text-center text-[10px] text-ink-3">{market.noteProvider.toUpperCase()} · {priceLabel ? `${priceLabel} ${market.priceSource === 'user' ? 'ENTERED' : 'FROM RETAIL'}` : 'NO PRICE · NOTHING COUNTED'}</div>
               </>
             ) : (
               <>
                 <div className="mono text-center text-[10px] tracking-[.3em] text-ink-2">VERDICT</div>
                 <div className="mono text-center text-lg font-semibold uppercase">{local.provisional ? VERDICT_LABEL[local.provisional] : 'Checking secondhand and retail…'}</div>
-                <div className="mono mt-1 text-center text-[11px] text-ink-3">{local.provisional ? 'Decided from your wardrobe alone. Still checking prices.' : 'Your wardrobe and friends are in. Prices next.'}</div>
+                <div className="mono mt-1 text-center text-[11px] text-ink-3">{local.provisional ? 'From your wardrobe. Checking prices…' : 'Checking prices…'}</div>
               </>
             )}
             {local.memory && !forOther && (
-              <><ReceiptRule /><ReceiptLine label={`YOUR MEDIAN ${local.memory.scope === 'brand' ? (local.parsed.brand ?? '').toUpperCase() : (local.parsed.category ?? 'ITEM').toUpperCase()} PURCHASE`} value={`${usd(local.memory.medianCents)} · n=${local.memory.n}`} muted /></>
+              <><ReceiptRule /><ReceiptLine label={`YOU USUALLY PAY (${local.memory.scope === 'brand' ? (local.parsed.brand ?? '').toUpperCase() : (local.parsed.category ?? 'ITEM').toUpperCase()})`} value={`${usd(local.memory.medianCents)} · ${local.memory.n} BUYS`} muted /></>
             )}
-            {local.budgetRemainingCents != null && <ReceiptLine label="LEFT IN THIS MONTH'S ENVELOPE" value={usd(local.budgetRemainingCents)} muted />}
+            {local.budgetRemainingCents != null && <ReceiptLine label="ENVELOPE LEFT" value={usd(local.budgetRemainingCents)} muted />}
           </Receipt>
 
           {/* 1. You already own this */}
           {!forOther && (
             <Receipt print>
-              <ReceiptHeader title="1 · You already own this" subtitle={local.owned.length ? `${local.owned.length} SIMILAR · SORTED BY FEWEST WEARS` : undefined} />
+              <ReceiptHeader title="1 · You already own this" subtitle={local.owned.length ? `${local.owned.length} SIMILAR` : undefined} />
               <ReceiptRule />
               {local.owned.length === 0 && <ReceiptLine label="NOTHING OWNED" value="that's fine" muted />}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -114,7 +114,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
                     <div className="mt-1 truncate text-sm">{o.name}</div>
                     <div className="mono text-[10px] text-ink-3">{Math.round(o.similarity * 100)}% · {o.wears} WEAR{o.wears === 1 ? '' : 'S'}{o.cpw != null ? ` · ${usd(o.cpw)}/WEAR` : ''}{o.price_cents != null ? ` · PAID ${usd(o.price_cents)}` : ''}</div>
                     <button className="btn btn-save mt-2 w-full !py-1 !text-[10px]" disabled={busy || !!decided} onClick={() => decide({ ...base(), decision: 'wear_mine', woreItemId: o.id },
-                      { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'STOOD IN', value: o.name.toUpperCase().slice(0, 22) }, { label: 'PAID', value: '$0.00' }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'ESTIMATED AGAINST YOUR INTENDED PRICE' : 'COUNTED AS AN ACTION, NO DOLLARS CLAIMED' })}>Wear mine</button>
+                      { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'STOOD IN', value: o.name.toUpperCase().slice(0, 22) }, { label: 'PAID', value: '$0.00' }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'ESTIMATE' : 'COUNTED, NO DOLLARS' })}>Wear mine</button>
                   </div>
                 ))}
               </div>
@@ -124,9 +124,9 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
           {/* 2. Borrow */}
           {!forOther && (
             <Receipt print>
-              <ReceiptHeader title="2 · Borrow" subtitle={local.friends.length ? `${local.friends.length} FROM FRIENDS · IN YOUR SIZE` : undefined} />
+              <ReceiptHeader title="2 · Borrow" subtitle={local.friends.length ? `${local.friends.length} IN YOUR SIZE` : undefined} />
               <ReceiptRule />
-              {local.friends.length === 0 && <ReceiptLine label="NO FRIEND HAS ONE IN YOUR SIZE" value={<Link href="/friends" className="underline">invite friends</Link>} muted />}
+              {local.friends.length === 0 && <ReceiptLine label="NONE IN YOUR SIZE" value={<Link href="/friends" className="underline">invite friends</Link>} muted />}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {local.friends.slice(0, 3).map((f) => (
                   <div key={f.id} className="cutout p-2">
@@ -142,7 +142,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
 
           {/* 3. Secondhand */}
           <Receipt print>
-            <ReceiptHeader title="3 · Secondhand" subtitle={market ? (market.used.length ? `${market.used.length} USED LISTINGS · CHEAPEST FIRST` : 'NO USED LISTINGS IN THIS SEARCH') : 'SEARCHING…'} />
+            <ReceiptHeader title="3 · Secondhand" subtitle={market ? (market.used.length ? `${market.used.length} USED · CHEAPEST FIRST` : 'NONE FOUND') : 'SEARCHING…'} />
             <ReceiptRule />
             {market && (
               <>
@@ -158,7 +158,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
 
           {/* 4. New */}
           <Receipt print>
-            <ReceiptHeader title="4 · New" subtitle={market ? (market.retail.length ? 'RETAIL, LAST' : 'NO RETAIL RESULTS') : 'SEARCHING…'} />
+            <ReceiptHeader title="4 · New" subtitle={market ? (market.retail.length ? 'LAST RESORT' : 'NONE FOUND') : 'SEARCHING…'} />
             <ReceiptRule />
             {market && (
               <>
@@ -171,9 +171,9 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
                   <div className="mono text-center text-[11px] text-ink-3">RECORDED · {decided.replace('_', ' ').toUpperCase()} · <Link href="/ghosts" className="underline">GHOST RACK</Link></div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-3">
-                    <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'skip' }, { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'PAID', value: '$0.00' }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: unpriced ? 'COUNTED AS AN ACTION, NO DOLLARS CLAIMED' : 'ESTIMATED AGAINST YOUR INTENDED PRICE' })}>Skip</button>
-                    <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'hold' }, { title: 'Purchase paused', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'NEXT CHECK', value: 'IN 48 HOURS', muted: true }, { label: 'POTENTIAL KEPT', value: priceLabel ?? '—', muted: true }], footer: 'A HOLD IS NOT YET KEPT MONEY' })}>Hold 48h</button>
-                    <button className="mono text-[11px] uppercase text-ink-3 hover:text-ink" disabled={busy} onClick={() => decide({ ...base(), decision: 'buy' }, { title: 'Noted', lines: [{ label: 'PAID', value: priceLabel ?? '—' }, { label: 'COST PER WEAR', value: `${priceLabel ?? '—'} / 0 WEARS`, muted: true }], footer: 'LOG THE FIRST WEAR WHEN IT ARRIVES' })}>Buy anyway</button>
+                    <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'skip' }, { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'PAID', value: '$0.00' }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: unpriced ? 'COUNTED, NO DOLLARS' : 'ESTIMATE' })}>Skip</button>
+                    <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'hold' }, { title: 'Purchase paused', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'NEXT CHECK', value: 'IN 48 HOURS', muted: true }, { label: 'POTENTIAL KEPT', value: priceLabel ?? '—', muted: true }], footer: 'NOT KEPT YET' })}>Hold 48h</button>
+                    <button className="mono text-[11px] uppercase text-ink-3 hover:text-ink" disabled={busy} onClick={() => decide({ ...base(), decision: 'buy' }, { title: 'Noted', lines: [{ label: 'PAID', value: priceLabel ?? '—' }, { label: 'COST PER WEAR', value: `${priceLabel ?? '—'} / 0 WEARS`, muted: true }], footer: 'LOG THE FIRST WEAR' })}>Buy anyway</button>
                   </div>
                 )}
               </>

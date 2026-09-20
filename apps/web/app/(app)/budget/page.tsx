@@ -35,20 +35,20 @@ export default async function BudgetPage() {
             <ReceiptLine label="ENVELOPE" value={usd(s.envelopeCents)} />
             <ReceiptLine label="SPENT ON YOU" value={usd(onYou)} />
             {onOthers > 0 && <ReceiptLine label="SPENT ON OTHERS" value={usd(onOthers)} muted />}
-            <ReceiptLine label="REMAINING PAPER" value={s.overBy > 0 ? 'RAN OUT' : usd(s.remainingCents)} />
+            <ReceiptLine label="LEFT" value={s.overBy > 0 ? 'RAN OUT' : usd(s.remainingCents)} />
             <ReceiptLine label="PROJECTED MONTH END" value={usd(s.projectedCents)} muted />
             {/* the envelope as a strip of paper */}
             <div className="mt-3">
               <div className="relative h-6 w-full border border-rule bg-paper">
                 <div className="absolute inset-y-0 left-0 bg-paper-2" style={{ width: `${paperPct}%`, borderRight: paperPct > 0 && paperPct < 100 ? '1px dashed var(--ink-3)' : 'none' }} />
                 {projPct > 0 && <div className="absolute inset-y-0 left-0 border-r-2 border-dotted border-ink-3" style={{ width: `${Math.min(100, projPct)}%` }} title="projected" />}
-                <div className="mono absolute inset-0 flex items-center justify-center text-[10px] text-ink-3">{s.overBy > 0 ? `OVER BY ${usd(s.overBy)}` : `${paperPct}% OF THE PAPER LEFT`}</div>
+                <div className="mono absolute inset-0 flex items-center justify-center text-[10px] text-ink-3">{s.overBy > 0 ? `OVER BY ${usd(s.overBy)}` : `${paperPct}% LEFT`}</div>
               </div>
-              <div className="mono mt-1 text-[9px] text-ink-3">SOLID = LEFT · DOTTED LINE = PROJECTED · {projPct > 100 ? 'PROJECTION RUNS PAST THE END' : ''}</div>
+              <div className="mono mt-1 text-[9px] text-ink-3">SOLID = LEFT · DOTTED = PROJECTED</div>
             </div>
           </>
         ) : (
-          <p className="text-sm text-ink-2">Set your take-home pay and Weave sets a monthly clothing envelope. It fills from your receipts and card automatically.</p>
+          <p className="text-sm text-ink-2">Enter take-home pay to get a monthly clothing envelope.</p>
         )}
       </Receipt>
 
@@ -58,21 +58,20 @@ export default async function BudgetPage() {
           <ReceiptRule />
           {describe(s.overBy > 0 ? s.overBy : onYou).map((d) => <ReceiptLine key={d} label={d.toUpperCase()} value="" muted />)}
           <ReceiptLine label="INVESTED 10 YEARS AT 7%" value={usd(investedTenYears(s.overBy > 0 ? s.overBy : onYou))} muted />
-          <div className="mono mt-2 text-[10px] text-ink-3">OPPORTUNITY COST, SHOWN PLAINLY. NOT A SUGGESTION TO SPEND ELSEWHERE.</div>
         </Receipt>
       )}
 
       <Receipt>
-        <ReceiptHeader title="Set the envelope" subtitle="ZERO MODEL CALLS · ALL ARITHMETIC" />
+        <ReceiptHeader title="Set the envelope" />
         <ReceiptRule />
         <form action={saveBudget} className="space-y-3">
-          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Monthly take-home pay</div><input name="income" inputMode="decimal" defaultValue={budget?.monthly_income_cents ? (budget.monthly_income_cents / 100).toFixed(0) : ''} placeholder="4200" className="mono mt-0.5 w-full border border-rule bg-paper p-2 text-sm" /></label>
-          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Share for clothes (%)</div><input name="pct" type="number" min={1} max={50} step={0.5} defaultValue={budget ? Number(budget.clothing_pct) : 5} className="mono mt-0.5 w-32 border border-rule bg-paper p-2 text-sm" /></label>
-          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Or a flat monthly envelope (overrides the %)</div><input name="override" inputMode="decimal" defaultValue={budget?.envelope_override_cents ? (budget.envelope_override_cents / 100).toFixed(0) : ''} placeholder="optional" className="mono mt-0.5 w-40 border border-rule bg-paper p-2 text-sm" /></label>
+          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Take-home pay / month</div><input name="income" inputMode="decimal" defaultValue={budget?.monthly_income_cents ? (budget.monthly_income_cents / 100).toFixed(0) : ''} placeholder="4200" className="mono mt-0.5 w-full border border-rule bg-paper p-2 text-sm" /></label>
+          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Clothes share (%)</div><input name="pct" type="number" min={1} max={50} step={0.5} defaultValue={budget ? Number(budget.clothing_pct) : 5} className="mono mt-0.5 w-32 border border-rule bg-paper p-2 text-sm" /></label>
+          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Or a flat envelope</div><input name="override" inputMode="decimal" defaultValue={budget?.envelope_override_cents ? (budget.envelope_override_cents / 100).toFixed(0) : ''} placeholder="optional" className="mono mt-0.5 w-40 border border-rule bg-paper p-2 text-sm" /></label>
           <button className="btn btn-primary" type="submit">Save</button>
         </form>
         <ReceiptRule />
-        <div className="mono text-[10px] text-ink-3">WITH AN ENVELOPE SET, <Link href="/search" className="underline">SEARCH</Link> HOLDS ANYTHING PRICED OVER WHAT&apos;S LEFT FOR 48 HOURS. THE PAGE NEVER SAYS &quot;YOU CAN STILL SPEND $X.&quot;</div>
+        <div className="mono text-[10px] text-ink-3"><Link href="/search" className="underline">SEARCH</Link> HOLDS ANYTHING OVER WHAT&apos;S LEFT FOR 48H.</div>
       </Receipt>
     </div>
   );

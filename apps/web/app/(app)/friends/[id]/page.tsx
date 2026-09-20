@@ -34,7 +34,7 @@ export default async function FriendPage({ params, searchParams }: { params: Pro
           <Link href={`/friends/${id}${all ? '' : '?all=1'}`} className="underline hover:text-ink">{all ? 'Only my size' : 'Show all sizes'}</Link>
           <Link href="/friends" className="hover:text-ink">← Friends</Link>
         </div>
-        <div className="mono mt-2 text-[10px] text-ink-3">YOU SEE WHAT {(f.display_name ?? 'THEY').toUpperCase()} MARKED SHAREABLE. NO PRICES, DATES OR STORES — EVER.</div>
+        <div className="mono mt-2 text-[10px] text-ink-3">SHARED ITEMS ONLY. NO PRICES.</div>
       </Receipt>
 
       {selected && (
