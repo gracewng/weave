@@ -27,6 +27,8 @@ export const ExtractedItemSchema = z.object({
 });
 
 export const ExtractEmailSchema = z.object({
+  /** purchase = the user bought; sale = the user SOLD (marketplace seller email); refund = money back; other. */
+  direction: z.enum(['purchase', 'sale', 'refund', 'other']),
   is_clothing_order: z.boolean(),
   retailer: z.string(),
   order_date: z.string(), // YYYY-MM-DD
@@ -34,7 +36,7 @@ export const ExtractEmailSchema = z.object({
 });
 export type ExtractEmailResult = z.infer<typeof ExtractEmailSchema>;
 
-export const EXTRACT_EMAIL_SYSTEM = `You extract clothing purchases from order confirmation emails. Include only apparel, shoes, and wearable accessories; exclude beauty, home, electronics, gift cards, and shipping fees. If the email is a shipping or delivery update rather than an order/receipt, set is_clothing_order to false and return no items. Prices are per-unit in cents after discounts, before tax. Match each item to the most likely product image from the numbered IMAGES list, and to the most likely product page from the numbered LINKS list, or null. Copy any UPC, EAN, SKU, style or item number printed for the item into identifier, exactly as printed, or null. Never invent fields — use null when unsure. order_date must be YYYY-MM-DD.`;
+export const EXTRACT_EMAIL_SYSTEM = `You extract clothing purchases from order confirmation emails. First decide direction: 'purchase' when the user is the buyer; 'sale' when the user is the SELLER (marketplace emails like Depop/Poshmark/eBay/Mercari that say you sold, your buyer, ship to the buyer, shipping label, earnings, payout, or address the user as the shop); 'refund' for refund/return-credit notices; 'other' otherwise. For a sale, still list the items sold (name, price the buyer paid) but set is_clothing_order to false — sales are never purchases. Include only apparel, shoes, and wearable accessories; exclude beauty, home, electronics, gift cards, and shipping fees. If the email is a shipping or delivery update rather than an order/receipt, set is_clothing_order to false and return no items. Prices are per-unit in cents after discounts, before tax. Match each item to the most likely product image from the numbered IMAGES list, and to the most likely product page from the numbered LINKS list, or null. Copy any UPC, EAN, SKU, style or item number printed for the item into identifier, exactly as printed, or null. Never invent fields — use null when unsure. order_date must be YYYY-MM-DD.`;
 
 /** Variable part goes LAST so the static prefix above stays cache-identical. */
 export function extractEmailInput(args: { from: string; subject: string; date: string; text: string; imageUrls: string[]; linkUrls?: string[] }): string {

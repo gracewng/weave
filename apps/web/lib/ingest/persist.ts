@@ -139,3 +139,22 @@ export async function insertExtractedItems(
   }
   return { inserted: (data ?? []) as Item[], duplicates };
 }
+
+function nameTokens(s: string): Set<string> { return new Set(s.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 2)); }
+
+/** A sale email names what you sold. Mark the best-matching owned item as sold (≥ 60% token overlap); otherwise ignore. */
+export async function markSold(admin: SupabaseClient, userId: string, sold: Array<{ name: string; priceCents: number | null }>, soldAtISO: string): Promise<number> {
+  const { data } = await admin.from('items').select('id,name').eq('user_id', userId).eq('status', 'owned');
+  const owned = (data ?? []) as Array<{ id: string; name: string }>;
+  let n = 0;
+  for (const s of sold) {
+    const st = nameTokens(s.name); if (st.size === 0) continue;
+    let best: { id: string; score: number } | null = null;
+    for (const o of owned) { const ot = nameTokens(o.name); const hit = [...st].filter((t) => ot.has(t)).length / st.size; if (hit > (best?.score ?? 0)) best = { id: o.id, score: hit }; }
+    if (best && best.score >= 0.6) {
+      const { error } = await admin.from('items').update({ status: 'sold', sold_cents: s.priceCents, sold_at: soldAtISO }).eq('id', best.id);
+      if (!error) { n++; owned.splice(owned.findIndex((o) => o.id === best!.id), 1); }
+    }
+  }
+  return n;
+}

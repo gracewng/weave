@@ -8,7 +8,7 @@ import { refreshGoogleAccessToken } from '@/lib/google';
 import { ORDER_QUERY, retailerQuery, getMessage, listMessageIds, type GmailMessage } from '@/lib/gmail';
 import { prepareEmail } from './html';
 import { prefilter, allowlistDomains } from './prefilter';
-import { insertExtractedItems } from './persist';
+import { insertExtractedItems, markSold } from './persist';
 import { SAMPLE_EMAILS } from './sample-emails';
 import { fixtures } from '@/fixtures';
 
@@ -126,12 +126,16 @@ export async function runIngestion(opts: RunOptions): Promise<Counters> {
         task: 'extract_email', system: EXTRACT_EMAIL_SYSTEM, schema: ExtractEmailSchema, schemaName: 'extract_email',
         input: extractEmailInput({ from: email.from, subject: email.subject, date: email.date.slice(0, 10), text: prepared.text, imageUrls: prepared.imageUrls, linkUrls: prepared.linkUrls }),
         userId: opts.userId,
-        fixture: email.expected ? () => email.expected! : () => ({ is_clothing_order: false, retailer: pf.retailer?.name ?? '', order_date: email.date.slice(0, 10), items: [] }),
+        fixture: email.expected ? () => email.expected! : () => ({ direction: 'other' as const, is_clothing_order: false, retailer: pf.retailer?.name ?? '', order_date: email.date.slice(0, 10), items: [] }),
       });
       c.costUsd += r.costUsd; c.tokens += r.usage.input + r.usage.output; c.cached += r.usage.cached;
       const result = r.data;
       let inserted: Item[] = [];
-      if (result.is_clothing_order && result.items.length) {
+      if (result.direction === 'sale' && result.items.length) {
+        // You sold it: mark the matching owned item as sold (let it go). Never insert.
+        await markSold(admin, opts.userId, result.items.map((i) => ({ name: i.name, priceCents: i.price_cents })), email.date);
+      }
+      if (result.direction === 'purchase' && result.is_clothing_order && result.items.length) {
         c.clothingOrders++;
         const res = await insertExtractedItems(admin, opts.userId, result, {
           messageId: email.id, retailerName: pf.retailer?.name ?? result.retailer ?? '',
@@ -141,7 +145,7 @@ export async function runIngestion(opts: RunOptions): Promise<Counters> {
       }
       await admin.from('email_records').upsert({
         ...record, retailer: pf.retailer?.name ?? result.retailer ?? null, order_date: /^\d{4}-\d{2}-\d{2}$/.test(result.order_date) ? result.order_date : null,
-        is_clothing_order: result.is_clothing_order, items_found: inserted.length, status: 'processed', cost_usd: r.costUsd,
+        is_clothing_order: result.direction === 'purchase' && result.is_clothing_order, direction: result.direction, items_found: inserted.length, status: 'processed', cost_usd: r.costUsd,
       });
       emit({ type: 'progress', counters: { ...c }, subject: email.subject, retailer: result.retailer, provider: r.provider });
       for (const it of inserted) emit({ type: 'item', item: { id: it.id, name: it.name, brand: it.brand, price_cents: it.price_cents, image_url: it.image_url, retailer: it.retailer, purchase_date: it.purchase_date, return_by: it.return_by } });

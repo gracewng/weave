@@ -45,6 +45,8 @@ export interface Item {
   return_initiated_at: string | null;
   refund_cents: number | null;
   refunded_at: string | null;
+  sold_cents: number | null;
+  sold_at: string | null;
   shareable: boolean;
   lendable: boolean;
   est_resale_cents: number | null;

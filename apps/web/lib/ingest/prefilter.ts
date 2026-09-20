@@ -35,6 +35,11 @@ const ORDER_BODY_RE = /(order\s*(number|no\.?|#|id)|order\s*confirmation|order\s
 /** Marketing subdomains: not a rejection on their own, but they must show order signals in the body. */
 const MARKETING_SUB_RE = /^(mkt|em|e|news|promo|marketing|info|hello|s|t|go|mail|email|newsletter|offers?|deals?)\d*\./i;
 
+/** A completed sale: goes to the model as direction=sale so the matching owned item is marked sold. Never a purchase. */
+const SALE_PASS_RE = /\b(you.?ve made a sale|you made a sale|you sold|sale confirmation|sold!|your sale)\b/i;
+/** Marketplace offer/shipping/marketing chatter: rejected before any model call. */
+const OFFER_RE = /(\b(your buyer is waiting|ship (today|now|it|by)|time to ship|shipping label|made you an offer|sent you (a |an )?(special )?offer|counter ?offer|accepted your offer|didn.t accept your offer|declined your offer|payout|your earnings|your listing|new like|liked your|wants what you|what to list|buyers want|meet @)\b|^@)/i;
+
 const CLOTHING_RE = /\b(shirt|t-?shirt|tee|top|blouse|sweater|hoodie|sweatshirt|cardigan|jacket|coat|blazer|dress|skirt|pants|trousers|jeans|denim|shorts|leggings|joggers|sneakers?|shoes?|boots?|sandals?|heels|loafers|bra|underwear|socks|scarf|hat|cap|beanie|bag|tote|belt|size\s*[:\-]?\s*(xs|s|m|l|xl|xxl|\d{1,2}))\b/i;
 
 export interface PrefilterInput { from: string; subject: string; text: string }
@@ -49,6 +54,8 @@ export function prefilter(input: PrefilterInput): PrefilterResult {
   const domain = senderDomain(input.from);
   const retailer = resolveRetailer(domain);
   if (NOT_ORDER_RE.test(input.subject)) return { pass: false, reason: 'subject:not-order', retailer, domain };
+  if (SALE_PASS_RE.test(input.subject) || /^sold@/i.test((/<([^>]+)>/.exec(input.from)?.[1] ?? input.from).trim())) return { pass: true, reason: 'sale', retailer, domain };
+  if (OFFER_RE.test(input.subject)) return { pass: false, reason: 'subject:offer-or-shipping', retailer, domain };
   if (retailer) {
     // Allowlisted sender: still needs to look transactional. Retailers send far more marketing than receipts.
     const subjectOrder = ORDER_RE.test(input.subject);
