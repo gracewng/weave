@@ -63,12 +63,19 @@ export async function runLocalStage(userId: string, q: string, forOther: boolean
     admin.from('budgets').select('*').eq('user_id', userId).maybeSingle(),
     admin.from('items').select('price_cents').eq('user_id', userId).gte('purchase_date', new Date().toISOString().slice(0, 8) + '01'),
   ]);
-  const ownedRaw = (ownedRes.data ?? []) as Array<{ id: string; name: string; brand: string | null; image_url: string | null; price_cents: number | null; size: string | null; similarity: number }>;
-  const owned: OwnedHit[] = ownedRaw
-    .sort((a, b) => b.similarity - a.similarity);
-  // Friends' items are shown only when plausibly the same kind of garment; the borrow *rule* needs ≥ 0.55.
+  // Embeddings alone let shoes score 0.6 against a halter top. When the query names a category, only that
+  // category (or untagged items) can count as "you already own this"; a floor keeps weak matches off the page.
+  const sameKind = (c: string | null) => !parsed.category || !c || c === parsed.category;
+  const OWNED_DISPLAY_FLOOR = 0.5;
   const FRIEND_DISPLAY_FLOOR = 0.45;
-  const friends = ((friendRes.data ?? []) as Array<{ id: string; owner_id: string; owner_name: string | null; name: string; image_url: string | null; size: string | null; similarity: number }>).filter((f) => f.similarity >= FRIEND_DISPLAY_FLOOR);
+  const ownedRaw = (ownedRes.data ?? []) as Array<{ id: string; name: string; brand: string | null; category: string | null; image_url: string | null; price_cents: number | null; size: string | null; similarity: number }>;
+  const owned: OwnedHit[] = ownedRaw
+    .filter((o) => sameKind(o.category) && o.similarity >= OWNED_DISPLAY_FLOOR)
+    .map(({ category: _c, ...o }) => o)
+    .sort((a, b) => b.similarity - a.similarity);
+  const friends = ((friendRes.data ?? []) as Array<{ id: string; owner_id: string; owner_name: string | null; name: string; category: string | null; image_url: string | null; size: string | null; similarity: number }>)
+    .filter((f) => sameKind(f.category) && f.similarity >= FRIEND_DISPLAY_FLOOR)
+    .map(({ category: _c, ...f }) => f);
 
   const memory = priceMemory((itemsRes.data ?? []) as Array<{ category: string | null; brand: string | null; price_cents: number | null }>, parsed.category, parsed.brand);
   const b = budgetRes.data as { monthly_income_cents: number | null; clothing_pct: number; envelope_override_cents: number | null } | null;
