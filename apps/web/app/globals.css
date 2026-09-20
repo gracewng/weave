@@ -156,8 +156,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 /* ─── Canopy background + floating panel ────────────────────────────────── */
 .canopy {
   position: fixed; inset: 0; z-index: -1; overflow: hidden;
-  /* Sun-printed leaf shadows on green cloth (public/canopy.jpg); the gradient shows until the image loads. */
-  background: url('/canopy.jpg') center / cover no-repeat, radial-gradient(120% 80% at 50% 0%, #f2f7ea 0%, #e3edd8 55%, #d3e2c5 100%);
+  background-color: #e3edd8; background-size: cover; background-position: center; background-repeat: no-repeat;
 }
 .canopy::after { content: ''; position: absolute; inset: 0; background: rgba(238, 243, 230, .12); }
 

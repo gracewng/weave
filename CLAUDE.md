@@ -516,7 +516,8 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   the demo "advance 48h / reset holds" triggers are gone. `holds` rows still record confirmed outcomes (Use mine,
   borrow instead) because Money Kept on the Statement and the wardrobe's "You saved" line are computed from them.
   Notifications are now two kinds: new clothing charge, return window at 4 days. Home shows this month's spend
-  instead of holds. Wardrobe header receipt: **You saved** (confirmed kept + refunds) as the double-ruled total.
+  instead of holds. Wardrobe header receipt is deliberately simple (spent last 30 days, paid in total, closet barcode); a "You saved"
+  total was tried and removed the same day because it read $0 for everyone. Profile uses a person icon.
 - 2026-09-20 redesign merge (Toryn): `main` merged into `toryn/redesign` with 36 conflicts resolved — Toryn's visual
   layer + main's features/IA. Decisions taken without the lead: keep Toryn's `/home` page as a sixth tab; keep the
   optional bank-link step at the end of the welcome flow (skippable; sets `profiles.onboarding_complete`, migration

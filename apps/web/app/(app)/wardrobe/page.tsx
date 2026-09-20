@@ -4,8 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { IngestPanel } from '@/components/IngestPanel';
 import { CardMenu } from '@/components/CardMenu';
 import { Tape, TapeHeader, TapeLine, TapeRule, TapeTotal, Barcode, Stamp, usd } from '@/components/Tape';
-import type { Item, Hold } from '@weave/shared/types';
-import { summarizeKept } from '@weave/shared/kept';
+import type { Item } from '@weave/shared/types';
 import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
@@ -23,19 +22,10 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
   const view: View = viewParam === 'tape' ? 'tape' : 'rack';
   const { supabase, user } = await requireUser();
   const admin = createAdminClient();
-  const [{ data: itemsData }, { data: tok }, { data: holdsData }, { data: returnedData }] = await Promise.all([
+  const [{ data: itemsData }, { data: tok }] = await Promise.all([
     supabase.from('items').select('id,user_id,name,brand,category,slot,color,formality,size,price_cents,purchase_date,retailer,image_url,image_source,receipt_url,source,return_by,status,shareable,lendable,description,profile_mismatch,created_at').eq('user_id', user.id).in('status', ['owned', 'returning']),
     admin ? admin.from('gmail_tokens').select('user_id').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
-    supabase.from('holds').select('id,status,price_cents,actual_paid_cents,outcome_confirmed_at').eq('user_id', user.id),
-    supabase.from('items').select('id,status,refund_cents').eq('user_id', user.id).eq('status', 'returned'),
   ]);
-  // "You saved": confirmed Money Kept (used mine / borrowed / bought used) + confirmed refunds. Never a bank balance.
-  const kept = summarizeKept({
-    holds: ((holdsData ?? []) as Pick<Hold, 'id' | 'status' | 'price_cents' | 'actual_paid_cents' | 'outcome_confirmed_at'>[]).map((h) => ({ id: h.id, status: h.status, priceCents: h.price_cents > 0 ? h.price_cents : null, actualPaidCents: h.actual_paid_cents, outcomeConfirmedAt: h.outcome_confirmed_at })),
-    returns: ((returnedData ?? []) as Array<{ id: string; status: string; refund_cents: number | null }>).map((i) => ({ itemId: i.id, status: 'returned' as const, refundCents: i.refund_cents })),
-  });
-  const recovered = ((returnedData ?? []) as Array<{ refund_cents: number | null }>).reduce((s, i) => s + (i.refund_cents ?? 0), 0);
-  const saved = kept.keptCents + recovered;
   const items = (itemsData ?? []) as Item[];
   const hasGmail = !!tok;
   const today = new Date().toISOString().slice(0, 10);
@@ -48,9 +38,8 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         <Tape>
           <TapeHeader title="Wardrobe" subtitle={`Nothing printed yet · ${printed}`} brand />
           <TapeRule />
-          <TapeLine label="Items" value="0" muted />
+          <TapeLine label="Spent, last 30 days" value="$0.00" muted />
           <TapeLine label="Paid in total" value="$0.00" muted />
-          <TapeTotal label="You saved" value="$0.00" />
           <TapeRule />
           <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
         </Tape>
@@ -67,9 +56,6 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
   const paid = items.reduce((s, i) => s + (i.price_cents ?? 0), 0);
   const since = new Date(); since.setUTCDate(since.getUTCDate() - 30); const sinceISO = since.toISOString().slice(0, 10);
   const spent30 = items.filter((i) => i.purchase_date && i.purchase_date >= sinceISO).reduce((s, i) => s + (i.price_cents ?? 0), 0);
-  const returnableItems = items.filter((i) => i.status === 'owned' && i.return_by && i.return_by >= today);
-  const atStake = returnableItems.reduce((s, i) => s + (i.price_cents ?? 0), 0);
-  const returnsPending = items.filter((i) => i.status === 'returning').length;
 
   const href = (o: { sort?: Sort; returnable?: boolean; view?: View }) => {
     const q = new URLSearchParams();
@@ -87,34 +73,26 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
     <div className="space-y-6">
       <IngestPanel hasGmail={hasGmail} itemCount={items.length} compact />
 
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start">
-        <Tape>
-          <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} brand />
-          <TapeRule />
-          <TapeTotal label="You saved" value={usd(saved)} valueClass={saved > 0 ? 'text-save' : ''} />
-          <TapeLine label="By not buying" value={usd(kept.keptCents)} muted sub />
-          <TapeLine label="By returning" value={usd(recovered)} muted sub />
-          <TapeRule />
-          <TapeLine label="Spent, last 30 days" value={usd(spent30)} />
-          <TapeLine label="Paid in total" value={usd(paid)} muted />
-          {returnableItems.length > 0 && <TapeLine label={<Link href="/returns" className="underline">Returnable</Link>} value={`${returnableItems.length} · ${usd(atStake)} at stake`} />}
-          {returnsPending > 0 && <TapeLine label={<Link href="/returns" className="underline">Returns pending</Link>} value={String(returnsPending)} muted />}
-          <TapeRule />
-          <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
-        </Tape>
+      <Tape className="mx-auto max-w-md">
+        <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} brand />
+        <TapeRule />
+        <TapeLine label="Spent, last 30 days" value={usd(spent30)} />
+        <TapeLine label="Paid in total" value={usd(paid)} muted />
+        <TapeRule />
+        <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
+      </Tape>
 
-        <div className="mono flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] uppercase tracking-wider text-ink-3 md:pt-3">
-          <span className="flex items-center gap-2">
-            <span>View</span>
-            <Link href={href({ view: 'rack' })} className={`flex items-center gap-1 ${view === 'rack' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="Hang tags on a rail"><Icon name="wardrobe" size={12} />Rack</Link>
-            <Link href={href({ view: 'tape' })} className={`flex items-center gap-1 ${view === 'tape' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="One long receipt, month by month"><Icon name="receipt" size={12} />Tape</Link>
-          </span>
-          <span className="flex items-center gap-2">
-            <span>Sort</span>
-            {SORTS.map(([k, label]) => <Link key={k} href={href({ sort: k })} className={k === sort ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}>{label}</Link>)}
-          </span>
-          <Link href={href({ returnable: !retOnly })} className={`flex items-center gap-1 ${retOnly ? 'text-save' : 'hover:text-ink'}`} title="Only items still inside their return window"><Icon name="undo" size={12} />Returnable{retOnly ? ' · on' : ''}</Link>
-        </div>
+      <div className="mono flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-wider text-ink-3">
+        <span className="flex items-center gap-2">
+          <span>View</span>
+          <Link href={href({ view: 'rack' })} className={`flex items-center gap-1 ${view === 'rack' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="Hang tags on a rail"><Icon name="wardrobe" size={12} />Rack</Link>
+          <Link href={href({ view: 'tape' })} className={`flex items-center gap-1 ${view === 'tape' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="One long receipt, month by month"><Icon name="receipt" size={12} />Tape</Link>
+        </span>
+        <span className="flex items-center gap-2">
+          <span>Sort</span>
+          {SORTS.map(([k, label]) => <Link key={k} href={href({ sort: k })} className={k === sort ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}>{label}</Link>)}
+        </span>
+        <Link href={href({ returnable: !retOnly })} className={`flex items-center gap-1 ${retOnly ? 'text-save' : 'hover:text-ink'}`} title="Only items still inside their return window"><Icon name="undo" size={12} />Returnable{retOnly ? ' · on' : ''}</Link>
       </div>
 
       {view === 'rack' ? (

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ComponentType, SVGProps } from 'react';
 import { Logo } from '@/components/Logo';
-import { IconHome, IconHanger, IconSearch, IconCard, IconFriends, IconCog, IconSignOut } from '@/components/icons';
+import { IconHome, IconHanger, IconSearch, IconCard, IconFriends, IconUser, IconSignOut } from '@/components/icons';
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 type Entry = { href: string; label: string; icon: Icon };
@@ -15,7 +15,7 @@ const NAV: Entry[] = [
   { href: '/search', label: 'Search', icon: IconSearch },
   { href: '/charges', label: 'Charges', icon: IconCard },
   { href: '/friends', label: 'Friends', icon: IconFriends },
-  { href: '/profile', label: 'Profile', icon: IconCog },
+  { href: '/profile', label: 'Profile', icon: IconUser },
 ];
 
 export function Sidebar({ name, demo, avatar }: { name: string; demo: boolean; avatar?: string | null }) {
