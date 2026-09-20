@@ -9,8 +9,8 @@ import { ReturnActions } from '../returns/ReturnActions';
 
 export const dynamic = 'force-dynamic';
 
-type Sort = 'newest' | 'price';
-const SORTS: Array<[Sort, string]> = [['newest', 'Newest'], ['price', 'Paid']];
+type Sort = 'newest' | 'price' | 'returnable';
+const SORTS: Array<[Sort, string]> = [['newest', 'Newest'], ['price', 'Paid'], ['returnable', 'Returnable']];
 
 export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
   const { sort = 'newest' } = await searchParams;
@@ -41,6 +41,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
 
   const sorted = [...items].sort((a, b) => {
     if (sort === 'price') return (b.price_cents ?? 0) - (a.price_cents ?? 0);
+    if (sort === 'returnable') { const ra = a.return_by && a.return_by >= today ? a.return_by : '9999'; const rb = b.return_by && b.return_by >= today ? b.return_by : '9999'; return ra.localeCompare(rb); }
     return (b.purchase_date ?? b.created_at).localeCompare(a.purchase_date ?? a.created_at);
   });
 

@@ -499,6 +499,9 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
+- 2026-09-20 profile: `profiles.bio` (free text, replaces the voice-persona picker in the UI; `voice_persona`
+  column stays), `profiles.area` (self-typed, never device location; friends in the same area show NEAR YOU), profile
+  basics editable inline on `/profile`; wardrobe sorts: Newest · Paid · Returnable.
 - 2026-09-20 search/charges revision (lead): search shows one tagged grid (MINE · BORROW FROM <friend> · SECOND
   HAND · NEW) with Use mine / Ask to borrow / Buy used / Buy (direct links; clicks are not recorded as purchases);
   no "for someone else" toggle, no Hold/Skip buttons (holds still come from Use mine and loans). Charges = linked
