@@ -9,11 +9,11 @@ import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
 
-type Sort = 'newest' | 'price' | 'returnable';
-const SORTS: Array<[Sort, string]> = [['newest', 'Newest'], ['price', 'Paid'], ['returnable', 'Returnable']];
+type Sort = 'newest' | 'price';
+const SORTS: Array<[Sort, string]> = [['newest', 'Newest'], ['price', 'Paid']];
 
-export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string }> }) {
-  const { sort = 'newest' } = await searchParams;
+export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string; returnable?: string }> }) {
+  const { sort = 'newest', returnable: retOnly } = await searchParams;
   const { supabase, user } = await requireUser();
   const admin = createAdminClient();
   const [{ data: itemsData }, { data: tok }] = await Promise.all([
@@ -39,9 +39,9 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
     );
   }
 
-  const sorted = [...items].sort((a, b) => {
+  const visible = retOnly ? items.filter((i) => i.status === 'owned' && i.return_by && i.return_by >= today) : items;
+  const sorted = [...visible].sort((a, b) => {
     if (sort === 'price') return (b.price_cents ?? 0) - (a.price_cents ?? 0);
-    if (sort === 'returnable') { const ra = a.return_by && a.return_by >= today ? a.return_by : '9999'; const rb = b.return_by && b.return_by >= today ? b.return_by : '9999'; return ra.localeCompare(rb); }
     return (b.purchase_date ?? b.created_at).localeCompare(a.purchase_date ?? a.created_at);
   });
 
@@ -66,13 +66,12 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
 
       <div className="mono flex flex-wrap gap-x-4 gap-y-1 text-[11px] uppercase tracking-wider text-ink-3">
         <span>Sort</span>
-        {SORTS.map(([k, label]) => <Link key={k} href={`/wardrobe?sort=${k}`} className={k === sort ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}>{label}</Link>)}
+        {SORTS.map(([k, label]) => <Link key={k} href={`/wardrobe?sort=${k}${retOnly ? '&returnable=1' : ''}`} className={k === sort ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}>{label}</Link>)}
+        <Link href={`/wardrobe?sort=${sort}${retOnly ? '' : '&returnable=1'}`} className={`ml-auto flex items-center gap-1 ${retOnly ? 'text-save' : 'hover:text-ink'}`} title="Show only items still inside their return window"><Icon name="undo" size={12} />Returnable{retOnly ? ' · on' : ''}</Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {sorted.map((i) => {
-          const returnableNow = i.status === 'owned' && !!i.return_by && i.return_by >= today;
-          const daysLeft = returnableNow ? Math.max(0, Math.round((new Date(i.return_by! + 'T00:00:00Z').getTime() - new Date(today + 'T00:00:00Z').getTime()) / 86400000)) : null;
           return (
             <div key={i.id} className="cutout group relative p-2 hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,.4)]">
               <CardMenu itemId={i.id} name={i.name} hasImage={!!i.image_url} />
@@ -86,7 +85,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
                 <div className="mt-2 truncate text-sm" title={i.name}>{i.name}</div>
                 <div className="mono flex items-center justify-between text-[11px] text-ink-3">
                   <span className="truncate">{i.brand ?? i.retailer ?? ''}{i.size ? ` · ${i.size}` : ''}</span>
-                  <span className="flex items-center gap-1.5">{returnableNow && <span className="flex items-center gap-0.5 text-save" title={`Returnable · ${daysLeft} days left`}><Icon name="undo" size={11} />{daysLeft}d</span>}{usd(i.price_cents)}</span>
+                  <span>{usd(i.price_cents)}</span>
                 </div>
               </Link>
             </div>

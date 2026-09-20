@@ -5,6 +5,8 @@ import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/compone
 import { printReceipt } from '@/lib/printer';
 import { recordDecision, type DecisionInput } from './actions';
 import type { LocalStage, MarketStage, Listing } from '@/lib/search/run';
+import { BuyModal } from './BuyModal';
+import { Icon } from '@/components/Icon';
 
 type Stage = 'idle' | 'local' | 'market' | 'done' | 'error';
 const VERDICT_LABEL: Record<string, string> = { skip: 'You already own this', borrow: 'Borrow it', secondhand: 'Buy it used', wait: 'Hold 48 hours', buy: 'Your call' };
@@ -19,6 +21,7 @@ export function SearchClient({ initialQ }: { initialQ: string }) {
   const [decided, setDecided] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [buying, setBuying] = useState<Listing | null>(null);
 
   useEffect(() => { if (initialQ) void run(initialQ, false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -61,20 +64,18 @@ export function SearchClient({ initialQ }: { initialQ: string }) {
   type Card = { key: string; kind: 'mine' | 'friend' | 'used' | 'new'; tag: string; title: string; image: string | null; sub: string; price: number | null; href?: string; action?: () => void; actionLabel?: string };
   const cards: Card[] = [];
   if (local) {
-    for (const o of local.owned.slice(0, 4)) cards.push({ key: `m-${o.id}`, kind: 'mine', tag: 'MINE', title: o.name, image: o.image_url, sub: `${Math.round(o.similarity * 100)}% MATCH${o.price_cents != null ? ` · PAID ${usd(o.price_cents)}` : ''}`, price: null, href: `/wardrobe/${o.id}`, actionLabel: decided ? undefined : 'Use mine',
-      action: () => decide({ ...base(), decision: 'use_mine', ownedItemId: o.id }, { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'USED', value: o.name.toUpperCase().slice(0, 22) }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'ESTIMATE' : 'COUNTED, NO DOLLARS' }) });
     for (const f of local.friends.slice(0, 4)) cards.push({ key: `f-${f.id}`, kind: 'friend', tag: `BORROW FROM ${(f.owner_name ?? 'A FRIEND').toUpperCase()}`, title: f.name, image: f.image_url, sub: `${f.size ?? '?'} · ${Math.round(f.similarity * 100)}% MATCH`, price: null, href: `/friends/${f.owner_id}?item=${f.id}${market?.priceCents != null ? `&price=${market.priceCents}` : ''}&q=${encodeURIComponent(q)}`, actionLabel: 'Ask to borrow' });
   }
   if (market) {
     for (const [i, u] of market.used.entries()) cards.push({ key: `u-${i}`, kind: 'used', tag: 'SECOND HAND', title: u.title, image: u.imageUrl, sub: u.merchant ?? '', price: u.priceCents, href: u.url ?? undefined, actionLabel: 'Buy used' });
-    for (const [i, r] of market.retail.entries()) cards.push({ key: `n-${i}`, kind: 'new', tag: 'NEW', title: r.title, image: r.imageUrl, sub: r.merchant ?? '', price: r.priceCents, href: r.url ?? undefined, actionLabel: 'Buy' });
+    for (const [i, r] of market.retail.entries()) cards.push({ key: `n-${i}`, kind: 'new', tag: 'NEW', title: r.title, image: r.imageUrl, sub: r.merchant ?? '', price: r.priceCents, href: r.url ?? undefined, actionLabel: 'Buy', action: () => setBuying(r) });
   }
   const TAG: Record<Card['kind'], string> = { mine: 'bg-ink text-paper', friend: 'bg-save text-white', used: 'border border-ink text-ink', new: 'border border-rule text-ink-3' };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <form className="receipt" onSubmit={(e) => { e.preventDefault(); void run(q, false); }}>
-        <ReceiptHeader title="Before you buy" subtitle="MINE · BORROW · SECOND HAND · NEW" />
+        <ReceiptHeader title="Before you buy" subtitle="BORROW · SECOND HAND · NEW" />
         <ReceiptRule />
         <div className="flex flex-col gap-2 sm:flex-row">
           <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="black slip dress for a wedding" className="mono flex-1 border border-rule bg-paper p-2 text-sm" />
@@ -84,6 +85,7 @@ export function SearchClient({ initialQ }: { initialQ: string }) {
         {error && <div className="mono mt-2 text-[11px] text-warn">{error}</div>}
       </form>
 
+      {buying && market && <BuyModal item={buying} used={market.used} onClose={() => setBuying(null)} />}
       {stage !== 'idle' && local && (
         <>
           <Receipt>
@@ -107,6 +109,19 @@ export function SearchClient({ initialQ }: { initialQ: string }) {
             {local.budgetRemainingCents != null && <ReceiptLine label="ENVELOPE LEFT" value={usd(local.budgetRemainingCents)} muted />}
           </Receipt>
 
+          {local.owned.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto py-1">
+              <span className="mono shrink-0 text-[10px] uppercase text-ink-3">You own</span>
+              {local.owned.slice(0, 6).map((o) => (
+                <div key={o.id} className="flex shrink-0 items-center gap-1.5 border border-dashed border-rule p-1 opacity-80">
+                  <Link href={`/wardrobe/${o.id}`} className="block h-12 w-9 bg-paper-2">{o.image_url ? <img src={o.image_url} alt={o.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-ink-3"><Icon name="image" size={12} /></div>}</Link>
+                  <div className="w-24"><div className="truncate text-[11px]" title={o.name}>{o.name}</div><div className="mono text-[9px] text-ink-3">{Math.round(o.similarity * 100)}%</div>
+                    {!decided && <button className="mono text-[9px] uppercase text-save hover:underline" disabled={busy} onClick={() => decide({ ...base(), decision: 'use_mine', ownedItemId: o.id }, { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'USED', value: o.name.toUpperCase().slice(0, 22) }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'ESTIMATE' : 'COUNTED, NO DOLLARS' })}>Use mine</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {cards.map((c) => (
               <div key={c.key} className="cutout print flex flex-col p-2">
@@ -119,7 +134,7 @@ export function SearchClient({ initialQ }: { initialQ: string }) {
                 <div className="mt-1 truncate text-xs" title={c.title}>{c.title}</div>
                 <div className="mono flex justify-between text-[10px] text-ink-3"><span className="truncate">{c.sub}</span>{c.price != null && <span>{usd(c.price)}</span>}</div>
                 {c.actionLabel && (c.action
-                  ? <button className="btn btn-save mt-2 w-full !py-1 !text-[10px]" disabled={busy} onClick={c.action}>{c.actionLabel}</button>
+                  ? <button className={`btn mt-2 w-full !py-1 !text-[10px] ${c.kind === 'new' ? 'btn-primary' : 'btn-save'}`} disabled={busy} onClick={c.action}>{c.actionLabel}</button>
                   : c.kind === 'friend'
                     ? <Link href={c.href!} className="btn btn-save mt-2 block w-full !py-1 text-center !text-[10px]">{c.actionLabel}</Link>
                     : <a href={c.href ?? '#'} target="_blank" rel="noreferrer" className={`btn mt-2 block w-full !py-1 text-center !text-[10px] ${c.kind === 'new' ? '' : ''}`}>{c.actionLabel}</a>)}

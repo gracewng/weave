@@ -75,7 +75,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           <ReceiptRule />
           <ReceiptLine label="DAYS OWNED" value={owned != null ? String(owned) : '—'} />
           {it.identifier && <ReceiptLine label="ITEM NO." value={it.identifier} muted />}
-          {it.description && <ReceiptLine label="TAGGED" value={it.description.replace(/^unknown\s+/i, '').slice(0, 40)} muted />}
+          {it.description && <ReceiptLine label="TAGGED" value={it.description.replace(/^unknown\s+/i, '').slice(0, 64)} muted />}
         </Receipt>
 
         {similar.length > 0 && (
