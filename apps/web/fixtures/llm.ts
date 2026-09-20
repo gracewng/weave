@@ -112,7 +112,7 @@ export const fixtureSpokenLine: Record<string, string> = {
   borrow: 'Maya has the slip dress in your size. One message and the hundred and forty-eight dollars stays put.',
   secondhand: 'The same dress is twenty-two dollars used. That is a hundred and twenty-six dollars kept.',
   wait: 'You have sixty-two dollars left this month and this is a hundred and forty-eight. Give it two days.',
-  buy: 'Nothing in your closet covers this, and it fits the budget. Go ahead — just log the wears.',
+  buy: 'Nothing in your closet covers this, and it fits the budget. Your call.',
 };
 
 export const fixtureBorrowMessage =

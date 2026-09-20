@@ -5,7 +5,7 @@
 Creates everything the 90-second demo needs in a Supabase project: a demo user with a 45-item closet, three
 friends with their own closets, 18 months of transactions, a budget, the Ghost Rack lifecycle, a past loan, one
 pending return and one confirmed refund. Wear tracking was dropped from the schema in migration 0012, so nothing
-is seeded into `wears`.
+is not seeded (wear tracking was removed).
 
 ```bash
 export NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
