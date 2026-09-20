@@ -70,7 +70,9 @@ export async function runLocalStage(userId: string, q: string, forOther: boolean
   const owned: OwnedHit[] = ownedRaw
     .map((o) => { const n = wears.get(o.id) ?? 0; return { ...o, wears: n, cpw: o.price_cents != null && n > 0 ? Math.round(o.price_cents / n) : null }; })
     .sort((a, b) => b.similarity - a.similarity || a.wears - b.wears);   // most similar, then fewest wears (rediscovery)
-  const friends = ((friendRes.data ?? []) as Array<{ id: string; owner_id: string; owner_name: string | null; name: string; image_url: string | null; size: string | null; similarity: number }>);
+  // Friends' items are shown only when plausibly the same kind of garment; the borrow *rule* needs ≥ 0.55.
+  const FRIEND_DISPLAY_FLOOR = 0.45;
+  const friends = ((friendRes.data ?? []) as Array<{ id: string; owner_id: string; owner_name: string | null; name: string; image_url: string | null; size: string | null; similarity: number }>).filter((f) => f.similarity >= FRIEND_DISPLAY_FLOOR);
 
   const memory = priceMemory((itemsRes.data ?? []) as Array<{ category: string | null; brand: string | null; price_cents: number | null }>, parsed.category, parsed.brand);
   const b = budgetRes.data as { monthly_income_cents: number | null; clothing_pct: number; envelope_override_cents: number | null } | null;

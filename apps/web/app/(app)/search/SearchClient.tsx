@@ -133,7 +133,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
                     <div className="aspect-[3/4] w-full bg-paper-2">{f.image_url && <img src={f.image_url} alt={f.name} className="h-full w-full object-contain" />}</div>
                     <div className="mt-1 truncate text-sm">{f.name}</div>
                     <div className="mono text-[10px] text-ink-3">{(f.owner_name ?? 'FRIEND').toUpperCase()} · {f.size ?? '?'} · {Math.round(f.similarity * 100)}%</div>
-                    <Link href={`/friends?borrow=${f.id}`} className="btn mt-2 block w-full !py-1 text-center !text-[10px]">Ask to borrow</Link>
+                    <Link href={`/friends/${f.owner_id}?item=${f.id}${market?.priceCents != null ? `&price=${market.priceCents}` : ''}&q=${encodeURIComponent(q)}`} className="btn btn-save mt-2 block w-full !py-1 text-center !text-[10px]">Ask to borrow</Link>
                   </div>
                 ))}
               </div>

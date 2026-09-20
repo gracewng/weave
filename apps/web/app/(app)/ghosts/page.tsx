@@ -62,7 +62,7 @@ export default async function GhostsPage() {
                     <ReceiptLine label="INTENDED" value={h.price_cents > 0 ? usd(h.price_cents) : 'NO PRICE'} />
                     <ReceiptLine label="NEXT CHECK" value={hrs == null ? '—' : hrs <= 0 ? 'NOW' : `IN ${hrs}H`} muted />
                     <ReceiptLine label="POTENTIAL KEPT" value={h.price_cents > 0 ? usd(h.price_cents) : '—'} muted />
-                    <GhostActions id={h.id} priceCents={h.price_cents} />
+                    {h.loan_id ? <div className="mono mt-2 text-[10px] text-ink-3">WAITING ON THE LOAN · <Link href="/friends" className="underline">FRIENDS</Link> · CREDITED WHEN THE ITEM IS HANDED OVER</div> : <GhostActions id={h.id} priceCents={h.price_cents} />}
                   </div>
                 </div>
               </Receipt>

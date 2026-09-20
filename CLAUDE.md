@@ -438,8 +438,16 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       time-advance covers the demo).
       Accept: near-duplicate tee shows owned first "worn 2×"; formal dress shows "Borrow from Maya"; Hold prints a
       Purchase Paused stub; confirming a skip turns it green and raises Money Kept by exactly the intended price.
-- [ ] **Phase 8 — Friend wardrobes + borrowing** (3h). Invite + QR, friend grid (in my size), loan flow, Realtime,
-      push, Shared Receipt, Closet Karma. Accept: two accounts complete a borrow live (demo-panel fallback works).
+- [x] **Phase 8 — Friend wardrobes + borrowing** (3h). `lib/friends.ts` (size match, karma, loans with names),
+      `/friends` (Closet Karma, invite code + QR (`qrcode`) + paste-a-code form, open loans with Accept / Decline /
+      Handed over / Returned, friends list, past loans; **Supabase Realtime** on `loans` refreshes and prints a
+      receipt when the other party acts), `/friends/[id]` (friend wardrobe via `friend_items`, "in my size" filter
+      with show-all toggle, Ask-to-borrow form with dates + `borrow_message` draft), search "Ask to borrow" deep-links
+      with the intended price; a loan that replaces a purchase creates a linked hold that becomes **borrowed** (Money
+      Kept credited) only when the item is handed over; declined → released. Demo panel: "Friend accepts my request".
+      **Verified:** Grace ↔ Zoe friendship; Zoe's shareable items appear in the Borrow section with sizes; `friend_items`
+      exposes no money fields. **Not yet verified live:** the two-phone accept (needs both of you signed in) — the
+      demo-panel accept covers it. Push notifications deferred to Phase 10.
 - [ ] **Phase 9 — Statement + Stats** (2.5h). Timeline → Money Kept → Money Recovered → details; `/stats` kept per
       AI dollar with live/fixture label. Accept: every headline number opens the receipts that sum to it.
 - [ ] **Phase 10 — Hardening, then voice.** Fixtures complete, fallback mode visible, 90-second recording, empty and
