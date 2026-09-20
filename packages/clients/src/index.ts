@@ -5,30 +5,24 @@
  * wrapped so that a throw (bad key, rate limit, timeout, no network on the demo wifi) silently falls back to the
  * fixture for that call: the demo never dies on an external service.
  *
- * eBay and ElevenLabs are implemented here. SerpAPI and Plaid already have working real implementations in the
+ * eBay is implemented here (ElevenLabs was removed from scope 2026-09-20). SerpAPI and Plaid already have working real implementations in the
  * web app (`apps/web/lib/identify.ts`, `apps/web/lib/plaid.ts`) — per the task status note they are not
  * reimplemented; pass them into `getClients({ serp, plaid })` and they get the same fallback wrapper, or omit
  * them and get the fixtures.
  */
-import type { Clients, EbayClient, PlaidClient, SerpClient, TtsClient } from '@weave/shared/contracts';
+import type { Clients, EbayClient, PlaidClient, SerpClient } from '@weave/shared/contracts';
 import { isDemoMode } from '@weave/shared/env';
 import { createEbayClient, ebayConfigured } from './ebay';
 import { createEbayMock } from './ebay.mock';
-import { createTtsClient, ttsConfigured, type TtsStore } from './tts';
-import { createTtsMock } from './tts.mock';
 import { createSerpMock } from './serp.mock';
 import { createPlaidMock } from './plaid.mock';
 
 export * from './ebay';
 export * from './ebay.mock';
-export * from './tts';
-export * from './tts.mock';
 export * from './serp.mock';
 export * from './plaid.mock';
 
 export interface ClientOptions {
-  /** Backing store for the TTS cache (Supabase Storage + audio_cache in the web app). */
-  ttsStore?: TtsStore;
   /** Real SerpAPI client from the web app; fixture is used when omitted. */
   serp?: SerpClient;
   /** Real Plaid client from the web app; fixture is used when omitted. */
@@ -70,15 +64,11 @@ export function getClients(opts: ClientOptions = {}): Clients {
   const ebayMock = createEbayMock();
   const ebay: EbayClient = demo || !ebayConfigured() ? ebayMock : withFallback('ebay', createEbayClient(), ebayMock);
 
-  const ttsMock = createTtsMock(opts.ttsStore);
-  const tts: TtsClient =
-    demo || !ttsConfigured() ? ttsMock : withFallback('tts', createTtsClient(opts.ttsStore), ttsMock);
-
   const serpMock = createSerpMock();
   const serp: SerpClient = demo || !opts.serp ? serpMock : withFallback('serp', opts.serp, serpMock);
 
   const plaidMock = createPlaidMock();
   const plaid: PlaidClient = demo || !opts.plaid ? plaidMock : withFallback('plaid', opts.plaid, plaidMock);
 
-  return { ebay, serp, tts, plaid };
+  return { ebay, serp, plaid };
 }

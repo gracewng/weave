@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { Card, CardTitle, Field, Row, Note, Progress, usd } from '@/components/ui';
 import { summarizeBudget } from '@weave/shared/budget';
 import { describeAlternatives } from '@weave/data';
 import { saveBudget } from '@/app/(app)/budget/actions';
@@ -20,32 +19,36 @@ export async function BudgetSection({ supabase, userId }: { supabase: SupabaseCl
   const daysLeft = Math.max(1, days - now.getUTCDate() + 1);
   const weeksLeft = Math.max(1, Math.round(daysLeft / 7));
   const has = s.envelopeCents != null;
+  const month = now.toLocaleDateString('en-US', { month: 'long' });
+  const remainingPct = has ? Math.round((s.remainingRatio ?? 0) * 100) : 0;
+
   return (
-    <div id="budget">
-      <div className="mono mb-1 text-xs uppercase text-ink-3">Budget · {now.toLocaleDateString('en-US', { month: 'long' })}</div>
-      {has ? (
-        <>
-          <ReceiptLine label="ENVELOPE" value={usd(s.envelopeCents)} muted />
-          <ReceiptLine label="SPENT" value={usd(spent)} />
-          <ReceiptLine label="LEFT" value={s.overBy > 0 ? `OVER BY ${usd(s.overBy)}` : usd(s.remainingCents)} />
-          {s.overBy === 0 && s.remainingCents != null && s.remainingCents > 0 && <ReceiptLine label={`PACE FOR THE ${daysLeft} DAYS LEFT`} value={`${usd(Math.round(s.remainingCents / weeksLeft))} / WEEK`} muted />}
-          <ReceiptLine label="PROJECTED MONTH END" value={usd(s.projectedCents)} muted />
-          {spent > 0 && <div className="mono mt-1 text-[10px] text-ink-3">{usd(s.overBy > 0 ? s.overBy : spent)} = {describeAlternatives(s.overBy > 0 ? s.overBy : spent, 2).join(' · ').toUpperCase()}</div>}
-        </>
-      ) : <div className="mono text-[10px] text-ink-3">NO ENVELOPE YET. ENTER TAKE-HOME PAY BELOW.</div>}
-      <form action={saveBudget} className="mt-3 grid grid-cols-3 gap-2">
-        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Take-home / mo</div><input name="income" inputMode="decimal" defaultValue={budget?.monthly_income_cents ? (budget.monthly_income_cents / 100).toFixed(0) : ''} placeholder="4200" className="mono mt-0.5 w-full border border-rule bg-paper p-1.5 text-sm" /></label>
-        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Clothes %</div><input name="pct" type="number" min={1} max={50} step={0.5} defaultValue={budget ? Number(budget.clothing_pct) : 5} className="mono mt-0.5 w-full border border-rule bg-paper p-1.5 text-sm" /></label>
-        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Or flat $</div><input name="override" inputMode="decimal" defaultValue={budget?.envelope_override_cents ? (budget.envelope_override_cents / 100).toFixed(0) : ''} placeholder="optional" className="mono mt-0.5 w-full border border-rule bg-paper p-1.5 text-sm" /></label>
-        <div className="col-span-3"><button className="btn !py-1 !text-[10px]" type="submit">Save budget</button></div>
+    <Card className="scroll-mt-6" >
+      <div id="budget" />
+      <CardTitle hint={has ? undefined : 'Enter take-home pay to set a monthly clothing envelope.'}>Budget · {month}</CardTitle>
+
+      {has && (
+        <div className="mb-4">
+          <div className="flex items-baseline justify-between">
+            <div className="display text-3xl font-semibold text-pine">{s.overBy > 0 ? 'Ran out' : usd(s.remainingCents)}</div>
+            <div className="text-xs text-ink-3">{s.overBy > 0 ? `over by ${usd(s.overBy)}` : `left of ${usd(s.envelopeCents)}`}</div>
+          </div>
+          <Progress pct={remainingPct} className="mt-2" />
+          <div className="mt-3">
+            <Row label="Spent so far" value={usd(spent)} />
+            {s.overBy === 0 && s.remainingCents != null && s.remainingCents > 0 && <Row label={`Pace for the ${daysLeft} days left`} value={`${usd(Math.round(s.remainingCents / weeksLeft))} / week`} muted />}
+            <Row label="Projected month end" value={usd(s.projectedCents)} muted />
+          </div>
+          {spent > 0 && <Note className="mt-2">{usd(s.overBy > 0 ? s.overBy : spent)} is {describeAlternatives(s.overBy > 0 ? s.overBy : spent, 2).join(', or ')}.</Note>}
+        </div>
+      )}
+
+      <form action={saveBudget} className="grid grid-cols-3 gap-3">
+        <Field label="Take-home / mo"><input name="income" inputMode="decimal" defaultValue={budget?.monthly_income_cents ? (budget.monthly_income_cents / 100).toFixed(0) : ''} placeholder="4200" className="input" /></Field>
+        <Field label="Clothes %"><input name="pct" type="number" min={1} max={50} step={0.5} defaultValue={budget ? Number(budget.clothing_pct) : 5} className="input" /></Field>
+        <Field label="Or a flat $" hint="Overrides the %"><input name="override" inputMode="decimal" defaultValue={budget?.envelope_override_cents ? (budget.envelope_override_cents / 100).toFixed(0) : ''} placeholder="optional" className="input" /></Field>
+        <div className="col-span-3"><button className="btn btn-primary !px-8 !py-3 !text-sm" type="submit">Save budget</button></div>
       </form>
-      <ReceiptRule />
-      <div className="mono flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase text-ink-3">
-        <Link href="/statement" className="underline hover:text-ink">Monthly statement</Link>
-        <Link href="/returns" className="underline hover:text-ink">Returns</Link>
-        <Link href="/ghosts" className="underline hover:text-ink">Almost bought</Link>
-        <Link href="/stats" className="underline hover:text-ink">AI spend</Link>
-      </div>
-    </div>
+    </Card>
   );
 }

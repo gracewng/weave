@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireUser } from '@/lib/auth';
 import { summarizeKept } from '@weave/shared/kept';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule } from '@/components/Receipt';
+import { Page, PageHeader, Card, CardTitle, Stat, StatGrid, Row, Note, Badge } from '@/components/ui';
 import { TASKS, MODELS } from '@weave/shared/models';
 import type { LlmCallRow } from '@weave/shared/types';
 
@@ -41,55 +41,72 @@ export default async function StatsPage() {
     e.calls++; e.cost += Number(r.cost_usd); e.in += r.input_tokens; e.out += r.output_tokens; e.cached += r.cached_tokens;
     byTask.set(key, e);
   }
+  const perEmail = emails.length ? money(emails.reduce((s, r) => s + Number(r.cost_usd), 0) / emails.length) : 'N/A';
+  const perSearch = searches.length ? money(mine.filter((r) => ['parse_query', 'search_note', 'embed'].includes(r.task)).reduce((s, r) => s + Number(r.cost_usd), 0) / searches.length) : 'N/A';
+  const ratio = myCost > 0 && kept.keptCents > 0 ? `$${(kept.keptCents / 100 / myCost).toFixed(0)}` : 'N/A';
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Receipt>
-        <ReceiptHeader title="AI spend" subtitle={`${rows.length} CALLS · LIVE FROM llm_calls`} />
-        <ReceiptRule />
-        <ReceiptLine label="INPUT TOKENS" value={totalIn.toLocaleString()} />
-        <ReceiptLine label="OUTPUT TOKENS" value={totalOut.toLocaleString()} />
-        <ReceiptLine label="CACHED TOKENS" value={totalCached.toLocaleString()} />
-        <ReceiptLine label="CACHE HIT RATE" value={`${cacheRate.toFixed(1)}%`} />
-        <ReceiptLine label="FALLBACKS" value={String(fallbacks)} />
-        <ReceiptRule />
-        <ReceiptLine label="AI SPEND (ALL USERS)" value={money(totalCost)} />
-        <ReceiptLine label="YOUR AI SPEND" value={money(myCost)} muted />
-        <ReceiptLine label="  PER EMAIL EXTRACTED" value={emails.length ? money(emails.reduce((s, r) => s + Number(r.cost_usd), 0) / emails.length) : 'N/A'} muted />
-        <ReceiptLine label="  PER SEARCH" value={searches.length ? money(mine.filter((r) => ['parse_query', 'search_note', 'embed'].includes(r.task)).reduce((s, r) => s + Number(r.cost_usd), 0) / searches.length) : 'N/A'} muted />
-        <ReceiptRule />
-        <ReceiptLine label="YOUR MONEY KEPT (CONFIRMED)" value={`$${(kept.keptCents / 100).toFixed(2)}`} valueClass={kept.keptCents > 0 ? 'saved' : ''} />
-        <ReceiptLine label="YOUR MONEY RECOVERED" value={`$${(kept.recoveredCents / 100).toFixed(2)}`} valueClass={kept.recoveredCents > 0 ? 'saved' : ''} />
-        <ReceiptLine label="KEPT PER $1 OF AI" value={myCost > 0 && kept.keptCents > 0 ? `$${(kept.keptCents / 100 / myCost).toFixed(0)}` : 'N/A'} valueClass="saved" />
-        <ReceiptLine label="MODE" value={liveCalls > 0 ? `live · ${liveCalls} real calls` : 'fixture / no calls'} muted />
-        <ReceiptRule />
-        <div className="mono text-[11px] text-ink-3">Confirmed outcomes only. N/A at zero.</div>
-      </Receipt>
+    <Page>
+      <PageHeader
+        title="AI spend"
+        subtitle={`${rows.length} calls, live from the call log. Every model call is routed, logged and priced.`}
+        actions={<Badge tone={liveCalls > 0 ? 'pine' : 'warn'}>{liveCalls > 0 ? `Live · ${liveCalls} real calls` : 'Fixture / no calls'}</Badge>}
+      />
 
-      <Receipt>
-        <ReceiptHeader title="By task" />
-        <ReceiptRule />
-        {byTask.size === 0 && <div className="mono text-xs text-ink-3">No calls yet.</div>}
+      <StatGrid cols={4}>
+        <Stat value={ratio} label="kept per $1 of your AI spend" tone="pine" valueClass={ratio !== 'N/A' ? 'saved' : ''} />
+        <Stat value={money(myCost)} label="your AI spend" />
+        <Stat value={`${cacheRate.toFixed(1)}%`} label="cache hit rate" />
+        <Stat value={fallbacks} label="fallbacks" />
+      </StatGrid>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card>
+          <CardTitle hint="All users, all time">Tokens and cost</CardTitle>
+          <Row label="Input tokens" value={totalIn.toLocaleString()} />
+          <Row label="Output tokens" value={totalOut.toLocaleString()} />
+          <Row label="Cached tokens" value={totalCached.toLocaleString()} />
+          <Row label="Total AI spend (all users)" value={money(totalCost)} />
+          <Row label="Your AI spend" value={money(myCost)} muted />
+          <Row label="Per email extracted" value={perEmail} muted sub />
+          <Row label="Per search" value={perSearch} muted sub />
+        </Card>
+
+        <Card>
+          <CardTitle hint="Confirmed outcomes only. The ratio is a product ratio over the period shown, not a causal claim. N/A at zero.">Kept against spend</CardTitle>
+          <Row label="Your Money Kept (confirmed)" value={`$${(kept.keptCents / 100).toFixed(2)}`} valueClass={kept.keptCents > 0 ? 'saved' : ''} />
+          <Row label="Your Money Recovered" value={`$${(kept.recoveredCents / 100).toFixed(2)}`} valueClass={kept.recoveredCents > 0 ? 'saved' : ''} />
+          <Row label="Kept per $1 of your AI spend" value={ratio} valueClass={ratio !== 'N/A' ? 'saved' : ''} />
+          <Row label="Mode" value={liveCalls > 0 ? `Live · ${liveCalls} real calls` : 'Fixture / no calls'} muted />
+        </Card>
+      </div>
+
+      <Card>
+        <CardTitle hint="Calls · tokens · cached · cost">By task</CardTitle>
+        {byTask.size === 0 && <Note>No calls yet. Hit /api/llm/health to log the first two.</Note>}
         {[...byTask.entries()].map(([k, v]) => (
-          <ReceiptLine key={k} label={k} value={`${v.calls}× · ${v.in + v.out} tok · ${v.cached} cached · ${money(v.cost)}`} />
+          <Row key={k} label={k} value={`${v.calls}× · ${(v.in + v.out).toLocaleString()} tok · ${v.cached.toLocaleString()} cached · ${money(v.cost)}`} />
         ))}
-      </Receipt>
+      </Card>
 
-      <Receipt>
-        <ReceiptHeader title="Routing" subtitle={`META ${MODELS.meta.chat} · OPENAI ${MODELS.openai.chat} · EMBED ${MODELS.openai.embed}`} />
-        <ReceiptRule />
-        {Object.entries(TASKS).map(([task, cfg]) => (
-          <ReceiptLine key={task} label={task} value={`${cfg.provider}${cfg.reasoningEffort ? ` · ${cfg.reasoningEffort}` : ''}${cfg.batchSize ? ` · batch ${cfg.batchSize}` : ''}`} muted />
-        ))}
-        <ReceiptRule />
-        <ul className="mono list-disc space-y-1 pl-4 text-[11px] text-ink-3">
-          <li>Allowlist before any model call</li>
-          <li>Emails stripped to ~6k chars</li>
-          <li>Minimal reasoning for extraction</li>
-          <li>Tagging batched 20/call; cache-friendly prompts</li>
-          <li>Embed once; verdicts are rules; model writes one line</li>
-        </ul>
-      </Receipt>
-    </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card>
+          <CardTitle hint={`Meta ${MODELS.meta.chat} · OpenAI ${MODELS.openai.chat} · embed ${MODELS.openai.embed}`}>Routing</CardTitle>
+          {Object.entries(TASKS).map(([task, cfg]) => (
+            <Row key={task} label={task} value={`${cfg.provider}${cfg.reasoningEffort ? ` · ${cfg.reasoningEffort}` : ''}${cfg.batchSize ? ` · batch ${cfg.batchSize}` : ''}`} muted />
+          ))}
+        </Card>
+        <Card>
+          <CardTitle>Token discipline</CardTitle>
+          <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-2">
+            <li>Gmail query and sender allowlist before any model call</li>
+            <li>HTML stripped, boilerplate removed, truncated to about 6k characters</li>
+            <li>Minimal reasoning effort for extraction, tagging and query parsing</li>
+            <li>Batched tagging (20 per call); static prompt prefix first for cache hits</li>
+            <li>Embeddings once per item; audio cached; verdicts and budget math are rules, the model only writes one line</li>
+          </ul>
+        </Card>
+      </div>
+    </Page>
   );
 }

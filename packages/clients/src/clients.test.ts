@@ -2,10 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EbayClient, SerpClient } from '@weave/shared/contracts';
 import { getClients, setFallbackReporter } from './index';
 import { createEbayMock } from './ebay.mock';
-import { createTtsMock, FIXTURE_AUDIO_DATA_URL } from './tts.mock';
 import { createSerpMock, fakeImageHash } from './serp.mock';
 import { mockTransactions, isClothingCategory, createPlaidMock } from './plaid.mock';
-import { cacheKey } from './tts';
 import { median } from './ebay';
 
 afterEach(() => {
@@ -43,41 +41,6 @@ describe('median', () => {
     expect(median([100, 200, 300])).toBe(200);
     expect(median([100, 300])).toBe(200);
     expect(median([])).toBeNull();
-  });
-});
-
-describe('tts fixture', () => {
-  it('returns a playable data URL, billing chars once per (text, voice)', async () => {
-    const tts = createTtsMock();
-    const first = await tts.speak('You kept $254 this month.', 'cfo');
-    expect(first).toMatchObject({ audioUrl: FIXTURE_AUDIO_DATA_URL, cached: false, chars: 25 });
-    const second = await tts.speak('You kept $254 this month.', 'cfo');
-    expect(second).toMatchObject({ cached: true, chars: 0 });
-  });
-
-  it('keys the cache on text + voice, so a different persona re-synthesizes', async () => {
-    const tts = createTtsMock();
-    await tts.speak('hello', 'bestie');
-    expect((await tts.speak('hello', 'stylist')).cached).toBe(false);
-  });
-
-  it('uses an injected store when one is given', async () => {
-    const store = new Map<string, string>();
-    const tts = createTtsMock({
-      get: async (h) => store.get(h) ?? null,
-      put: async (h) => {
-        store.set(h, `https://cdn.example/${h}.mp3`);
-        return store.get(h)!;
-      },
-    });
-    const hash = cacheKey('hello', 'fixture-bestie');
-    store.set(hash, 'https://cdn.example/cached.mp3');
-    expect(await tts.speak('hello', 'bestie')).toEqual({ audioUrl: 'https://cdn.example/cached.mp3', cached: true, chars: 0 });
-  });
-
-  it('hashes deterministically and differs by voice', () => {
-    expect(cacheKey('a', 'v1')).toBe(cacheKey('a', 'v1'));
-    expect(cacheKey('a', 'v1')).not.toBe(cacheKey('a', 'v2'));
   });
 });
 
@@ -181,7 +144,6 @@ describe('getClients', () => {
     const shapes: Array<[keyof typeof c, string[]]> = [
       ['ebay', ['searchUsed', 'soldMedianCents']],
       ['serp', ['shoppingResults', 'lens']],
-      ['tts', ['speak']],
       ['plaid', ['createLinkToken', 'exchangePublicToken', 'syncTransactions']],
     ];
     for (const [name, methods] of shapes) {

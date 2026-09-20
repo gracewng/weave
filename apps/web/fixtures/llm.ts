@@ -106,14 +106,5 @@ export const fixtureSearchNote: Record<string, string> = {
   buy: 'Nothing close in your closet, and your median dress purchase is $96 across 5 confirmed buys.',
 };
 
-/** The spoken version of the same beat, for the ElevenLabs persona read. */
-export const fixtureSpokenLine: Record<string, string> = {
-  skip: 'You already own this one — the black crew tee, fourteen dollars ninety. Wear that instead.',
-  borrow: 'Maya has the slip dress in your size. One message and the hundred and forty-eight dollars stays put.',
-  secondhand: 'The same dress is twenty-two dollars used. That is a hundred and twenty-six dollars kept.',
-  wait: 'You have sixty-two dollars left this month and this is a hundred and forty-eight. Give it two days.',
-  buy: 'Nothing in your closet covers this, and it fits the budget. Your call.',
-};
-
 export const fixtureBorrowMessage =
   'Hey Maya! Any chance I could borrow your black slip dress for Sam and Al’s wedding on the 4th? I’d pick it up Friday and have it back to you that Sunday. Totally fine if not!';

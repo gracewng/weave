@@ -3,15 +3,34 @@ import { getProfile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { env } from '@/lib/env';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { Page, PageHeader, Card, CardTitle, SectionTitle, Row, Note, Badge, usd } from '@/components/ui';
 import { listFriends, loansFor, karmaFor } from '@/lib/friends';
 import { InviteQR } from './InviteQR';
 import { LoansLive } from './LoansLive';
 import { LoanActions } from './LoanActions';
 import { JoinForm } from './JoinForm';
-import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
+
+const STATUS: Record<string, string> = { requested: 'Requested', accepted: 'Accepted', out: 'Out', returned: 'Returned', declined: 'Declined' };
+const STEPS: Array<[string, string]> = [['requested', 'Asked'], ['accepted', 'Accepted'], ['out', 'Handed over'], ['returned', 'Back']];
+
+/* Where a loan is, as four dots. Declined shows as a single quiet label. */
+function LoanSteps({ status }: { status: string }) {
+  if (status === 'declined') return <div className="text-xs text-ink-3">Declined</div>;
+  const idx = STEPS.findIndex(([k]) => k === status);
+  return (
+    <ol className="flex items-center gap-1 text-[10px] text-ink-3">
+      {STEPS.map(([k, label], i) => (
+        <li key={k} className="flex items-center gap-1">
+          <span className={`h-2 w-2 rounded-full ${i <= idx ? 'bg-fern' : 'bg-dust'}`} />
+          <span className={i === idx ? 'font-medium text-ink' : ''}>{label}</span>
+          {i < STEPS.length - 1 && <span className={`mx-1 h-px w-4 ${i < idx ? 'bg-fern' : 'bg-dust'}`} />}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export default async function FriendsPage({ searchParams }: { searchParams: Promise<{ joined?: string; error?: string }> }) {
   const { joined, error } = await searchParams;
@@ -21,86 +40,87 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
   const [friends, loans, karma] = await Promise.all([listFriends(supabase, user.id), loansFor(supabase, user.id), admin ? karmaFor(admin, user.id) : Promise.resolve({ lent: 0, helpedKeepCents: 0, borrowed: 0 })]);
   const link = `${env.appUrl}/join/${profile?.invite_code ?? ''}`;
   const myArea = (profile?.area ?? '').trim().toLowerCase();
-  const near = (a: string | null) => !!myArea && !!a && a.trim().toLowerCase() === myArea;
+  const near = (a: string | null | undefined) => !!myArea && !!a && a.trim().toLowerCase() === myArea;
   const nearCount = friends.filter((f) => near(f.area)).length;
   const open = loans.filter((l) => ['requested', 'accepted', 'out'].includes(l.status));
   const past = loans.filter((l) => ['returned', 'declined'].includes(l.status)).slice(0, 10);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <Page>
       <LoansLive userId={user.id} />
-      {joined && <div className="mono text-center text-[11px] text-save">FRIEND ADDED</div>}
-      {error && <div className="mono text-center text-[11px] text-warn">{decodeURIComponent(error)}</div>}
+      <PageHeader title="Friends" subtitle="Borrow before you buy. Friends see only what you mark shareable, never prices, dates, stores or receipts." />
+      {joined && <Badge tone="save">Friend added</Badge>}
+      {error && <div className="text-sm text-warn">{decodeURIComponent(error)}</div>}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Receipt>
-          <ReceiptHeader title="Closet karma" />
-          <ReceiptRule />
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="cutout p-2"><Icon name="hand" size={18} className="text-ink-3" /><div className="mono mt-1 text-lg">{karma.lent}</div><div className="mono text-[9px] uppercase text-ink-3">Lent</div></div>
-            <div className="cutout p-2"><Icon name="receipt" size={18} className={karma.helpedKeepCents > 0 ? 'text-save' : 'text-ink-3'} /><div className={`mono mt-1 text-lg ${karma.helpedKeepCents > 0 ? 'saved' : ''}`}>{usd(karma.helpedKeepCents)}</div><div className="mono text-[9px] uppercase text-ink-3">Friends kept</div></div>
-            <div className="cutout p-2"><Icon name="undo" size={18} className="text-ink-3" /><div className="mono mt-1 text-lg">{karma.borrowed}</div><div className="mono text-[9px] uppercase text-ink-3">Borrowed</div></div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card tone="pine">
+          <CardTitle>Closet Karma</CardTitle>
+          <div className="flex items-baseline gap-3">
+            <span className="display text-5xl font-semibold text-white">{karma.lent}</span>
+            <span className="text-sm text-white/75">time{karma.lent === 1 ? '' : 's'} lent</span>
           </div>
-        </Receipt>
-        <Receipt>
-          <ReceiptHeader title="Invite" subtitle="SCAN OR SHARE" />
-          <ReceiptRule />
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-white/10 p-3"><div className={`display text-xl ${karma.helpedKeepCents > 0 ? 'text-[#9fe3b4]' : 'text-white'}`}>{usd(karma.helpedKeepCents)}</div><div className="text-xs text-white/70">helped friends keep</div></div>
+            <div className="rounded-2xl bg-white/10 p-3"><div className="display text-xl text-white">{karma.borrowed}</div><div className="text-xs text-white/70">borrowed</div></div>
+          </div>
+        </Card>
+        <Card tone="paper">
+          <CardTitle hint="Scan or share">Invite a friend</CardTitle>
           <div className="flex items-start gap-4">
-            <InviteQR url={link} />
+            <div className="shrink-0 overflow-hidden rounded-2xl border border-dust p-1"><InviteQR url={link} /></div>
             <div className="min-w-0 flex-1">
-              <div className="mono select-all border border-rule bg-paper p-2 text-center text-lg tracking-[.2em]">{profile?.invite_code ?? '—'}</div>
-              <div className="mono mt-2 break-all text-[10px] text-ink-3">{link}</div>
+              <div className="display select-all rounded-2xl bg-mist px-3 py-2 text-center text-2xl font-semibold tracking-[.2em] text-pine">{profile?.invite_code ?? '—'}</div>
+              <div className="mt-2 break-all text-xs text-ink-3">{link}</div>
               <JoinForm />
             </div>
           </div>
-          <div className="mono mt-3 text-[10px] text-ink-3">FRIENDS NEVER SEE PRICES OR STORES.</div>
-        </Receipt>
+        </Card>
       </div>
 
       {open.length > 0 && (
-        <Receipt>
-          <ReceiptHeader title="Open loans" subtitle={`${open.length} · LIVE`} />
-          <ReceiptRule />
-          <div className="space-y-3">
+        <section>
+          <SectionTitle hint="updates live">Open loans</SectionTitle>
+          <div className="grid gap-3 md:grid-cols-2">
             {open.map((l) => {
               const isOwner = l.owner_id === user.id;
               return (
-                <div key={l.id} className="flex gap-3 border-b border-dashed border-rule pb-3 last:border-0">
-                  <div className="h-16 w-12 shrink-0 bg-paper-2">{l.item_image && <img src={l.item_image} alt="" className="h-full w-full object-contain" />}</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm">{l.item_name}</div>
-                    <div className="mono text-[10px] text-ink-3">{isOwner ? `${l.borrower_name.toUpperCase()} ASKED` : `FROM ${l.owner_name.toUpperCase()}`}{l.event_name ? ` · ${l.event_name.toUpperCase()}` : ''}{l.needed_on ? ` · NEEDED ${l.needed_on}` : ''}{l.due_back ? ` · BACK ${l.due_back}` : ''} · <span className="text-ink">{l.status.toUpperCase()}</span></div>
-                    {l.message && <div className="mt-1 text-xs text-ink-2">“{l.message}”</div>}
-                    <div className="mt-2"><LoanActions loanId={l.id} status={l.status} isOwner={isOwner} itemName={l.item_name} ownerName={l.owner_name} borrowerName={l.borrower_name} dueBack={l.due_back} /></div>
+                <Card key={l.id}>
+                  <div className="flex gap-4">
+                    <div className="h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-paper">{l.item_image && <img src={l.item_image} alt="" className="h-full w-full object-contain" />}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{l.item_name}</div>
+                      <div className="mt-0.5 text-xs text-ink-2">{isOwner ? `${l.borrower_name} asked` : `From ${l.owner_name}`}{l.event_name ? ` · ${l.event_name}` : ''}{l.needed_on ? ` · needed ${l.needed_on}` : ''}{l.due_back ? ` · back ${l.due_back}` : ''}</div>
+                      <div className="mt-2"><LoanSteps status={l.status} /></div>
+                      {l.message && <div className="mt-2 rounded-2xl rounded-tl-sm bg-paper px-3 py-2 text-sm text-ink-2">“{l.message}”<div className="mt-0.5 text-[10px] text-ink-3">{isOwner ? l.borrower_name : 'You'}</div></div>}
+                      <div className="mt-3"><LoanActions loanId={l.id} status={l.status} isOwner={isOwner} itemName={l.item_name} ownerName={l.owner_name} borrowerName={l.borrower_name} dueBack={l.due_back} /></div>
+                    </div>
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
-        </Receipt>
+        </section>
       )}
 
-      <Receipt>
-        <ReceiptHeader title="Friends" subtitle={friends.length ? `${friends.length}${nearCount ? ` · ${nearCount} NEAR YOU` : ''} · TAP TO BROWSE` : 'NO FRIENDS YET'} />
-        <ReceiptRule />
-        {friends.length === 0 && <p className="text-sm text-ink-2">Share your code. Friends' items show up here, in your size.</p>}
-        <div className="grid gap-2 sm:grid-cols-2">
+      <section>
+        <SectionTitle hint={friends.length ? `${friends.length}${nearCount ? ` · ${nearCount} near you` : ''} · tap to browse a wardrobe` : 'no friends yet'}>Friends</SectionTitle>
+        {friends.length === 0 && <p className="text-sm text-ink-2">Share your code. When a friend joins, their shareable items show up here, filtered to your size, ready to borrow before you buy.</p>}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {friends.map((f) => (
-            <Link key={f.id} href={`/friends/${f.id}`} className="cutout flex items-center gap-3 p-2 hover:border-ink">
-              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-paper-2">{f.avatar_url && <img src={f.avatar_url} alt="" className="h-full w-full object-cover" />}</div>
-              <div className="min-w-0"><div className="flex items-center gap-2 truncate text-sm">{f.display_name ?? 'Friend'}{near(f.area) && <span className="stamp saved !text-[8px]">NEAR YOU</span>}</div><div className="mono truncate text-[10px] text-ink-3">{[f.area, Object.entries(f.sizes ?? {}).map(([k, v]) => `${k.toUpperCase()} ${v}`).join(' · ') || null].filter(Boolean).join(' · ') || 'NO SIZES SET'}</div>{f.bio && <div className="truncate text-[11px] text-ink-2">{f.bio}</div>}</div>
+            <Link key={f.id} href={`/friends/${f.id}`} className="card card-paper card-hover flex items-center gap-3 !p-4">
+              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-mist">{f.avatar_url && <img src={f.avatar_url} alt="" className="h-full w-full object-cover" />}</div>
+              <div className="min-w-0"><div className="flex items-center gap-2 truncate text-sm font-medium">{f.display_name ?? 'Friend'}{near(f.area) && <Badge tone="save">Near you</Badge>}</div><div className="text-xs text-ink-3">{Object.entries(f.sizes ?? {}).map(([k, v]) => `${k} ${v}`).join(' · ') || 'No sizes set'}</div></div>
             </Link>
           ))}
         </div>
-      </Receipt>
+      </section>
 
       {past.length > 0 && (
-        <Receipt>
-          <ReceiptHeader title="Past loans" />
-          <ReceiptRule />
-          {past.map((l) => <ReceiptLine key={l.id} label={`${l.item_name.slice(0, 26)} · ${l.owner_id === user.id ? 'TO ' + l.borrower_name : 'FROM ' + l.owner_name}`} value={l.status.toUpperCase()} muted />)}
-        </Receipt>
+        <Card tone="paper">
+          <CardTitle>Past loans</CardTitle>
+          {past.map((l) => <Row key={l.id} label={`${l.item_name.slice(0, 32)} · ${l.owner_id === user.id ? 'to ' + l.borrower_name : 'from ' + l.owner_name}`} value={STATUS[l.status] ?? l.status} muted />)}
+        </Card>
       )}
-    </div>
+    </Page>
   );
 }

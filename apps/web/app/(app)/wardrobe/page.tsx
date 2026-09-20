@@ -2,44 +2,52 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { IngestPanel } from '@/components/IngestPanel';
-import { CardMenu } from '@/components/CardMenu';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { HangTag } from '@/components/HangTag';
+import { Tape, PrintedTape, TapeHeader, TapeLine, TapeRule, TapeTotal, Barcode, Stamp, usd } from '@/components/Tape';
 import type { Item } from '@weave/shared/types';
 import { Icon } from '@/components/Icon';
+import { WardrobeFilters, type Sort, type View } from './WardrobeFilters';
 
 export const dynamic = 'force-dynamic';
 
-type Sort = 'newest' | 'price';
-const SORTS: Array<[Sort, string]> = [['newest', 'Newest'], ['price', 'Paid']];
+const MONTH = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
-export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string; returnable?: string }> }) {
-  const { sort = 'newest', returnable: retOnly } = await searchParams;
+const closetNo = (id: string) => id.replace(/-/g, '').slice(0, 12).toUpperCase().replace(/(.{4})/g, '$1 ').trim();
+
+export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string; returnable?: string; view?: string; q?: string }> }) {
+  const { sort: sortParam, returnable: retOnly, view: viewParam, q: qParam = '' } = await searchParams;
+  const sort: Sort = sortParam === 'price' ? 'price' : 'newest';
+  const view: View = viewParam === 'summary' || viewParam === 'tape' ? 'summary' : 'rack';
+  const q = qParam.trim().toLowerCase();
   const { supabase, user } = await requireUser();
   const admin = createAdminClient();
   const [{ data: itemsData }, { data: tok }] = await Promise.all([
-    supabase.from('items').select('id,user_id,name,brand,category,slot,color,formality,size,price_cents,purchase_date,retailer,image_url,image_source,receipt_url,source,return_by,status,shareable,lendable,description,created_at').eq('user_id', user.id).in('status', ['owned', 'returning']),
+    supabase.from('items').select('id,user_id,name,brand,category,slot,color,formality,size,price_cents,purchase_date,retailer,image_url,image_source,receipt_url,source,return_by,status,shareable,lendable,description,profile_mismatch,created_at').eq('user_id', user.id).in('status', ['owned', 'returning']),
     admin ? admin.from('gmail_tokens').select('user_id').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const items = (itemsData ?? []) as Item[];
   const hasGmail = !!tok;
   const today = new Date().toISOString().slice(0, 10);
+  const printed = today.replace(/-/g, '/');
 
   if (items.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-lg space-y-6">
         <IngestPanel hasGmail={hasGmail} itemCount={0} />
-        <Receipt className="mx-auto max-w-lg">
-          <ReceiptHeader title="Wardrobe" subtitle="NOTHING PRINTED YET" />
-          <ReceiptRule />
-          <ReceiptLine label="ITEMS" value="0" muted />
-          <ReceiptLine label="PAID IN TOTAL" value="$0.00" muted />
-          <ReceiptLine label="CLOSET COVERAGE" value="No history yet" muted />
-        </Receipt>
+        <Tape>
+          <TapeHeader title="Wardrobe" subtitle={`Nothing printed yet · ${printed}`} />
+          <TapeRule />
+          <TapeLine label="Spent, last 30 days" value="$0.00" muted />
+          <TapeLine label="Paid in total" value="$0.00" muted />
+          <TapeRule />
+          <Barcode seed={user.id} label={`Closet no. ${closetNo(user.id)}`} />
+        </Tape>
       </div>
     );
   }
 
-  const visible = retOnly ? items.filter((i) => i.status === 'owned' && i.return_by && i.return_by >= today) : items;
+  const matches = (i: Item) => !q || [i.name, i.brand, i.retailer, i.color, i.category, i.size, i.description].some((f) => f && f.toLowerCase().includes(q));
+  const visible = items.filter((i) => matches(i) && (!retOnly || (i.status === 'owned' && i.return_by && i.return_by >= today)));
   const sorted = [...visible].sort((a, b) => {
     if (sort === 'price') return (b.price_cents ?? 0) - (a.price_cents ?? 0);
     return (b.purchase_date ?? b.created_at).localeCompare(a.purchase_date ?? a.created_at);
@@ -48,50 +56,82 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
   const paid = items.reduce((s, i) => s + (i.price_cents ?? 0), 0);
   const since = new Date(); since.setUTCDate(since.getUTCDate() - 30); const sinceISO = since.toISOString().slice(0, 10);
   const spent30 = items.filter((i) => i.purchase_date && i.purchase_date >= sinceISO).reduce((s, i) => s + (i.price_cents ?? 0), 0);
-  const returnableItems = items.filter((i) => i.return_by && i.return_by >= today);
-  const atStake = returnableItems.reduce((s, i) => s + (i.price_cents ?? 0), 0);
-  const returnsPending = items.filter((i) => i.status === 'returning').length;
+
+  // Tape view: one long receipt, grouped by purchase month with a subtotal per month.
+  const groups = new Map<string, Item[]>();
+  for (const i of sorted) { const k = i.purchase_date ? i.purchase_date.slice(0, 7) : 'undated'; groups.set(k, [...(groups.get(k) ?? []), i]); }
 
   return (
     <div className="space-y-6">
       <IngestPanel hasGmail={hasGmail} itemCount={items.length} compact />
-      <Receipt>
-        <ReceiptHeader title="Wardrobe" subtitle={`${items.length} ITEMS`} />
-        <ReceiptRule />
-        <ReceiptLine label="SPENT, LAST 30 DAYS" value={usd(spent30)} />
-        <ReceiptLine label="PAID IN TOTAL" value={usd(paid)} muted />
-        {returnableItems.length > 0 && <ReceiptLine label={<Link href="/returns" className="underline">RETURNABLE</Link>} value={`${returnableItems.length} · ${usd(atStake)} AT STAKE`} />}
-        {returnsPending > 0 && <ReceiptLine label={<Link href="/returns" className="underline">RETURNS PENDING</Link>} value={String(returnsPending)} muted />}
-      </Receipt>
 
-      <div className="mono flex flex-wrap gap-x-4 gap-y-1 text-[11px] uppercase tracking-wider text-ink-3">
-        <span>Sort</span>
-        {SORTS.map(([k, label]) => <Link key={k} href={`/wardrobe?sort=${k}${retOnly ? '&returnable=1' : ''}`} className={k === sort ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}>{label}</Link>)}
-        <Link href={`/wardrobe?sort=${sort}${retOnly ? '' : '&returnable=1'}`} className={`ml-auto flex items-center gap-1 ${retOnly ? 'text-save' : 'hover:text-ink'}`} title="Show only items still inside their return window"><Icon name="undo" size={12} />Returnable{retOnly ? ' · on' : ''}</Link>
+      <div className="mx-auto w-full max-w-md">
+      <PrintedTape>
+        <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} />
+        <TapeRule />
+        <TapeLine label="Spent, last 30 days" value={usd(spent30)} />
+        <TapeLine label="Paid in total" value={usd(paid)} muted />
+        <TapeRule />
+        <Barcode seed={user.id} label={`Closet no. ${closetNo(user.id)}`} />
+      </PrintedTape>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {sorted.map((i) => {
-          return (
-            <div key={i.id} className="cutout group relative p-2 hover:shadow-[0_8px_20px_-12px_rgba(0,0,0,.4)]">
-              <CardMenu itemId={i.id} name={i.name} hasImage={!!i.image_url} />
-              <Link href={`/wardrobe/${i.id}`} className="block">
-                <div className="relative aspect-[3/4] w-full bg-paper-2">
-                  {i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-ink-3"><Icon name="image" size={22} /></div>}
-                  {!i.shareable && <span className="absolute left-1 top-1 bg-paper p-1 text-ink-3" title="Private"><Icon name="lock" size={12} /></span>}
-                  {i.profile_mismatch && <span className="mono absolute bottom-1 left-1 bg-paper px-1 text-[9px] text-warn">YOURS?</span>}
-                  {i.status === 'returning' && <span className="mono absolute bottom-1 right-1 bg-paper px-1 text-[9px] text-ink-3">RETURNING</span>}
-                </div>
-                <div className="mt-2 truncate text-sm" title={i.name}>{i.name}</div>
-                <div className="mono flex items-center justify-between text-[11px] text-ink-3">
-                  <span className="truncate">{i.brand ?? i.retailer ?? ''}{i.size ? ` · ${i.size}` : ''}</span>
-                  <span>{usd(i.price_cents)}</span>
+      <div className="mt-2">
+        <WardrobeFilters q={qParam.trim()} sort={sort} returnable={!!retOnly} view={view} count={visible.length} />
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="py-10 text-center text-sm text-ink-3">{q ? 'Nothing here matches. Try fewer words.' : 'Nothing in the return window right now.'}{!q && !retOnly && <div className="mt-3"><Link href="/wardrobe/add" className="btn btn-sm">Add your own</Link></div>}</div>
+      ) : view === 'rack' ? (
+        <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {!q && !retOnly && (
+            <div className="hook">
+              <Link href="/wardrobe/add" className="tag h-full !border-dashed !border-sage !bg-transparent !shadow-none hover:!border-fern">
+                <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 text-center text-ink-2 hover:text-ink">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-mist"><Icon name="camera" size={24} /></span>
+                  <span className="font-sans text-[15px]">Add your own</span>
+                  <span className="text-[11px] text-ink-3">Photo or name</span>
                 </div>
               </Link>
             </div>
-          );
-        })}
-      </div>
+          )}
+          {sorted.map((i) => <HangTag key={i.id} item={i} today={today} showReturnable={!retOnly} />)}
+        </div>
+      ) : (
+        <Tape className="mx-auto max-w-2xl">
+          <TapeHeader title="Summary" subtitle={`${sorted.length} lines${q ? ` · matching “${qParam.trim()}”` : ''}${retOnly ? ' · returnable only' : ''}`} />
+          {[...groups.entries()].map(([k, list]) => {
+            const subtotal = list.reduce((s, i) => s + (i.price_cents ?? 0), 0);
+            const label = k === 'undated' ? 'Undated' : MONTH.format(new Date(`${k}-01T00:00:00Z`));
+            return (
+              <div key={k}>
+                <TapeRule />
+                <div className="flex items-baseline justify-between text-[11px] font-semibold"><span>{label}</span><span className="font-normal text-ink-3">{list.length} item{list.length === 1 ? '' : 's'}</span></div>
+                <div className="mt-1">
+                  {list.map((i) => (
+                    <TapeLine
+                      key={i.id}
+                      label={
+                        <Link href={`/wardrobe/${i.id}`} className="flex min-w-0 items-center gap-2 hover:underline">
+                          <span className="h-7 w-5 shrink-0 overflow-hidden bg-white">{i.image_url && <img src={i.image_url} alt="" className="h-full w-full object-contain" />}</span>
+                          <span className="truncate">{i.name}</span>
+                          {i.size && <span className="shrink-0 text-ink-3">{i.size}</span>}
+                          {i.status === 'returning' && <Stamp className="shrink-0">Returning</Stamp>}
+                          {i.status === 'owned' && i.return_by && i.return_by >= today && <span className="shrink-0 text-ink-3" title={`Returnable until ${i.return_by}`}><Icon name="undo" size={10} /></span>}
+                        </Link>
+                      }
+                      value={usd(i.price_cents)}
+                    />
+                  ))}
+                </div>
+                <TapeLine label={`Subtotal · ${label}`} value={usd(subtotal)} muted />
+              </div>
+            );
+          })}
+          <TapeTotal label="Paid in total" value={usd(sorted.reduce((s, i) => s + (i.price_cents ?? 0), 0))} />
+          <Barcode seed={user.id} label={`Closet no. ${closetNo(user.id)}`} className="mt-3" />
+        </Tape>
+      )}
     </div>
   );
 }

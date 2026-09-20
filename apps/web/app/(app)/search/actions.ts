@@ -30,6 +30,6 @@ export async function recordDecision(d: DecisionInput): Promise<{ id: string; st
   };
   const { data, error } = await supabase.from('holds').insert(row).select('id,status,kept_cents').single();
   if (error || !data) return null;
-  revalidatePath('/ghosts'); revalidatePath('/statement'); if (d.ownedItemId) revalidatePath(`/wardrobe/${d.ownedItemId}`);
+  revalidatePath('/statement'); if (d.ownedItemId) revalidatePath(`/wardrobe/${d.ownedItemId}`);
   return { id: data.id, status: data.status, keptCents: data.kept_cents, confirmed };
 }

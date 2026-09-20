@@ -7,7 +7,6 @@ import { z } from 'zod';
 
 export const CATEGORIES = ['top', 'bottom', 'dress', 'outerwear', 'shoes', 'accessory', 'intimates', 'other'] as const;
 export const SLOTS = ['top', 'bottom', 'one_piece', 'outer', 'shoes', 'accessory'] as const;
-export const PERSONAS = ['bestie', 'stylist', 'cfo'] as const;
 export const VERDICTS = ['skip', 'borrow', 'secondhand', 'wait', 'buy'] as const;
 
 // ─── extract_email ────────────────────────────────────────────────────────────
@@ -147,38 +146,6 @@ export function searchNoteInput(args: {
     `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,
     `USER USUALLY PAYS: ${args.usualPriceCents != null ? usd(args.usualPriceCents) : 'unknown'}`,
     `BUDGET LEFT THIS MONTH: ${args.budgetRemainingCents != null ? usd(args.budgetRemainingCents) : 'unknown'}`,
-  ].join('\n');
-}
-
-// ─── spoken_line ──────────────────────────────────────────────────────────────
-
-export const PERSONA_STYLE: Record<(typeof PERSONAS)[number], string> = {
-  bestie: 'Warm, hype, a little funny, gently talks the user down. Sounds like a best friend texting.',
-  stylist: 'Blunt, fashion-literate, opinionated about fit and fabric. No fluff.',
-  cfo: 'Dry, all numbers, mildly amused. Talks in dollars and budgets.',
-};
-
-export const SPOKEN_LINE_SYSTEM = `You write the one spoken line a wardrobe copilot says about a purchase or a monthly statement. The verdict is already decided and you must not contradict it. One or two sentences, under 30 words. Mention at least one concrete number (a price or budget figure) or a friend's name. Never shame the user. Output plain text only, no quotes, no emojis.`;
-
-export function spokenLineInput(args: {
-  persona: (typeof PERSONAS)[number];
-  verdict: (typeof VERDICTS)[number];
-  productTitle: string;
-  priceCents: number;
-  similarOwned?: { name: string } | null;
-  friendItem?: { name: string; friendName: string } | null;
-  cheapestUsedCents?: number | null;
-  budgetRemainingCents?: number | null;
-}): string {
-  const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
-  return [
-    `PERSONA: ${args.persona} — ${PERSONA_STYLE[args.persona]}`,
-    `VERDICT (fixed): ${args.verdict}`,
-    `PRODUCT: ${args.productTitle} at ${usd(args.priceCents)}`,
-    `MOST SIMILAR OWNED: ${args.similarOwned?.name ?? 'none'}`,
-    `FRIEND CAN LEND: ${args.friendItem ? `${args.friendItem.friendName}'s ${args.friendItem.name}` : 'none'}`,
-    `BUDGET LEFT THIS MONTH: ${args.budgetRemainingCents != null ? usd(args.budgetRemainingCents) : 'unknown'}`,
-    `CHEAPEST USED: ${args.cheapestUsedCents != null ? usd(args.cheapestUsedCents) : 'none'}`,
   ].join('\n');
 }
 

@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { Badge, usd } from '@/components/ui';
+import { TapeHeader, TapeLine, TapeRule, TapeTotal } from '@/components/Tape';
+import { Icon } from '@/components/Icon';
 
 type Counters = { scanned: number; prefiltered: number; sent: number; clothingOrders: number; itemsFound: number; duplicates: number; failed: number; costUsd: number; tokens: number; cached: number };
 type RecentItem = { id: string; name: string; brand: string | null; price_cents: number | null; image_url: string | null; retailer: string | null };
@@ -18,6 +20,10 @@ const ZERO: Counters = { scanned: 0, prefiltered: 0, sent: 0, clothingOrders: 0,
 
 function cents(usdAmount: number) { return usdAmount < 0.01 ? `${(usdAmount * 100).toFixed(2)}¢` : `${(usdAmount * 100).toFixed(1)}¢`; }
 
+/**
+ * The inbox scan is a receipt being printed. The slot's light blinks while emails are read, every item found
+ * feeds out as a new line, and when the scan ends the paper tears off with the totals.
+ */
 export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail: boolean; itemCount: number; compact?: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
@@ -25,97 +31,115 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
   const [total, setTotal] = useState(0);
   const [c, setC] = useState<Counters>(ZERO);
   const [subject, setSubject] = useState('');
-  const [provider, setProvider] = useState('');
-  const [recent, setRecent] = useState<RecentItem[]>([]);
+  const [found, setFound] = useState<RecentItem[]>([]);
   const [error, setError] = useState('');
   const [elapsed, setElapsed] = useState(0);
   const [tagged, setTagged] = useState<{ tagged: number; embedded: number; costUsd: number } | null>(null);
   const [images, setImages] = useState<{ looked_up: number; imaged: number; searches: number } | null>(null);
   const es = useRef<EventSource | null>(null);
+  const paper = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(!compact);
 
   useEffect(() => () => es.current?.close(), []);
+  // Keep the newest printed line in view, like paper feeding out.
+  useEffect(() => { paper.current?.lastElementChild?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [found.length, state]);
 
   function start() {
-    setState('running'); setC(ZERO); setRecent([]); setError(''); setSubject(''); setOpen(true); setTagged(null); setImages(null);
+    setState('running'); setC(ZERO); setFound([]); setError(''); setSubject(''); setOpen(true); setTagged(null); setImages(null);
     const src = new EventSource('/api/ingest/gmail?max=300');
     es.current = src;
     src.onmessage = (m) => {
       const e = JSON.parse(m.data) as Ev;
       if (e.type === 'start') { setMode(e.mode); setTotal(e.total); }
-      else if (e.type === 'progress') { setC(e.counters); if (e.subject) setSubject(e.subject); if (e.provider) setProvider(e.provider); }
-      else if (e.type === 'item') setRecent((r) => [e.item, ...r].slice(0, 8));
+      else if (e.type === 'progress') { setC(e.counters); if (e.subject) setSubject(e.subject); }
+      else if (e.type === 'item') setFound((r) => [...r, e.item]);
       else if (e.type === 'done') { setC(e.counters); setElapsed(e.elapsedMs); setState('done'); if (e.counters.itemsFound === 0) { src.close(); } router.refresh(); }
       else if (e.type === 'tagged') { setTagged(e); router.refresh(); }
       else if (e.type === 'images') { setImages(e); src.close(); router.refresh(); }
       else if (e.type === 'error') { setC(e.counters); setError(e.message); setState('error'); src.close(); router.refresh(); }
     };
-    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Scan again to continue.'); setState('error'); } src.close(); };
+    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Items found so far are kept. Scan again to continue.'); setState('error'); } src.close(); };
   }
 
   const pct = total > 0 ? Math.min(100, Math.round((c.scanned / total) * 100)) : 0;
+  const running = state === 'running';
+  const finished = state === 'done' || state === 'error';
 
   if (compact && !open) {
     return (
-      <div className="mono flex items-center justify-between text-[11px] text-ink-3">
-        <span>{itemCount} ITEMS · {hasGmail ? 'GMAIL CONNECTED' : 'GMAIL NOT CONNECTED'}</span>
-        <button className="btn !py-1 !px-2 !text-[10px]" onClick={start}>Rescan inbox</button>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dust px-4 py-3 text-sm text-ink-2">
+        <span>{itemCount} item{itemCount === 1 ? '' : 's'} · {hasGmail ? 'Gmail connected' : 'Gmail not connected'}</span>
+        <button className="btn btn-sm" onClick={start}><Icon name="refresh" size={12} />Rescan inbox</button>
+      </div>
+    );
+  }
+
+  if (state === 'idle') {
+    return (
+      <div className="card card-mist flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div className="display text-xs text-ink-2">Inbox scan</div>
+          <p className="mt-1 text-sm text-ink-2">Order emails become items with price, size and return window. The email itself is never kept.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge>{hasGmail ? 'Gmail read-only' : 'Connect Gmail by signing in with Google'}</Badge>
+          <button className="btn btn-primary" onClick={start} disabled={!hasGmail}>Scan my inbox</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <Receipt className="mx-auto max-w-lg" print={state === 'running'}>
-      <ReceiptHeader title="Inbox scan" subtitle={mode === 'fixture' ? 'FIXTURE · NOT YOUR INBOX' : mode === 'gmail' ? 'LIVE · GMAIL READ-ONLY' : hasGmail ? 'READY' : 'SIGN IN TO CONNECT GMAIL'} />
-      <ReceiptRule />
-      {state === 'idle' && (
-        <>
-          <p className="text-sm text-ink-2">Reads your order emails. Keeps item, price, size, return window. Drops the email.</p>
-          <div className="mt-4 flex gap-2">
-            <button className="btn btn-primary" onClick={start}>Scan my inbox</button>
+    <div className="printer">
+      <div className={`slot ${running ? 'busy' : ''}`} aria-hidden="true">
+        <span className="slot-progress" style={{ width: `${state === 'done' ? 100 : pct}%` }} />
+      </div>
+      <section className={`tape feed ${finished ? 'torn' : ''}`} aria-live="polite">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <TapeHeader title={running ? 'Scanning your inbox' : state === 'error' ? 'Scan stopped' : 'Inbox scanned'} subtitle={`${c.scanned}${total ? ` of ${total}` : ''} emails · ${c.prefiltered} skipped before the model · ${c.sent} read by the model`} />
+          {mode === 'fixture' ? <Badge tone="warn">Fixture · not your inbox</Badge> : <Badge tone="pine">Live · Gmail read-only</Badge>}
+        </div>
+        {running && (
+          <div className="mt-2 truncate text-[11px] text-ink-3">
+            <span className="cursor" /> Reading {subject || '…'}
           </div>
-          <div className="mono mt-4 text-[11px] text-ink-3">3 YEARS · ORDERS ONLY · FILTERED BEFORE THE MODEL</div>
-        </>
-      )}
-      {state !== 'idle' && (
-        <>
-          <ReceiptLine label="EMAILS SCANNED" value={`${c.scanned}${total ? ` / ${total}` : ''}`} />
-          <ReceiptLine label="SKIPPED" value={String(c.prefiltered)} muted />
-          <ReceiptLine label="SENT TO MODEL" value={String(c.sent)} muted />
-          <ReceiptLine label="CLOTHING ORDERS" value={String(c.clothingOrders)} />
-          <ReceiptLine label="ITEMS FOUND" value={String(c.itemsFound)} valueClass={c.itemsFound ? 'saved' : ''} />
-          {c.duplicates > 0 && <ReceiptLine label="DUPLICATES" value={String(c.duplicates)} muted />}
-          {c.failed > 0 && <ReceiptLine label="FAILED" value={String(c.failed)} muted />}
-          <ReceiptLine label="TOKENS" value={`${c.tokens.toLocaleString()}${c.cached ? ` (${c.cached} cached)` : ''}`} muted />
-          <ReceiptLine label="COST" value={cents(c.costUsd)} />
-          {provider && <ReceiptLine label="PROVIDER" value={provider} muted />}
-          <div className="mt-3 h-1 w-full bg-paper"><div className="h-1 bg-ink transition-all" style={{ width: `${state === 'done' ? 100 : pct}%` }} /></div>
-          {state === 'running' && <div className="mono mt-2 truncate text-[11px] text-ink-3">READING · {subject || '…'}</div>}
-          {recent.length > 0 && (
-            <div className="mt-3 flex gap-2 overflow-x-auto">
-              {recent.map((it) => (
-                <div key={it.id} className="cutout print w-20 shrink-0 p-1">
-                  <div className="aspect-[3/4] w-full bg-paper-2">{it.image_url && <img src={it.image_url} alt="" className="h-full w-full object-contain" />}</div>
-                  <div className="mono mt-1 truncate text-[9px]">{usd(it.price_cents)}</div>
-                </div>
-              ))}
-            </div>
+        )}
+        <TapeRule />
+
+        <div ref={paper} className="max-h-72 overflow-y-auto">
+          {found.length === 0 && (
+            <div className="py-2 text-center text-[11px] text-ink-3">{running ? 'Nothing printed yet. Marketing and shipping mail is skipped before the model sees it.' : 'Nothing new. Every clothing order in reach is already on the rack.'}</div>
           )}
-          <ReceiptRule />
-          {state === 'done' && <ReceiptLine label="DONE" value={`${(elapsed / 1000).toFixed(1)}s · ${c.itemsFound} ITEMS · ${cents(c.costUsd)} IN TOKENS`} />}
-          {state === 'done' && c.itemsFound > 0 && !tagged && <ReceiptLine label="TAGGING + EMBEDDING" value="…" muted />}
-          {tagged && <ReceiptLine label="TAGGED · EMBEDDED" value={`${tagged.tagged} · ${tagged.embedded} · ${cents(tagged.costUsd)}`} muted />}
-          {tagged && !images && <ReceiptLine label="IMAGES" value="…" muted />}
-          {images && <ReceiptLine label="IMAGES FOUND" value={`${images.imaged} / ${images.looked_up} · ${images.searches} SEARCHES`} muted />}
-          {state === 'error' && <div className="mono text-[11px] text-warn">{error}</div>}
-          {(state === 'done' || state === 'error') && (
-            <div className="mt-3 flex gap-2">
-              <button className="btn" onClick={start}>Scan again</button>
-              {compact && <button className="btn" onClick={() => setOpen(false)}>Close</button>}
+          {found.map((it, i) => (
+            <div key={it.id} className="print-line" style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}>
+              <TapeLine
+                label={<><span className="h-6 w-4 shrink-0 overflow-hidden bg-white">{it.image_url && <img src={it.image_url} alt="" className="h-full w-full object-contain" />}</span><span className="truncate">{it.name}</span>{it.retailer && <span className="shrink-0 text-ink-3">{it.retailer}</span>}</>}
+                value={usd(it.price_cents)}
+              />
             </div>
-          )}
-        </>
-      )}
-    </Receipt>
+          ))}
+        </div>
+
+        {finished && (
+          <>
+            <TapeRule />
+            <TapeTotal label="Items found" value={String(c.itemsFound)} valueClass={c.itemsFound ? 'text-save' : ''} />
+            {c.duplicates > 0 && <TapeLine label="Already on the rack" value={String(c.duplicates)} muted />}
+            {c.failed > 0 && <TapeLine label="Could not read" value={String(c.failed)} muted />}
+            <TapeLine label="Model spend" value={`${cents(c.costUsd)} · ${c.tokens.toLocaleString()} tokens${c.cached ? `, ${c.cached} cached` : ''}`} muted />
+            {state === 'done' && <TapeLine label="Time" value={`${(elapsed / 1000).toFixed(1)}s`} muted />}
+            {state === 'done' && c.itemsFound > 0 && !tagged && <TapeLine label="Tagging" value="printing…" muted />}
+            {tagged && <TapeLine label="Tagged" value={`${tagged.tagged} · ${cents(tagged.costUsd)}`} muted />}
+            {tagged && !images && <TapeLine label="Product photos" value="looking…" muted />}
+            {images && <TapeLine label="Product photos" value={`${images.imaged} of ${images.looked_up}`} muted />}
+            {state === 'error' && <p className="mt-2 text-xs text-warn">{error}</p>}
+            <div className="mt-4 flex gap-2">
+              <button className="btn btn-sm" onClick={start}><Icon name="refresh" size={12} />Scan again</button>
+              {compact && <button className="btn btn-sm btn-outline" onClick={() => setOpen(false)}>Close</button>}
+            </div>
+          </>
+        )}
+      </section>
+    </div>
   );
 }

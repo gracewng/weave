@@ -3,14 +3,13 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Weave',
-  description: 'The spending copilot for clothes. Know what you own, borrow before you buy, and keep the receipts.',
+  description: 'A bank statement for your closet.',
   manifest: '/manifest.webmanifest',
+  icons: { icon: '/logo.png', apple: '/logo.png' },
   appleWebApp: { capable: true, title: 'Weave', statusBarStyle: 'default' },
 };
 
-export const viewport: Viewport = {
-  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#f6f3ec' }, { media: '(prefers-color-scheme: dark)', color: '#161616' }],
-};
+export const viewport: Viewport = { themeColor: '#eef3e6' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen">{children}</body>
     </html>

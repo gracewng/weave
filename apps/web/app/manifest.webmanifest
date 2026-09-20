@@ -1,10 +1,10 @@
 {
   "name": "Weave",
   "short_name": "Weave",
-  "description": "The spending copilot for clothes.",
-  "start_url": "/wardrobe",
+  "description": "A bank statement for your closet.",
+  "start_url": "/home",
   "display": "standalone",
-  "background_color": "#f6f3ec",
-  "theme_color": "#141414",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "background_color": "#eef3e6",
+  "theme_color": "#3a5a40",
+  "icons": [{ "src": "/logo.png", "sizes": "1511x489", "type": "image/png" }]
 }

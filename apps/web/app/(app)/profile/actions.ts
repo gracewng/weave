@@ -1,6 +1,8 @@
 'use server';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'node:crypto';
 import { requireUser } from '@/lib/auth';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const AGES = new Set(['under_18', '18_24', '25_34', '35_44', '45_54', '55_plus', 'prefer_not']);
 const GENDERS = new Set(['woman', 'man', 'non_binary', 'prefer_not']);
@@ -21,4 +23,23 @@ export async function updateSettings(formData: FormData) {
     shops_department: DEPTS.has(dept) ? dept : null,
   }).eq('id', user.id);
   revalidatePath('/profile'); revalidatePath('/friends');
+}
+
+/** Profile picture: any image → `items` bucket under avatars/, then profiles.avatar_url. */
+export async function updateAvatar(form: FormData): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, user } = await requireUser();
+  const admin = createAdminClient(); if (!admin) return { ok: false, error: 'storage not configured' };
+  const file = form.get('avatar') as File | null;
+  if (!file || file.size === 0) return { ok: false, error: 'choose a photo' };
+  if (file.size > 8 * 1024 * 1024) return { ok: false, error: 'photo is over 8 MB' };
+  const type = file.type || 'image/jpeg'; if (!type.startsWith('image/')) return { ok: false, error: 'not an image' };
+  const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
+  const path = `${user.id}/avatar/${randomUUID()}.${ext}`;
+  const { error } = await admin.storage.from('items').upload(path, Buffer.from(await file.arrayBuffer()), { contentType: type });
+  if (error) return { ok: false, error: error.message };
+  const url = admin.storage.from('items').getPublicUrl(path).data.publicUrl;
+  const { error: e2 } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+  if (e2) return { ok: false, error: e2.message };
+  revalidatePath('/', 'layout');
+  return { ok: true };
 }

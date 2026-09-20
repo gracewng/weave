@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Icon } from '@/components/Icon';
+import { Badge } from '@/components/ui';
 
 function b64ToU8(b64: string) { const p = '='.repeat((4 - (b64.length % 4)) % 4); const s = (b64 + p).replace(/-/g, '+').replace(/_/g, '/'); const raw = atob(s); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); }
 
@@ -23,8 +23,8 @@ export function PushEnable({ compact = false }: { compact?: boolean }) {
       setState(r.ok ? 'on' : 'idle');
     } catch { setState('idle'); }
   }
-  if (state === 'unsupported') return compact ? null : <div className="mono text-[10px] text-ink-3">NOT SUPPORTED HERE (IPHONE: ADD TO HOME SCREEN)</div>;
-  if (state === 'on') return <div className="mono text-[10px] text-save">NOTIFICATIONS ON</div>;
-  if (state === 'denied') return <div className="mono text-[10px] text-ink-3">BLOCKED IN BROWSER</div>;
-  return <button className={`btn ${compact ? '!py-1 !text-[10px]' : ''}`} disabled={state === 'busy'} onClick={enable}><Icon name="bell" size={12} className="mr-1" />{state === 'busy' ? 'Enabling…' : 'Notifications'}</button>;
+  if (state === 'unsupported') return compact ? null : <div className="text-xs text-ink-3">Push isn’t supported in this browser. On iPhone, add Weave to your home screen first.</div>;
+  if (state === 'on') return <div className="flex flex-wrap items-center gap-2 text-xs text-ink-2"><Badge tone="save">Notifications on</Badge><span>New charge · return window</span></div>;
+  if (state === 'denied') return <div className="text-xs text-ink-3">Notifications are blocked in your browser settings.</div>;
+  return <button className={`btn ${compact ? 'btn-sm btn-outline' : ''}`} disabled={state === 'busy'} onClick={enable}>{state === 'busy' ? 'Enabling…' : 'Turn on notifications'}</button>;
 }

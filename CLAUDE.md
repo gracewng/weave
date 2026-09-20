@@ -22,7 +22,7 @@ exit, never as a reason to buy.
 
 **Sponsor priorities:** Visa, Ramp, OpenAI API, plus Sustainability as the strongest regular track. Long Lake is a
 strong pitch fit. Meta, token optimization, Devin, and Interactive Media depend on demonstrable evidence.
-ElevenLabs is low priority. Education secondary. Healthcare not a target. (Track list is the supplied challenge
+ElevenLabs was removed 2026-09-20 (no voice). Education secondary. Healthcare not a target. (Track list is the supplied challenge
 list; confirm official rules before submitting.)
 
 ## Judging criteria (weights drive every priority call)
@@ -81,7 +81,7 @@ list; confirm official rules before submitting.)
     deterministically (brand match, name similarity, retailer match) → prefer product-only images (flat background,
     no face) → show a strip of 4–6 candidates the user taps → fallback: user's photo through `rembg`. Every item
     records `image_source` (email / shopping / lens / user_photo / cutout). No item is invented from a charge alone.
-12. **Voice (low priority).** ElevenLabs reads the statement or a verdict in a persona (Bestie/Stylist/CFO).
+12. *(removed 2026-09-20)* Voice / ElevenLabs personas. No spoken statements.
 
 ## The intervention experience
 
@@ -201,12 +201,11 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 | P0 | One reliable two-account borrowing path (+ demo-panel "Maya accepts" fallback) | 8 |
 | P0 | One return rescue with honest pending/refund distinction | 6 |
 | P0 | Statement with traceable totals; `/stats` evidence | 9 |
-| P0 | Complete fixtures, visible fallback mode, recorded demo — before voice | 10 |
+| P0 | Complete fixtures, visible fallback mode, recorded demo | 10 |
 | P1 | In-store capture: mock charge → in-app banner → camera → multimodal read → item with receipt on file | 4 (built) |
 | P1 | One Mystery Purchase resolution with a coverage change | 4 |
 | P1 | Purchase Autopsy expansion | 3 / 9 |
 | P2 | Plaid Link walkthrough, elaborate budget alternatives, richer friend features | kept in plan, off main stage |
-| P2 | ElevenLabs voice/personas | 10, after all P0 |
 
 ## Track strategy (same product for every track)
 | Track | Story | Evidence |
@@ -216,7 +215,6 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 | Ramp (save time + money) | Automatic reconstruction replaces cataloging; intervention avoids spend; returns recover it | Time-to-usable-wardrobe, items reconciled, itemized Money Kept/Recovered. Time-saved claims need a timed manual baseline |
 | OpenAI API | Embeddings do the retrieval; `search_note` explains grounded facts | Real calls, logs, costs; say which tasks are Meta vs OpenAI |
 | Devin | Useful engineering inside the ownership map | `DEVIN_LOG.md`, briefs, PRs, reviews, tests, merged code |
-| ElevenLabs | Optional accessible spoken Statement | One real playback with cache behavior |
 | Token optimization | Measured filtering, batching, caching, short outputs | `/stats` + controlled before/after sample with quality held constant |
 | Meta (bring people closer) | A real shared wardrobe, not a feed; Meta Model API does extraction/parsing | Two accounts complete a loan; private fields shown excluded |
 | Sustainability | Reduced new consumption, reuse, lending | Confirmed avoided purchases, borrows, used buys, returns, lending. No carbon/water figures |
@@ -244,14 +242,14 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 Next.js 16 (App Router, `proxy.ts` not `middleware.ts`) + TypeScript + Tailwind v4 · Supabase (Postgres + pgvector,
 Google OAuth, Storage bucket `items`, Realtime) · Vercel (cron) · Meta Model API (Muse Spark, OpenAI-SDK compatible,
 base `https://api.meta.ai/v1`) · OpenAI (embeddings + short lines) · Plaid sandbox · SerpAPI ·
-ElevenLabs (optional) · PWA (web push, camera via file input) · optional FastAPI `rembg`.
+PWA (web push, camera via file input) · optional FastAPI `rembg`.
 
 ## Repo layout (pnpm workspaces)
 ```
 apps/web              Next.js app + API routes            (Claude)   fixtures/ is Devin's
 packages/shared       models, llm, prompts, contracts, types, budget, verdict, matcher, kept, coverage  (Claude; *.test.ts Devin)
 packages/data         retailer allowlist, return policies, marketplace links, money alternatives  (Devin)
-packages/clients      eBay, SerpAPI, ElevenLabs, Plaid + mocks (Devin)
+packages/clients      eBay, SerpAPI, Plaid + mocks (Devin)
 scripts               seed-demo.ts etc.                     (Devin)
 supabase              migrations + seed.sql                 (Claude — schema-owner session ONLY)
 services/rembg        optional Python bg removal
@@ -282,7 +280,6 @@ every couple of hours. Commit messages `phase-N: <what>` or `devin: <task>`.
 | `parse_query` | Meta | `minimal`, strict JSON |
 | `borrow_message` | Meta | `minimal` |
 | `search_note` | OpenAI `gpt-5.6-luna` | one line above search results |
-| `spoken_line` | OpenAI | ElevenLabs text (low priority) |
 | `embed` | OpenAI `text-embedding-3-small` | 1536 dims, once per item |
 
 Pricing (per 1M): Muse Spark $1.25 in / $0.15 cached / $4.25 out · gpt-5.6-luna $0.20 / $0.02 / $1.20 ·
@@ -295,7 +292,7 @@ first, variable `input` last; `cached_tokens` logged. zod → `json_schema` stri
 `return_initiated_at`, `refund_cents`, `refunded_at`, `est_resale_cents`) · `friendships` · `loans` · `transactions`
 (match_status, decision keep/returning/not_clothes/gift) · `budgets` · `holds` (Ghost Rack: intended
 price/source, verdict, status, `outcome_confirmed_at`, `actual_paid_cents`, `loan_id`, `owned_item_id`,
-`kept_cents`, `release_at`) · `llm_calls` · `gmail_tokens` (service role) · `push_subscriptions` · `audio_cache` · `email_records` (per processed message: subject, retailer, items found,
+`kept_cents`, `release_at`) · `llm_calls` · `gmail_tokens` (service role) · `push_subscriptions` · `email_records` (per processed message: subject, retailer, items found,
 cost; never the body).
 RLS everywhere. View `friend_items` (no money fields). Functions: `match_items`, `match_friend_items`
 (size-filtered), `accept_invite`, `is_friend`, `handle_new_user`, `items_privacy_defaults`.
@@ -313,7 +310,7 @@ Coverage: resolved / detected records in period; "not clothes" leaves the denomi
 ## Token optimization (prize track — shown on `/stats`)
 1. Gmail query + sender-domain allowlist before any LLM call · 2. HTML strip, boilerplate removal, ~6k-char
 truncation · 3. `minimal` reasoning for extraction, tagging, parsing · 4. Tagging batched 20/call · 5. Static
-prefix first → prompt cache; `cached_tokens` tracked · 6. Embeddings once per item; audio cache · 7. Rules for
+prefix first → prompt cache; `cached_tokens` tracked · 6. Embeddings once per item · 7. Rules for
 verdicts, budget, memory, coverage, kept, returns — the model writes only short text · 8. `/stats`: tokens + cost
 by task/provider, cache rate, fallbacks, cost per email/search, kept per AI dollar, live vs fixture.
 
@@ -354,17 +351,32 @@ maps to a known effect; every rule below closes a known failure mode.
 treat, wishlist, missing, gap, saved for later, wasted, frugal, score, streak. "Buy anyway" is the neutral label;
 "Skip" is the neutral opposite.
 
-**Notification policy.** Exactly three kinds, each at most once per event: a new clothing charge (immediate), a
-return window at 4 days (once), a hold check-in at 48h (once). Never marketing, never nudges to shop.
+**Notification policy.** Exactly two kinds, each at most once per event: a new clothing charge (immediate), a
+return window at 4 days (once). (The 48h hold check-in went with the Ghost Rack, 2026-09-20.) Never marketing, never nudges to shop.
 
 ## Design direction
-Aesthetic digital wardrobe on receipt paper. **The app is a thermal printer:** every decision produces a receipt,
-the wardrobe is a rack of cutouts, money is always ink on paper. Off-white thermal paper, near-black ink, one
-accent: savings green (`--save`) **only for confirmed** kept/recovered money. No red anywhere; over-budget is the
-receipt running out of paper. IBM Plex Mono for numbers, IBM Plex Sans for body; tabular numerals. Carbon-copy dark
-mode with slightly blue ink. Respect `prefers-reduced-motion` (every animation degrades to an instant state
-change); receipts are real text. Primitives: `apps/web/components/Receipt.tsx`; icons: `components/Icon.tsx` (inline SVG, stroke currentColor —
-use an icon + one word on buttons, never a sentence). Receipt headers show the WEAVE wordmark only on the landing page.
+**Redesign merged 2026-09-20 (Toryn's `toryn/redesign`, reconciled with `main` on `toryn/redesign-merge`).** Aesthetic
+digital wardrobe as a wide "panel" on a pastel-green canopy: white paper, mist/sprout/sage/fern/hunter/pine greens,
+Unbounded for display type, Fraunces for body, IBM Plex Mono for numbers. Sidebar nav (`components/Sidebar.tsx`:
+Home · Wardrobe · Search · Charges · Friends · Profile, avatar + sign-out at the bottom). Kit lives in
+`components/ui.tsx` (`Page`, `PageHeader`, `Card`, `Stat`, `StatGrid`, `Row`, `Badge`, `Field`, `Empty`, `Progress`,
+`usd`) and `components/icons.tsx`; the older `components/Receipt.tsx` is now a **compat layer** over that kit
+(Receipt → Card, ReceiptLine → Row, SHOUTED labels sentence-cased) so the pages that still use it look like the
+rest, and `components/Icon.tsx` (small inline glyphs) stays for buttons. Action confirmations are a bottom
+snackbar (`Snackbar.tsx`, fed by `lib/printer.ts`); the landing and welcome flows print on a 3D thermal printer
+(`components/three/ReceiptPrinter3D.tsx`, three.js + react-three-fiber + motion). Savings green (`--save`) is still
+reserved for confirmed kept/recovered money; no red anywhere. Respect `prefers-reduced-motion`.
+
+**Wardrobe = a rack of hang tags + a closet ledger (2026-09-20).** `components/Tape.tsx` holds the thermal-receipt
+primitives (`Tape` with perforated ends, `TapeLine` dotted leaders, `TapeRule`, `TapeTotal`, `Stamp`, `Barcode` drawn
+deterministically from any id). `/wardrobe` prints a header tape (spend, paid, returnable, closet barcode) and offers
+two views: **Rack** (`?view=rack`, default) hangs each item as a paper tag on a rail — string, punched hole, product
+photo, dotted-leader price line, its own barcode, purchase date — and tags swing slightly on hover; **Tape**
+(`?view=tape`) is one long receipt grouped by purchase month with subtotals and a double-ruled total. The item page
+is a single mini receipt on tape with the item barcode. Both respect `prefers-reduced-motion`.
+
+*Earlier direction (kept for the ideas, superseded in look):* the app as a thermal printer, receipt paper, near-black
+ink, carbon-copy dark mode.
 
 **Signature interactions (build in this order; each phase inherits the earlier ones)**
 1. **Printer slot.** A dark slit fixed at the top; every action's receipt prints from it line by line, then settles.
@@ -464,12 +476,12 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       separately; "kept + recovered" labeled; spent on you vs on others; envelope when a budget exists; % worn 90d,
       best/worst cost per wear, dormant $). `/stats` now shows your AI spend, per-email and per-search cost, your
       confirmed Money Kept / Recovered, **kept per $1 of your AI spend** (N/A at zero), and live call count.
-- [~] **Phase 10 — Hardening, then voice.** **Done:** production deploy at https://weave-phi.vercel.app (health green,
+- [~] **Phase 10 — Hardening.** **Done:** production deploy at https://weave-phi.vercel.app (health green,
       Google sign-in redirect verified, cron authenticates). **Done:** web push (VAPID keys local + Vercel, `public/sw.js`, `POST /api/push/subscribe`,
       `PushEnable` on Settings + Charges; sends: new unmatched clothing charge, return window at 4 days (daily cron),
       48h hold check-in (hourly `/api/cron/holds`); each once), live inbox scan capped to Vercel's 60s function
       limit (80 messages/run, resumable), `(app)/loading.tsx` printing skeleton, language-guide pass.
-      **Left:** fixture completeness (Devin task 3), 90-second recording (Grace), ElevenLabs only after that.
+      **Left:** fixture completeness (Devin task 3), 90-second recording (Grace). Voice was cut 2026-09-20.
 
 ## Demo — 90 seconds, one changed purchase at a time
 Live vs fixture is always labeled; the recorded fallback is ready.
@@ -500,8 +512,26 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
-- 2026-09-20 profile: `profiles.bio` (free text, replaces the voice-persona picker in the UI; `voice_persona`
-  column stays), `profiles.area` (self-typed, never device location; friends in the same area show NEAR YOU), profile
+- 2026-09-20 search matching: owned/friend hits must share the query's parsed category (untagged items pass) and
+  clear a 0.5 display floor, so shoes no longer show as a match for a top. Verdict thresholds unchanged.
+- 2026-09-20: PR #19 (Toryn's redesign + the lead's UI passes: tape wardrobe, hang tags, printer scan, search rack,
+  buy modal, profile, charges, friends) merged to `main` and deployed to https://weave-phi.vercel.app.
+- 2026-09-20 (lead): **Ghost Rack removed from the UI** — `/ghosts`, the search HoldsPanel, the hourly hold cron and
+  the demo "advance 48h / reset holds" triggers are gone. `holds` rows still record confirmed outcomes (Use mine,
+  borrow instead) because Money Kept on the Statement and the wardrobe's "You saved" line are computed from them.
+  Notifications are now two kinds: new clothing charge, return window at 4 days. Home shows this month's spend
+  instead of holds. Wardrobe header receipt is deliberately simple (spent last 30 days, paid in total, closet barcode); a "You saved"
+  total was tried and removed the same day because it read $0 for everyone. Profile uses a person icon.
+- 2026-09-20 redesign merge (Toryn): `main` merged into `toryn/redesign` with 36 conflicts resolved — Toryn's visual
+  layer + main's features/IA. Decisions taken without the lead: keep Toryn's `/home` page as a sixth tab; keep the
+  optional bank-link step at the end of the welcome flow (skippable; sets `profiles.onboarding_complete`, migration
+  **0014**, applied live — Toryn's file was numbered 0013 and collided with `0013_profile_bio_area.sql`); Sidebar IA
+  changed from Toryn's Home / My stuff / Shop / Spending / Budgeting / Settings to the lead's five tabs + Home;
+  `/settings` and `/budget` still redirect to `/profile`. Pages that main rewrote after the branch point
+  (wardrobe grid + item page, search grid + Buy modal, charges + Add details form, profile) render through the
+  Receipt compat layer and are not yet hand-restyled in the new kit. New deps: three, @react-three/fiber, drei,
+  motion (+ ~600 lock lines).
+- 2026-09-20 profile: `profiles.bio` (free text; the voice-persona picker and `voice_persona` column are gone, migration 0015), `profiles.area` (self-typed, never device location; friends in the same area show NEAR YOU), profile
   basics editable inline on `/profile`; wardrobe sorts: Newest · Paid · Returnable.
 - 2026-09-20 search/charges revision (lead): search shows one tagged grid (MINE · BORROW FROM <friend> · SECOND
   HAND · NEW) with Use mine / Ask to borrow / Buy used / Buy (direct links; clicks are not recorded as purchases);
@@ -525,6 +555,10 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - Meta `cached_tokens` field location unverified in a real response — `extractUsage()` accepts both
   `usage.prompt_tokens_details.cached_tokens` and `usage.cached_tokens`; confirm on first live call.
 ### Contract changes
+- 2026-09-20 ElevenLabs removed: `TtsClient`/`TtsResult`/`VoicePersona` deleted from `contracts.ts`, `Clients.tts`
+  gone, `Fixtures.llm.spoken_line` and `Fixtures.audio` gone, `spoken_line` task removed from `models.ts`;
+  `packages/clients/src/tts*.ts` and `apps/web/fixtures/audio.ts` deleted; migration 0015 drops `audio_cache` and
+  `profiles.voice_persona` (applied live).
 - 2026-09-20 wear removal: `VerdictInputs.topOwnedWears` removed; `wears.ts` deleted (Devin task 4: drop its
   tests); `holds.wore_item_id` → `owned_item_id`; `wears` table dropped (migration 0012).
 - 2026-09-19 re-plan: removed crew/outfit/intervention shapes; added `MarketplaceLink`, `MoneyAlternative`,

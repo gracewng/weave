@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { demoAdvance48h, demoResetHolds, demoFriendAccepts, demoSeedRefund } from '@/app/demo-actions';
+import { demoFriendAccepts, demoSeedRefund } from '@/app/demo-actions';
 import { printReceipt } from '@/lib/printer';
+import { Badge } from '@/components/ui';
 
-/** Press D three times within 1.5s. Hosts every demo trigger; each one is labeled DEMO. */
+/** Press D three times within 1.5s. Hosts every demo trigger; each one is labeled Demo. */
 export function DemoPanel() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -19,16 +20,14 @@ export function DemoPanel() {
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }, []);
   if (!open) return null;
-  const run = (label: string, fn: () => Promise<number>) => start(async () => { const n = await fn(); printReceipt({ title: 'Demo trigger', lines: [{ label: label.toUpperCase(), value: String(n) }], footer: 'DEMO · NOT LIVE', ttlMs: 3000 }); router.refresh(); });
+  const run = (label: string, fn: () => Promise<number>) => start(async () => { const n = await fn(); printReceipt({ title: 'Demo trigger', lines: [{ label, value: String(n) }], footer: 'Labeled demo action, not live data', ttlMs: 3000 }); router.refresh(); });
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-64 border border-warn bg-paper p-3 shadow-lg">
-      <div className="mono mb-2 flex items-center justify-between text-[10px] uppercase text-warn"><span>Demo panel</span><button onClick={() => setOpen(false)}>close</button></div>
+    <div className="card card-paper fixed bottom-4 right-4 z-40 w-64 !p-4 shadow-lg">
+      <div className="mb-3 flex items-center justify-between"><Badge tone="warn">Demo</Badge><button className="btn-text" onClick={() => setOpen(false)}>Close</button></div>
       <div className="flex flex-col gap-2">
-        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('holds advanced 48h', demoAdvance48h)}>Advance 48h (holds)</button>
-        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { const r = await fetch('/api/demo/charge', { method: 'POST' }); const j = await r.json(); printReceipt({ title: 'Demo trigger', lines: [{ label: 'MOCK CHARGE', value: r.ok ? `$42.00 UNIQLO` : 'FAILED' }], footer: 'DEMO · NOT LIVE', ttlMs: 3000 }); router.refresh(); void j; })}>Fire mock charge ($42 Uniqlo)</button>
-        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('friend accepted + handed over', demoFriendAccepts)}>Friend accepts my request</button>
-        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('refund seeded (cents)', demoSeedRefund)}>Seed confirmed refund</button>
-        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => { if (confirm('Delete all of your holds?')) run('holds deleted', demoResetHolds); }}>Reset my holds</button>
+        <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => start(async () => { const r = await fetch('/api/demo/charge', { method: 'POST' }); const j = await r.json(); printReceipt({ title: 'Demo trigger', lines: [{ label: 'Mock charge', value: r.ok ? '$42.00 Uniqlo' : 'Failed' }], footer: 'Labeled demo action, not live data', ttlMs: 3000 }); router.refresh(); void j; })}>Fire mock charge ($42 Uniqlo)</button>
+        <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => run('Friend accepted and handed over', demoFriendAccepts)}>Friend accepts my request</button>
+        <button className="btn btn-sm btn-outline" disabled={pending} onClick={() => run('Refund seeded (cents)', demoSeedRefund)}>Seed confirmed refund</button>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export function AddDetailsForm({ txId, merchant }: { txId: string; merchant: str
   const [err, setErr] = useState('');
   const [preview, setPreview] = useState<string | null>(null);
   const field = (name: string, label: string, placeholder = '') => (
-    <label className="block"><div className="mono text-[10px] uppercase text-ink-3">{label}</div><input name={name} placeholder={placeholder} className="mt-0.5 w-full border border-rule bg-paper p-2 text-sm" /></label>
+    <label className="block"><div className="mono text-[10px] uppercase text-ink-3">{label}</div><input name={name} placeholder={placeholder} className="input mt-0.5 " /></label>
   );
   return (
     <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); start(async () => {
@@ -25,8 +25,8 @@ export function AddDetailsForm({ txId, merchant }: { txId: string; merchant: str
       {field('name', 'Item name', 'black crew neck tee')}
       <div className="grid grid-cols-2 gap-2">
         {field('brand', 'Brand', 'Uniqlo')}
-        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Type</div><select name="category" className="mt-0.5 w-full border border-rule bg-paper p-2 text-sm">{CATS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
-        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Casual / formal</div><select name="formality" defaultValue={2} className="mt-0.5 w-full border border-rule bg-paper p-2 text-sm">{FORMALITY.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Type</div><select name="category" className="input mt-0.5 ">{CATS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Casual / formal</div><select name="formality" defaultValue={2} className="input mt-0.5 ">{FORMALITY.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
         {field('color', 'Color', 'black')}
         {field('size', 'Size', 'M')}
       </div>

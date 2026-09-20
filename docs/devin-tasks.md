@@ -6,7 +6,7 @@
 > when it exports the contract shape. Stopgaps to replace:
 > - Task 1 → `apps/web/lib/ingest/retailers-fallback.ts` (35 retailers) and `apps/web/lib/returns.ts#policyDaysFor`
 > - Task 2 → SerpAPI lives in `apps/web/lib/identify.ts` and Plaid in `apps/web/lib/plaid.ts` (both working; keep the
->   contract shapes). **Only eBay and ElevenLabs remain for you.** Skip SerpAPI/Plaid unless you're wrapping the existing code.
+>   contract shapes). **Only eBay and ElevenLabs remain for you.** *(Both later cut from scope by the lead, 2026-09-20; the ElevenLabs client, fixtures and `spoken_line` task were deleted.)* Skip SerpAPI/Plaid unless you're wrapping the existing code.
 > - Task 3 → `apps/web/lib/ingest/sample-emails.ts` (5 emails) and `apps/web/fixtures/index.ts` (`null`)
 > - Task 5 → `apps/web/lib/search/marketplaces.ts`
 > Contracts gained since the briefs were written (all in `packages/shared/src/contracts.ts`): `KeptInputs/Summary`,

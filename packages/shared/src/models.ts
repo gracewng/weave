@@ -39,7 +39,6 @@ export type Task =
   | 'parse_query'
   | 'search_note'
   | 'borrow_message'
-  | 'spoken_line'
   | 'embed'
   | 'health';
 
@@ -92,11 +91,6 @@ export const TASKS: Record<Task, TaskConfig> = {
     provider: 'meta', fallback: 'openai', reasoningEffort: 'minimal', structured: false,
     timeoutMs: 8000, maxOutputTokens: 120,
     why: 'Short social copy',
-  },
-  spoken_line: {
-    provider: 'openai', fallback: 'meta', structured: false,
-    timeoutMs: 8000, maxOutputTokens: 80,
-    why: 'ElevenLabs spoken statement / verdict (low priority)',
   },
   embed: {
     provider: 'openai', structured: false, batchSize: 100, timeoutMs: 10000,

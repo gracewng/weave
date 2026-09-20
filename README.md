@@ -9,7 +9,7 @@ The spending copilot for clothes. See `CLAUDE.md` for architecture, conventions,
 3. Supabase → Auth → Providers → Google: enable, paste a Google OAuth client. In Google Cloud, add the scope
    `https://www.googleapis.com/auth/gmail.readonly` and enable the Gmail API. Add
    `http://localhost:3000/auth/callback` and your Vercel URL to Supabase redirect URLs.
-4. `cp .env.example apps/web/.env.local` and fill in values (`DEMO_MODE=true` works without eBay/Serp/ElevenLabs/Plaid).
+4. `cp .env.example apps/web/.env.local` and fill in values (`DEMO_MODE=true` works without eBay/Serp/Plaid).
 5. `pnpm dev` → http://localhost:3000 · `curl localhost:3000/api/llm/health`
 
 ## Deploy (Vercel)
