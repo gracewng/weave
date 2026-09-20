@@ -22,3 +22,9 @@ export async function getProfile(): Promise<{ profile: Profile | null; user: Non
   const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
   return { profile: (data as Profile | null) ?? null, user };
 }
+
+/* onboarded_at is set only when the whole flow finishes, so it stands in until migration 0013 adds onboarding_complete. */
+export function isOnboarded(profile: Profile | null): boolean {
+  if (!profile) return false;
+  return profile.onboarding_complete ?? !!profile.onboarded_at;
+}

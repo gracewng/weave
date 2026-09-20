@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { draftBorrowMessage, requestLoan } from '../actions';
 import { printReceipt } from '@/lib/printer';
+import { Field, Note } from '@/components/ui';
 
 function plusDays(d: string, n: number) { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
 
@@ -17,25 +18,25 @@ export function BorrowForm({ itemId, ownerId, friendName, itemName, intendedPric
   const [sent, setSent] = useState(false);
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2">
-        <label className="block col-span-3 sm:col-span-1"><div className="mono text-[10px] uppercase text-ink-3">For (event)</div><input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="a wedding" className="mt-0.5 w-full border border-rule bg-paper p-1.5 text-sm" /></label>
-        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Needed on</div><input type="date" value={neededOn} onChange={(e) => setNeededOn(e.target.value)} className="mono mt-0.5 w-full border border-rule bg-paper p-1.5 text-xs" /></label>
-        <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Back by</div><input type="date" value={dueBack} onChange={(e) => setDueBack(e.target.value)} className="mono mt-0.5 w-full border border-rule bg-paper p-1.5 text-xs" /></label>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="For (event)"><input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="a wedding" className="input" /></Field>
+        <Field label="Needed on"><input type="date" value={neededOn} onChange={(e) => setNeededOn(e.target.value)} className="input" /></Field>
+        <Field label="Back by"><input type="date" value={dueBack} onChange={(e) => setDueBack(e.target.value)} className="input" /></Field>
       </div>
       <div>
-        <div className="mono flex items-center justify-between text-[10px] uppercase text-ink-3"><span>Message</span><button type="button" className="hover:text-ink" disabled={pending} onClick={() => start(async () => setMessage(await draftBorrowMessage({ friendName, itemName, event, neededOn, returnBy: dueBack })))}>{pending ? 'drafting…' : 'draft one for me'}</button></div>
-        <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder={`Hey ${friendName}, could I borrow your ${itemName}…`} className="mt-0.5 w-full border border-rule bg-paper p-1.5 text-sm" />
+        <div className="mb-1 flex items-center justify-between"><span className="text-xs font-medium text-ink-2">Message</span><button type="button" className="btn-text" disabled={pending} onClick={() => start(async () => setMessage(await draftBorrowMessage({ friendName, itemName, event, neededOn, returnBy: dueBack })))}>{pending ? 'Drafting…' : 'Draft one for me'}</button></div>
+        <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder={`Hey ${friendName}, could I borrow your ${itemName}…`} className="input" />
       </div>
       {!sent ? (
         <button className="btn btn-primary" disabled={pending} onClick={() => start(async () => {
           const r = await requestLoan({ itemId, ownerId, event, neededOn, dueBack, message, intendedPriceCents, query, title: intendedPriceCents != null ? `${itemName} (borrow instead)` : null });
           if (!r.ok) { alert(r.error); return; }
           setSent(true);
-          printReceipt({ title: 'Shared receipt', subtitle: `YOU · ${friendName.toUpperCase()}`, lines: [{ label: 'ITEM', value: itemName.toUpperCase().slice(0, 22) }, { label: 'STATUS', value: 'REQUESTED' }, { label: 'BACK BY', value: dueBack, muted: true }], footer: 'NO PRICES ON A SHARED RECEIPT', ttlMs: 5000 });
+          printReceipt({ title: 'Shared receipt', subtitle: `You · ${friendName}`, lines: [{ label: 'Item', value: itemName.slice(0, 28) }, { label: 'Status', value: 'Requested' }, { label: 'Back by', value: dueBack, muted: true }], footer: 'No prices on a shared receipt', ttlMs: 5000 });
           router.push('/friends');
         })}>{pending ? 'Sending…' : 'Send request'}</button>
-      ) : <div className="mono text-[11px] text-save">REQUEST SENT</div>}
-      <div className="mono text-[10px] text-ink-3">{intendedPriceCents != null ? 'IF THIS REPLACES THE PURCHASE, MONEY KEPT IS CREDITED ONCE THE ITEM IS HANDED OVER.' : 'A REQUEST IS PENDING UNTIL YOUR FRIEND ACCEPTS.'}</div>
+      ) : <div className="text-sm text-save">Request sent</div>}
+      <Note>{intendedPriceCents != null ? 'If this replaces the purchase, Money Kept is credited once the item is handed over.' : 'A request is pending until your friend accepts.'}</Note>
     </div>
   );
 }

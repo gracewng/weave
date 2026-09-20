@@ -1,5 +1,5 @@
 import { getProfile } from '@/lib/auth';
-import { Receipt, ReceiptHeader, ReceiptRule } from '@/components/Receipt';
+import { Page, PageHeader, Card, CardTitle, Field, Note } from '@/components/ui';
 import { updateSettings } from './actions';
 import { PushEnable } from '@/components/PushEnable';
 
@@ -13,48 +13,44 @@ export default async function SettingsPage() {
   const { profile, user } = await getProfile();
   const sizes = profile?.sizes ?? {};
   return (
-    <Receipt className="mx-auto max-w-lg">
-      <ReceiptHeader title="Settings" subtitle={user.email ?? ''} />
-      <ReceiptRule />
-      <form action={updateSettings} className="space-y-5">
-        <label className="block">
-          <div className="mono text-xs uppercase text-ink-3">Display name</div>
-          <input name="display_name" defaultValue={profile?.display_name ?? ''} className="mt-1 w-full border border-rule bg-paper p-2 text-sm" />
-        </label>
-        <fieldset>
-          <legend className="mono text-xs uppercase text-ink-3">Voice persona (spoken statement, optional)</legend>
-          <div className="mt-2 space-y-2">
+    <Page>
+      <PageHeader title="Settings" subtitle={user.email ?? ''} />
+      <form action={updateSettings} className="max-w-2xl space-y-4">
+        <Card>
+          <CardTitle hint={`Invite code ${profile?.invite_code ?? '—'}`}>Profile</CardTitle>
+          <Field label="Display name"><input name="display_name" defaultValue={profile?.display_name ?? ''} className="input" /></Field>
+          <div className="mt-4">
+            <div className="mb-1 text-xs font-medium text-ink-2">Sizes <span className="font-normal text-ink-3">· shown to friends for borrow matching</span></div>
+            <div className="grid grid-cols-3 gap-3">
+              {(['top', 'bottom', 'shoes'] as const).map((k) => (
+                <Field key={k} label={k.charAt(0).toUpperCase() + k.slice(1)}><input name={`size_${k}`} defaultValue={sizes[k] ?? ''} className="input" /></Field>
+              ))}
+            </div>
+          </div>
+          <Note className="mt-4">Profile basics (age, gender, department) are used only for image matching. <a href="/welcome?edit=1&next=/settings" className="underline">Edit</a></Note>
+        </Card>
+        <Card>
+          <CardTitle hint="Spoken statement, optional">Voice persona</CardTitle>
+          <div className="space-y-2">
             {PERSONAS.map(([v, label, desc]) => (
-              <label key={v} className="flex items-start gap-2 text-sm">
-                <input type="radio" name="voice_persona" value={v} defaultChecked={(profile?.voice_persona ?? 'bestie') === v} className="mt-1" />
-                <span><span className="font-medium">{label}</span> <span className="text-ink-3">— {desc}</span></span>
+              <label key={v} className="flex cursor-pointer items-start gap-3 rounded-2xl bg-paper p-3 text-sm">
+                <input type="radio" name="voice_persona" value={v} defaultChecked={(profile?.voice_persona ?? 'bestie') === v} className="mt-0.5" />
+                <span><span className="font-medium">{label}</span> <span className="text-ink-3">· {desc}</span></span>
               </label>
             ))}
           </div>
-        </fieldset>
-        <fieldset>
-          <legend className="mono text-xs uppercase text-ink-3">Sizes (shown to friends for borrow matching)</legend>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {(['top', 'bottom', 'shoes'] as const).map((k) => (
-              <label key={k} className="block">
-                <div className="mono text-[11px] uppercase text-ink-3">{k}</div>
-                <input name={`size_${k}`} defaultValue={sizes[k] ?? ''} className="mt-1 w-full border border-rule bg-paper p-2 text-sm" />
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <ReceiptRule />
-        <div className="mono text-[11px] text-ink-3">
-          <div>INVITE CODE · {profile?.invite_code ?? '—'}</div>
-          <div className="mt-1">PROFILE BASICS (AGE · GENDER · DEPARTMENT) · <a href="/welcome?edit=1&next=/settings" className="underline">EDIT</a> · USED ONLY FOR IMAGE MATCHING</div>
-          <div className="mt-1">PRIVACY · Friends see shareable items only. Prices, purchase dates, stores and return windows are never shared. Intimates are hidden by default.</div>
-        </div>
+        </Card>
+        <Card tone="paper">
+          <CardTitle>Privacy</CardTitle>
+          <Note>Friends see shareable items only. Prices, purchase dates, stores and return windows are never shared. Intimates are hidden by default. Emails are read-only and their text is never stored.</Note>
+        </Card>
         <button className="btn btn-primary" type="submit">Save</button>
       </form>
-      <ReceiptRule />
-      <div className="mono mb-1 text-xs uppercase text-ink-3">Notifications</div>
-      <PushEnable />
-      <div className="mono mt-1 text-[10px] text-ink-3">EXACTLY THREE KINDS, EACH ONCE: A NEW CLOTHING CHARGE · A RETURN WINDOW AT 4 DAYS · A 48H HOLD CHECK-IN. NEVER MARKETING.</div>
-    </Receipt>
+      <Card className="max-w-2xl">
+        <CardTitle>Notifications</CardTitle>
+        <PushEnable />
+        <Note className="mt-3">Exactly three kinds, each once: a new clothing charge, a return window at 4 days, a 48h hold check-in. Never marketing.</Note>
+      </Card>
+    </Page>
   );
 }

@@ -1,7 +1,8 @@
-import { Nav } from '@/components/Nav';
-import { PrinterSlot } from '@/components/PrinterSlot';
+import { Sidebar } from '@/components/Sidebar';
+import { Canopy } from '@/components/Canopy';
+import { Snackbar } from '@/components/Snackbar';
 import { DemoPanel } from '@/components/DemoPanel';
-import { getProfile } from '@/lib/auth';
+import { getProfile, isOnboarded } from '@/lib/auth';
 import { isDemoMode } from '@weave/shared/env';
 import { redirect } from 'next/navigation';
 
@@ -9,15 +10,17 @@ export const dynamic = 'force-dynamic';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, user } = await getProfile();
-  // First sign-in: one short onboarding step, then never again (onboarded_at).
-  if (profile && !profile.onboarded_at) redirect('/welcome');
-  const name = profile?.display_name ?? user.email ?? 'you';
+  if (!isOnboarded(profile)) redirect('/welcome');
+  const name = profile?.display_name?.trim().split(/\s+/)[0] || user.email?.split('@')[0] || 'you';
   return (
-    <div className="min-h-screen">
-      <PrinterSlot />
+    <div className="min-h-dvh p-3 md:px-0 md:py-[7.5dvh]">
+      <Canopy />
+      <Snackbar />
       <DemoPanel />
-      <Nav name={name} demo={isDemoMode()} />
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <div className="panel">
+        <Sidebar name={name} demo={isDemoMode()} />
+        <main className="min-w-0 flex-1 px-4 py-6 md:px-10 md:py-8">{children}</main>
+      </div>
     </div>
   );
 }

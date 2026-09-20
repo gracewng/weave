@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { Card, CardTitle, Row, Note, Badge, Progress, usd } from '@/components/ui';
 
 type Counters = { scanned: number; prefiltered: number; sent: number; clothingOrders: number; itemsFound: number; duplicates: number; failed: number; costUsd: number; tokens: number; cached: number };
 type RecentItem = { id: string; name: string; brand: string | null; price_cents: number | null; image_url: string | null; retailer: string | null };
@@ -50,72 +50,80 @@ export function IngestPanel({ hasGmail, itemCount, compact = false }: { hasGmail
       else if (e.type === 'images') { setImages(e); src.close(); router.refresh(); }
       else if (e.type === 'error') { setC(e.counters); setError(e.message); setState('error'); src.close(); router.refresh(); }
     };
-    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Items found so far are recorded — scan again to continue.'); setState('error'); } src.close(); };
+    src.onerror = () => { if (state === 'running') { setError('Connection dropped. Items found so far are recorded. Scan again to continue.'); setState('error'); } src.close(); };
   }
 
   const pct = total > 0 ? Math.min(100, Math.round((c.scanned / total) * 100)) : 0;
 
   if (compact && !open) {
     return (
-      <div className="mono flex items-center justify-between text-[11px] text-ink-3">
-        <span>{itemCount} ITEMS · {hasGmail ? 'GMAIL CONNECTED' : 'GMAIL NOT CONNECTED'}</span>
-        <button className="btn !py-1 !px-2 !text-[10px]" onClick={start}>Rescan inbox</button>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dust px-4 py-3 text-sm text-ink-2">
+        <span>{itemCount} item{itemCount === 1 ? '' : 's'} · {hasGmail ? 'Gmail connected' : 'Gmail not connected'}</span>
+        <button className="btn btn-sm" onClick={start}>Rescan inbox</button>
       </div>
     );
   }
 
+  const modeBadge = mode === 'fixture'
+    ? <Badge tone="warn">Fixture mode · not your real inbox</Badge>
+    : mode === 'gmail'
+      ? <Badge tone="pine">Live · Gmail read-only</Badge>
+      : <Badge>{hasGmail ? 'Ready' : 'Sign in with Google to connect Gmail'}</Badge>;
+
   return (
-    <Receipt className="mx-auto max-w-lg" print={state === 'running'}>
-      <ReceiptHeader title="Inbox scan" subtitle={mode === 'fixture' ? 'FIXTURE MODE · NOT YOUR REAL INBOX' : mode === 'gmail' ? 'LIVE · GMAIL READ-ONLY' : hasGmail ? 'READY' : 'SIGN IN WITH GOOGLE TO CONNECT GMAIL'} />
-      <ReceiptRule />
+    <Card className="max-w-3xl">
+      <CardTitle action={modeBadge}>Inbox scan</CardTitle>
       {state === 'idle' && (
         <>
           <p className="text-sm text-ink-2">Weave reads your order confirmations, extracts each clothing item with its price, size and return window, and discards the email text. Nothing you didn&apos;t buy gets invented.</p>
           <div className="mt-4 flex gap-2">
             <button className="btn btn-primary" onClick={start}>Scan my inbox</button>
           </div>
-          <div className="mono mt-4 text-[11px] text-ink-3">3 YEARS · ORDER + RECEIPT EMAILS ONLY · RETAILER ALLOWLIST BEFORE ANY MODEL CALL</div>
+          <Note className="mt-4">Three years of order and receipt emails only. The retailer allowlist runs before any model call.</Note>
         </>
       )}
       {state !== 'idle' && (
         <>
-          <ReceiptLine label="EMAILS SCANNED" value={`${c.scanned}${total ? ` / ${total}` : ''}`} />
-          <ReceiptLine label="SKIPPED BEFORE THE MODEL" value={String(c.prefiltered)} muted />
-          <ReceiptLine label="SENT TO MODEL" value={String(c.sent)} muted />
-          <ReceiptLine label="CLOTHING ORDERS" value={String(c.clothingOrders)} />
-          <ReceiptLine label="ITEMS FOUND" value={String(c.itemsFound)} valueClass={c.itemsFound ? 'saved' : ''} />
-          {c.duplicates > 0 && <ReceiptLine label="ALREADY IN WARDROBE" value={String(c.duplicates)} muted />}
-          {c.failed > 0 && <ReceiptLine label="FAILED" value={String(c.failed)} muted />}
-          <ReceiptLine label="TOKENS" value={`${c.tokens.toLocaleString()}${c.cached ? ` (${c.cached} cached)` : ''}`} muted />
-          <ReceiptLine label="MODEL SPEND" value={cents(c.costUsd)} />
-          {provider && <ReceiptLine label="PROVIDER" value={provider} muted />}
-          <div className="mt-3 h-1 w-full bg-paper"><div className="h-1 bg-ink transition-all" style={{ width: `${state === 'done' ? 100 : pct}%` }} /></div>
-          {state === 'running' && <div className="mono mt-2 truncate text-[11px] text-ink-3">READING · {subject || '…'}</div>}
+          <Progress pct={state === 'done' ? 100 : pct} className="mb-3" />
+          {state === 'running' && <Note className="mb-3 truncate">Reading · {subject || '…'}</Note>}
+          <Row label="Emails scanned" value={`${c.scanned}${total ? ` / ${total}` : ''}`} />
+          <Row label="Skipped before the model" value={String(c.prefiltered)} muted />
+          <Row label="Sent to model" value={String(c.sent)} muted />
+          <Row label="Clothing orders" value={String(c.clothingOrders)} />
+          <Row label="Items found" value={String(c.itemsFound)} valueClass={c.itemsFound ? 'saved' : ''} />
+          {c.duplicates > 0 && <Row label="Already in wardrobe" value={String(c.duplicates)} muted />}
+          {c.failed > 0 && <Row label="Failed" value={String(c.failed)} muted />}
+          <Row label="Tokens" value={`${c.tokens.toLocaleString()}${c.cached ? ` (${c.cached} cached)` : ''}`} muted />
+          <Row label="Model spend" value={cents(c.costUsd)} />
+          {provider && <Row label="Provider" value={provider} muted />}
           {recent.length > 0 && (
-            <div className="mt-3 flex gap-2 overflow-x-auto">
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
               {recent.map((it) => (
-                <div key={it.id} className="cutout print w-20 shrink-0 p-1">
-                  <div className="aspect-[3/4] w-full bg-paper-2">{it.image_url && <img src={it.image_url} alt="" className="h-full w-full object-contain" />}</div>
-                  <div className="mono mt-1 truncate text-[9px]">{usd(it.price_cents)}</div>
+                <div key={it.id} className="cutout w-20 shrink-0 p-1">
+                  <div className="aspect-[3/4] w-full rounded-lg bg-paper-2">{it.image_url && <img src={it.image_url} alt="" className="h-full w-full object-contain" />}</div>
+                  <div className="mt-1 truncate px-0.5 text-[10px] tabular-nums text-ink-2">{usd(it.price_cents)}</div>
                 </div>
               ))}
             </div>
           )}
-          <ReceiptRule />
-          {state === 'done' && <ReceiptLine label="DONE" value={`${(elapsed / 1000).toFixed(1)}s · ${c.itemsFound} ITEMS · ${cents(c.costUsd)} IN TOKENS`} />}
-          {state === 'done' && c.itemsFound > 0 && !tagged && <ReceiptLine label="TAGGING + EMBEDDING" value="…" muted />}
-          {tagged && <ReceiptLine label="TAGGED · EMBEDDED" value={`${tagged.tagged} · ${tagged.embedded} · ${cents(tagged.costUsd)}`} muted />}
-          {tagged && !images && <ReceiptLine label="FINDING PRODUCT IMAGES" value="…" muted />}
-          {images && <ReceiptLine label="IMAGES FOUND" value={`${images.imaged} / ${images.looked_up} · ${images.searches} SEARCHES`} muted />}
-          {state === 'error' && <div className="mono text-[11px] text-warn">{error}</div>}
+          {(state === 'done' || tagged || images || state === 'error') && (
+            <div className="mt-3 border-t border-dust/60 pt-1">
+              {state === 'done' && <Row label="Done" value={`${(elapsed / 1000).toFixed(1)}s · ${c.itemsFound} items · ${cents(c.costUsd)} in tokens`} />}
+              {state === 'done' && c.itemsFound > 0 && !tagged && <Row label="Tagging and embedding" value="…" muted />}
+              {tagged && <Row label="Tagged · embedded" value={`${tagged.tagged} · ${tagged.embedded} · ${cents(tagged.costUsd)}`} muted />}
+              {tagged && !images && <Row label="Finding product images" value="…" muted />}
+              {images && <Row label="Images found" value={`${images.imaged} / ${images.looked_up} · ${images.searches} searches`} muted />}
+              {state === 'error' && <p className="mt-2 text-xs text-warn">{error}</p>}
+            </div>
+          )}
           {(state === 'done' || state === 'error') && (
-            <div className="mt-3 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <button className="btn" onClick={start}>Scan again</button>
-              {compact && <button className="btn" onClick={() => setOpen(false)}>Close</button>}
+              {compact && <button className="btn btn-outline" onClick={() => setOpen(false)}>Close</button>}
             </div>
           )}
         </>
       )}
-    </Receipt>
+    </Card>
   );
 }

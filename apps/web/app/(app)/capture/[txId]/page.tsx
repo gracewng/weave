@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { Page, PageHeader, Card, Row, Note, Badge, usd } from '@/components/ui';
 import { CaptureForm } from './CaptureForm';
 import type { Transaction } from '@weave/shared/types';
 
 export const dynamic = 'force-dynamic';
+
+const STATUS: Record<string, string> = { unmatched: 'Unmatched', mystery: 'Mystery', matched: 'Matched', captured: 'Captured' };
 
 export default async function CapturePage({ params }: { params: Promise<{ txId: string }> }) {
   const { txId } = await params;
@@ -13,14 +15,16 @@ export default async function CapturePage({ params }: { params: Promise<{ txId: 
   if (!data) notFound();
   const t = data as Transaction;
   return (
-    <Receipt className="mx-auto max-w-lg">
-      <ReceiptHeader title="Snap the receipt" subtitle={(t.merchant ?? '').toUpperCase()} />
-      <ReceiptRule />
-      <ReceiptLine label="CHARGE" value={usd(t.amount_cents)} />
-      <ReceiptLine label="DATE" value={t.date ?? ''} muted />
-      <ReceiptLine label="STATUS" value={t.match_status.toUpperCase()} muted />
-      <ReceiptRule />
-      {t.match_status === 'captured' ? <div className="mono text-[11px] text-ink-3">ALREADY CAPTURED · {t.item_ids.length} ITEM{t.item_ids.length === 1 ? '' : 'S'}</div> : <CaptureForm txId={t.id} merchant={t.merchant ?? ''} amount={usd(t.amount_cents)} />}
-    </Receipt>
+    <Page>
+      <PageHeader title="Snap the receipt" subtitle={`${t.merchant ?? 'A charge'} with no matching receipt email. A photo or a line of text becomes the item, with the photo kept as your receipt.`} />
+      <Card className="mx-auto w-full max-w-xl">
+        <div className="mb-3 flex items-center justify-between"><span className="display text-2xl font-semibold text-pine">{usd(t.amount_cents)}</span><Badge tone={t.match_status === 'captured' ? 'save' : 'neutral'}>{STATUS[t.match_status] ?? t.match_status}</Badge></div>
+        <Row label="Merchant" value={t.merchant ?? '—'} />
+        <Row label="Date" value={t.date ?? ''} muted />
+        <div className="mt-4">
+          {t.match_status === 'captured' ? <Note>Already captured · {t.item_ids.length} item{t.item_ids.length === 1 ? '' : 's'}.</Note> : <CaptureForm txId={t.id} merchant={t.merchant ?? ''} amount={usd(t.amount_cents)} />}
+        </div>
+      </Card>
+    </Page>
   );
 }

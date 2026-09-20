@@ -1,39 +1,40 @@
 @import "tailwindcss";
 
-/* ─── Receipt / bank-statement aesthetic ─────────────────────────────────────
-   Thermal-paper background, near-black ink, one accent (savings green) used ONLY for money saved.
-   Dark mode = "carbon copy": inverted ink. */
+/* Palette: white paper, pastel greens, pine ink. --save is reserved for confirmed kept/recovered money. */
 :root {
-  --paper: #f6f3ec;
-  --paper-2: #efeadf;
-  --ink: #141414;
-  --ink-2: #4a4a48;
-  --ink-3: #8a8a86;
-  --rule: #c9c4b8;
-  --save: #0f8a3c;
-  --save-bg: #e3f3e8;
-  --warn: #b5541c;
-  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-sans: "IBM Plex Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  color-scheme: light dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #161616;
-    --paper-2: #1e1e1e;
-    --ink: #ecebe6;
-    --ink-2: #b9b8b2;
-    --ink-3: #7d7c77;
-    --rule: #3a3a38;
-    --save: #4cd57a;
-    --save-bg: #0f2a19;
-    --warn: #e9895a;
-  }
+  --paper: #ffffff;
+  --paper-2: #f4f8ef;
+  --mist: #eef3e6;
+  --sprout: #cfe3c0;
+  --dust: #dad7cd;
+  --sage: #a3b18a;
+  --fern: #588157;
+  --hunter: #3a5a40;
+  --pine: #344e41;
+  --ink: #344e41;
+  --ink-2: #4f6a58;
+  --ink-3: #86987f;
+  --rule: #dad7cd;
+  --save: #2f8f4e;
+  --save-bg: #e0f2e3;
+  --warn: #a8702a;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Fraunces", Georgia, serif;
+  --font-display: "Unbounded", "Fraunces", system-ui, sans-serif;
+  --shadow-panel: 0 30px 80px -20px rgba(52, 78, 65, .45), 0 8px 24px -12px rgba(52, 78, 65, .25);
+  color-scheme: light;
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-2: var(--paper-2);
+  --color-mist: var(--mist);
+  --color-sprout: var(--sprout);
+  --color-dust: var(--dust);
+  --color-sage: var(--sage);
+  --color-fern: var(--fern);
+  --color-hunter: var(--hunter);
+  --color-pine: var(--pine);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
@@ -43,75 +44,138 @@
   --color-warn: var(--warn);
   --font-mono: var(--font-mono);
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 }
 
 html, body {
-  background: var(--paper);
+  overscroll-behavior: none; /* no rubber-band past the page edges */
+  background: var(--mist);
   color: var(--ink);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
 }
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.display { font-family: var(--font-display); letter-spacing: -.01em; }
 
-/* Receipt paper with perforated top/bottom edges */
-.receipt {
-  background: var(--paper-2);
-  color: var(--ink);
-  position: relative;
-  padding: 1.25rem 1.25rem;
-  --perf: 10px;
-  -webkit-mask:
-    radial-gradient(circle at 50% 0, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 0 / var(--perf) var(--perf) repeat-x,
-    linear-gradient(#000, #000) 0 var(--perf) / 100% calc(100% - 2 * var(--perf)) no-repeat,
-    radial-gradient(circle at 50% 100%, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 100% / var(--perf) var(--perf) repeat-x;
-  mask:
-    radial-gradient(circle at 50% 0, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 0 / var(--perf) var(--perf) repeat-x,
-    linear-gradient(#000, #000) 0 var(--perf) / 100% calc(100% - 2 * var(--perf)) no-repeat,
-    radial-gradient(circle at 50% 100%, transparent calc(var(--perf) / 2), #000 calc(var(--perf) / 2 + 0.5px)) 50% 100% / var(--perf) var(--perf) repeat-x;
-  box-shadow: 0 1px 0 var(--rule), 0 12px 24px -18px rgba(0,0,0,.35);
-}
+/* ─── Surfaces (Material-style tonal cards) ────────────────────────────── */
+.card { border-radius: 24px; padding: 1.25rem; }
+@media (min-width: 640px) { .card { padding: 1.5rem; } }
+.card-mist { background: var(--mist); }
+.card-paper { background: var(--paper); border: 1px solid var(--dust); }
+.card-sprout { background: var(--sprout); }
+.card-pine { background: var(--pine); color: #fff; }
+.card-pine .text-ink, .card-pine .text-pine { color: #fff; }
+.card-pine .text-ink-2, .card-pine .text-ink-3 { color: rgba(255, 255, 255, .72); }
+.card-pine .row { border-color: rgba(255, 255, 255, .14); }
+.card-hover { transition: background .15s ease, transform .15s ease, border-color .15s ease; }
+.card-hover:hover { background: var(--sprout); transform: translateY(-1px); }
+.card-paper.card-hover:hover { background: var(--mist); border-color: var(--sage); }
 
-.rule-dashed { border-top: 1px dashed var(--rule); }
+.cutout { background: var(--paper); border: 1px solid var(--dust); border-radius: 18px; overflow: hidden; }
 
-/* Dotted leader between label and value: LABEL ........ VALUE */
-.leader { display: flex; align-items: baseline; gap: .5rem; font-family: var(--font-mono); }
-.leader > .l { flex: none; }
-.leader > .dots { flex: 1; border-bottom: 1px dotted var(--ink-3); transform: translateY(-4px); min-width: 1rem; }
-.leader > .v { flex: none; }
+.row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .5rem 0; font-size: .875rem; border-bottom: 1px solid color-mix(in srgb, var(--dust) 50%, transparent); }
+.row:last-child { border-bottom: 0; }
+
+.badge { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; font-family: var(--font-display); font-size: .6rem; letter-spacing: .02em; padding: .3rem .6rem; border-radius: 999px; background: var(--paper); color: var(--ink-2); }
+.badge-save { background: var(--save-bg); color: var(--save); }
+.badge-warn { background: #f7edda; color: var(--warn); }
+.badge-pine { background: var(--sprout); color: var(--pine); }
+.badge-outline { background: transparent; border: 1px solid var(--dust); }
+
+.progress { height: 8px; border-radius: 999px; background: var(--paper); overflow: hidden; }
+.card-paper .progress { background: var(--mist); }
+.progress > div { height: 100%; border-radius: 999px; background: var(--fern); transition: width .4s ease; }
 
 .saved { color: var(--save); }
 
-/* Receipt printing animation */
-@keyframes print { from { clip-path: inset(0 0 100% 0); opacity: .4 } to { clip-path: inset(0 0 0 0); opacity: 1 } }
-.print { animation: print .9s steps(18, end) both; }
+/* ─── Inputs ────────────────────────────────────────────────────────────── */
+.input { width: 100%; border-radius: 14px; background: var(--mist); border: 1.5px solid transparent; padding: .65rem .9rem; font-size: .875rem; color: var(--ink); font-family: var(--font-sans); transition: border-color .15s ease, background .15s ease; }
+.card-mist .input, .card-sprout .input { background: var(--paper); }
+.input::placeholder { color: var(--ink-3); }
+.input:focus { outline: none; border-color: var(--fern); background: var(--paper); }
+.input-sm { padding: .4rem .7rem; font-size: .8rem; border-radius: 12px; }
+textarea.input { resize: vertical; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 1rem; height: 1rem; }
 
-/* Item cutouts: clean, square, no pastel cards */
-.cutout { background: var(--paper); border: 1px solid var(--rule); }
-
-.btn { font-family: var(--font-mono); font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; border: 1px solid var(--ink); padding: .55rem .9rem; background: transparent; color: var(--ink); cursor: pointer; }
-.btn:hover { background: var(--ink); color: var(--paper); }
-.btn-primary { background: var(--ink); color: var(--paper); }
-.btn-primary:hover { opacity: .9; }
-.btn-save { border-color: var(--save); color: var(--save); }
+/* ─── Buttons + chips ───────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  font-family: var(--font-display); font-size: .72rem; letter-spacing: .02em;
+  border: 1.5px solid transparent; border-radius: 999px; padding: .6rem 1.15rem;
+  background: var(--sprout); color: var(--pine); cursor: pointer; white-space: nowrap;
+  transition: transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn:hover { background: var(--sage); color: #fff; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .55; cursor: default; transform: none; }
+.btn-sm { padding: .4rem .85rem; font-size: .64rem; }
+.btn-primary { background: var(--hunter); color: #fff; box-shadow: 0 8px 18px -10px rgba(58, 90, 64, .7); }
+.btn-primary:hover { background: var(--fern); color: #fff; }
+.btn-outline { background: transparent; border-color: var(--dust); color: var(--ink-2); }
+.btn-outline:hover { background: var(--mist); border-color: var(--sage); color: var(--ink); }
+.btn-ink { background: #111; border-color: #111; color: #fff; }
+.btn-ink:hover { background: #2a2a2a; border-color: #2a2a2a; }
+.btn-save { background: var(--save-bg); color: var(--save); }
 .btn-save:hover { background: var(--save); color: #fff; }
+.btn-text { font-family: var(--font-display); font-size: .7rem; color: var(--ink-3); background: none; border: 0; cursor: pointer; padding: .3rem .2rem; border-radius: 8px; }
+.btn-text:hover { color: var(--ink); }
+.btn-text:disabled { opacity: .55; cursor: default; }
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; color: var(--ink-3); background: none; border: 0; cursor: pointer; }
+.btn-icon svg { width: 16px; height: 16px; }
+.btn-icon:hover { background: var(--mist); color: var(--ink); }
 
-/* ─── Printer slot: every decision prints a receipt from a slit at the top ─── */
-.printer-slot { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: min(420px, 92vw); z-index: 50; pointer-events: none; }
-.printer-slit { height: 8px; background: var(--ink); border-radius: 0 0 4px 4px; box-shadow: inset 0 -3px 4px rgba(0,0,0,.5); }
-.printer-paper { pointer-events: auto; margin: 0 8px; background: var(--paper-2); color: var(--ink); box-shadow: 0 10px 30px -10px rgba(0,0,0,.45); transform-origin: top center; animation: feed .9s cubic-bezier(.2,.8,.2,1) both; }
-.printer-paper.out { animation: tear .35s ease-in both; }
-@keyframes feed { from { clip-path: inset(0 0 100% 0); transform: translateY(-6px); } to { clip-path: inset(0 0 0 0); transform: translateY(0); } }
-@keyframes tear { from { opacity: 1; transform: translateY(0) rotate(0); } to { opacity: 0; transform: translateY(24px) rotate(-1.5deg); } }
+.chip {
+  display: inline-flex; align-items: center; cursor: pointer;
+  font-family: var(--font-display); font-size: .72rem;
+  padding: .55rem 1rem; border-radius: 999px;
+  background: var(--mist); color: var(--ink); border: 1.5px solid transparent;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.chip:hover { background: var(--sprout); transform: translateY(-1px); }
+.chip[data-on="true"], .chip:has(:checked) { background: var(--sprout); border-color: var(--hunter); }
 
-/* rubber stamp */
-.stamp { display: inline-block; font-family: var(--font-mono); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; border: 2px solid var(--ink-2); color: var(--ink-2); padding: .15rem .4rem; transform: rotate(-4deg); opacity: .85; }
-.stamp.saved { border-color: var(--save); color: var(--save); }
-.stamp.new { animation: slam .35s cubic-bezier(.2,1.4,.4,1) both; }
-@keyframes slam { from { transform: rotate(-4deg) scale(2.2); opacity: 0 } to { transform: rotate(-4deg) scale(1); opacity: .85 } }
+/* HTML printed on the 3D receipt: grain, slight blur, tiny skew, multiply onto the paper. */
+.printed { filter: url(#thermal-ink) contrast(1.15); transform: rotate(-.3deg); mix-blend-mode: multiply; }
+.printed .btn-ink { background: #161616; border-color: #161616; box-shadow: 0.6px 0.4px 0 rgba(0,0,0,.35); }
+.printed .chip { background: #e9ede4; border-color: rgba(0,0,0,.25); color: #111; }
+.printed .chip[data-on="true"] { background: #161616; color: #fff; border-color: #161616; }
+.printed .btn-text { color: #3d3d3d; text-decoration: underline; text-underline-offset: 3px; }
+.printed .btn-text:hover { color: #111; }
+
+/* ─── Snackbar (action confirmations rise from the bottom) ─────────────── */
+.snackbar { position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); width: min(460px, calc(100vw - 2rem)); z-index: 50; pointer-events: none; }
+.snackbar-card { pointer-events: auto; background: var(--pine); color: #fff; border-radius: 20px; padding: .9rem 1.1rem; box-shadow: 0 18px 40px -14px rgba(52, 78, 65, .65); animation: rise .35s cubic-bezier(.2, .8, .2, 1) both; cursor: pointer; }
+.snackbar-card.out { animation: sink .25s ease-in both; }
+.snackbar-card .saved { color: #9fe3b4; }
+@keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes sink { from { opacity: 1; } to { opacity: 0; transform: translateY(12px); } }
+
+/* ─── Canopy background + floating panel ────────────────────────────────── */
+.canopy {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden;
+  background: radial-gradient(120% 80% at 50% 0%, #f2f7ea 0%, #e3edd8 55%, #d3e2c5 100%);
+}
+
+.panel {
+  background: var(--paper); border-radius: 28px; box-shadow: var(--shadow-panel);
+  display: flex; overflow: hidden;
+  width: 85vw; min-height: 85dvh; margin: 0 auto; /* ~15% smaller than the viewport; the layout wrapper pads the rest */
+}
+@media (max-width: 767px) { .panel { flex-direction: column; border-radius: 22px; width: auto; min-height: calc(100dvh - 1.5rem); } }
+
+.sidebar-link {
+  display: flex; align-items: center; gap: .65rem; border-radius: 14px; padding: .55rem .75rem;
+  font-family: var(--font-display); font-size: .68rem; color: var(--ink-2);
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+.sidebar-link:hover { background: var(--mist); color: var(--ink); }
+.sidebar-link.active { background: var(--sprout); color: var(--pine); }
+.sidebar-link svg { width: 20px; height: 20px; flex: none; color: var(--fern); }
+.sidebar-link.active svg { color: var(--pine); }
 
 @media (prefers-reduced-motion: reduce) {
-  .print, .printer-paper, .stamp.new { animation: none !important; }
-  .leader > .dots { transform: none; }
+  .snackbar-card, .leaf, .card-hover { animation: none !important; transition: none !important; }
 }

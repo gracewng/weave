@@ -4,7 +4,7 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'Weave', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Weave', { body: d.body || '', icon: '/icon.svg', badge: '/icon.svg', data: { url: d.url || '/' }, tag: d.tag, renotify: false }));
+  e.waitUntil(self.registration.showNotification(d.title || 'Weave', { body: d.body || '', icon: '/logo.png', badge: '/logo.png', data: { url: d.url || '/' }, tag: d.tag, renotify: false }));
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();

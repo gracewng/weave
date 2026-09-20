@@ -1,14 +1,13 @@
 import type { ReactNode } from 'react';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule } from '@/components/Receipt';
+import { Card, CardTitle, Row } from '@/components/ui';
 
+/** Quiet empty card: a title, a few zeroed rows, and an optional action. */
 export function EmptyState({ title, lines, children }: { title: string; lines: Array<[string, string]>; children?: ReactNode }) {
   return (
-    <Receipt className="mx-auto max-w-lg">
-      <ReceiptHeader title={title} subtitle="NOTHING PRINTED YET" />
-      <ReceiptRule />
-      {lines.map(([l, v]) => <ReceiptLine key={l} label={l} value={v} muted />)}
-      <ReceiptRule />
-      {children}
-    </Receipt>
+    <Card className="max-w-xl">
+      <CardTitle hint="Nothing here yet">{title}</CardTitle>
+      {lines.map(([l, v]) => <Row key={l} label={l} value={v} muted />)}
+      {children && <div className="mt-4">{children}</div>}
+    </Card>
   );
 }

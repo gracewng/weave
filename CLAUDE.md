@@ -363,6 +363,21 @@ treat, wishlist, missing, gap, saved for later, wasted, frugal, score, streak. "
 return window at 4 days with zero wears (once), a hold check-in at 48h (once). Never marketing, never nudges to shop.
 
 ## Design direction
+**Redesign in progress (2026-09-19, branch `toryn/redesign`):** white + pastel greens (Dust Grey / Dry Sage / Fern /
+Hunter / Pine), Unbounded display + Fraunces body, `motion` for transitions. Onboarding: `/` prints a receipt from a
+3D printer (three.js via R3F: `components/three/ReceiptPrinter3D.tsx`, texture painted by `receiptTexture.ts`), stages cross-fade (`components/onboarding/Stage.tsx`), `/welcome` is a
+three-tap chip flow, then `/home` (dashboard) inside a white rounded panel over a clip-art leaf canopy
+(`components/Canopy.tsx`, `components/Sidebar.tsx`).
+**2026-09-20: the receipt aesthetic is retired inside the app.** Every signed-in page uses the playful, Material-style
+look of the home page: nearly full width (`max-w-6xl`), rounded tonal cards, big display numbers in tiles, sentence-case
+labels, pill buttons. Primitives live in `components/ui.tsx` (`Page`, `PageHeader`, `Card`, `Stat`, `Row`, `Badge`,
+`Field`, `Empty`, `Progress`, `usd`); `components/Receipt.tsx` and the printer slot are gone. Action confirmations are a
+bottom snackbar (`components/Snackbar.tsx`, still fed by `lib/printer.ts`'s `printReceipt`). Stamps became badges.
+No `mono`/ALL-CAPS copy in the app. The receipt and printer language survives only on onboarding (`/`, `/welcome`) and in
+product copy ("Purchase Voided", "Shared Receipt" as names of outcomes). The paragraphs below are the original direction,
+kept for the onboarding printer and for the vocabulary; do not reintroduce thermal paper, dotted leaders or perforations
+on app pages.
+
 Aesthetic digital wardrobe on receipt paper. **The app is a thermal printer:** every decision produces a receipt,
 the wardrobe is a rack of cutouts, money is always ink on paper. Off-white thermal paper, near-black ink, one
 accent: savings green (`--save`) **only for confirmed** kept/recovered money. No red anywhere; over-budget is the
@@ -514,6 +529,8 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - Meta `cached_tokens` field location unverified in a real response — `extractUsage()` accepts both
   `usage.prompt_tokens_details.cached_tokens` and `usage.cached_tokens`; confirm on first live call.
 ### Contract changes
+- 2026-09-19 onboarding: `profiles.onboarding_complete boolean default false` (migration 0013, **apply manually**); `Profile.onboarding_complete`;
+  `/welcome` = basics → bank link (Plaid, skippable) → `/home`; app layout gates on `isOnboarded()`.
 - 2026-09-19 re-plan: removed crew/outfit/intervention shapes; added `MarketplaceLink`, `MoneyAlternative`,
   `BudgetInputs`/`BudgetSummary`; `VerdictInputs.outfitsUnlocked` → `budgetRemainingCents`; fixtures gained
   `parse_query` and `search_note`, lost `crew_fits`.

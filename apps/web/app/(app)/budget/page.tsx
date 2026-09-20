@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { Page, PageHeader, Card, CardTitle, Stat, StatGrid, Row, Note, Field, Progress, usd } from '@/components/ui';
 import { summarizeBudget } from '@weave/shared/budget';
 import { describe, investedTenYears } from '@/lib/alternatives';
 import { saveBudget } from './actions';
@@ -21,59 +21,67 @@ export default async function BudgetPage() {
   const budget = b as { monthly_income_cents: number | null; clothing_pct: number; envelope_override_cents: number | null } | null;
   const s = summarizeBudget({ monthlyIncomeCents: budget?.monthly_income_cents ?? null, clothingPct: Number(budget?.clothing_pct ?? 5), envelopeOverrideCents: budget?.envelope_override_cents ?? null, spentThisMonthCents: onYou + onOthers, dayOfMonth: now.getUTCDate(), daysInMonth: days });
   const hasEnvelope = s.envelopeCents != null;
-  // The envelope is paper: remaining money = remaining paper. Over budget = the paper has run out.
-  const paperPct = hasEnvelope ? Math.round((s.remainingRatio ?? 0) * 100) : 100;
+  // Remaining money = remaining bar. Over budget = the bar has run out.
+  const remainingPct = hasEnvelope ? Math.round((s.remainingRatio ?? 0) * 100) : 100;
   const projPct = hasEnvelope && s.envelopeCents ? Math.min(140, Math.round((s.projectedCents / s.envelopeCents) * 100)) : 0;
+  const monthLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const instead = s.overBy > 0 ? s.overBy : onYou;
 
   return (
-    <div className="mx-auto max-w-lg space-y-6">
-      <Receipt>
-        <ReceiptHeader title="This month's envelope" subtitle={now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()} />
-        <ReceiptRule />
-        {hasEnvelope ? (
-          <>
-            <ReceiptLine label="ENVELOPE" value={usd(s.envelopeCents)} />
-            <ReceiptLine label="SPENT ON YOU" value={usd(onYou)} />
-            {onOthers > 0 && <ReceiptLine label="SPENT ON OTHERS" value={usd(onOthers)} muted />}
-            <ReceiptLine label="REMAINING PAPER" value={s.overBy > 0 ? 'RAN OUT' : usd(s.remainingCents)} />
-            <ReceiptLine label="PROJECTED MONTH END" value={usd(s.projectedCents)} muted />
-            {/* the envelope as a strip of paper */}
-            <div className="mt-3">
-              <div className="relative h-6 w-full border border-rule bg-paper">
-                <div className="absolute inset-y-0 left-0 bg-paper-2" style={{ width: `${paperPct}%`, borderRight: paperPct > 0 && paperPct < 100 ? '1px dashed var(--ink-3)' : 'none' }} />
-                {projPct > 0 && <div className="absolute inset-y-0 left-0 border-r-2 border-dotted border-ink-3" style={{ width: `${Math.min(100, projPct)}%` }} title="projected" />}
-                <div className="mono absolute inset-0 flex items-center justify-center text-[10px] text-ink-3">{s.overBy > 0 ? `OVER BY ${usd(s.overBy)}` : `${paperPct}% OF THE PAPER LEFT`}</div>
-              </div>
-              <div className="mono mt-1 text-[9px] text-ink-3">SOLID = LEFT · DOTTED LINE = PROJECTED · {projPct > 100 ? 'PROJECTION RUNS PAST THE END' : ''}</div>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-ink-2">Set your take-home pay and Weave sets a monthly clothing envelope. It fills from your receipts and card automatically.</p>
-        )}
-      </Receipt>
+    <Page>
+      <PageHeader eyebrow={monthLabel} title="This month's envelope" subtitle="Take-home pay times a share for clothes. It fills from your receipts and card automatically. Zero model calls." />
 
-      {hasEnvelope && (s.overBy > 0 || onYou > 0) && (
-        <Receipt>
-          <ReceiptHeader title="What this could be instead" subtitle={s.overBy > 0 ? `THE ${usd(s.overBy)} OVER` : `THIS MONTH'S ${usd(onYou)}`} />
-          <ReceiptRule />
-          {describe(s.overBy > 0 ? s.overBy : onYou).map((d) => <ReceiptLine key={d} label={d.toUpperCase()} value="" muted />)}
-          <ReceiptLine label="INVESTED 10 YEARS AT 7%" value={usd(investedTenYears(s.overBy > 0 ? s.overBy : onYou))} muted />
-          <div className="mono mt-2 text-[10px] text-ink-3">OPPORTUNITY COST, SHOWN PLAINLY. NOT A SUGGESTION TO SPEND ELSEWHERE.</div>
-        </Receipt>
+      {hasEnvelope ? (
+        <>
+          <StatGrid>
+            <Stat value={usd(s.envelopeCents)} label="envelope" />
+            <Stat value={usd(onYou)} label="spent on you" />
+            <Stat value={s.overBy > 0 ? 'Ran out' : usd(s.remainingCents)} label="remaining" tone="pine" />
+          </StatGrid>
+
+          <Card>
+            <CardTitle hint="Solid = what's left. The projection runs to month end at today's pace.">Remaining</CardTitle>
+            <Progress pct={remainingPct} />
+            <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs text-ink-3">
+              <span>{s.overBy > 0 ? `Over by ${usd(s.overBy)}` : `${remainingPct}% of the envelope left`}</span>
+              <span>Projected month end {usd(s.projectedCents)}{projPct > 100 ? ' · runs past the envelope' : ''}</span>
+            </div>
+            <div className="mt-3">
+              {onOthers > 0 && <Row label="Spent on others" value={usd(onOthers)} muted />}
+              <Row label="Projected month end" value={usd(s.projectedCents)} muted />
+            </div>
+          </Card>
+        </>
+      ) : (
+        <Card>
+          <CardTitle>No envelope yet</CardTitle>
+          <p className="text-sm text-ink-2">Set your take-home pay and Weave sets a monthly clothing envelope. It fills from your receipts and card automatically.</p>
+        </Card>
       )}
 
-      <Receipt>
-        <ReceiptHeader title="Set the envelope" subtitle="ZERO MODEL CALLS · ALL ARITHMETIC" />
-        <ReceiptRule />
-        <form action={saveBudget} className="space-y-3">
-          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Monthly take-home pay</div><input name="income" inputMode="decimal" defaultValue={budget?.monthly_income_cents ? (budget.monthly_income_cents / 100).toFixed(0) : ''} placeholder="4200" className="mono mt-0.5 w-full border border-rule bg-paper p-2 text-sm" /></label>
-          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Share for clothes (%)</div><input name="pct" type="number" min={1} max={50} step={0.5} defaultValue={budget ? Number(budget.clothing_pct) : 5} className="mono mt-0.5 w-32 border border-rule bg-paper p-2 text-sm" /></label>
-          <label className="block"><div className="mono text-[10px] uppercase text-ink-3">Or a flat monthly envelope (overrides the %)</div><input name="override" inputMode="decimal" defaultValue={budget?.envelope_override_cents ? (budget.envelope_override_cents / 100).toFixed(0) : ''} placeholder="optional" className="mono mt-0.5 w-40 border border-rule bg-paper p-2 text-sm" /></label>
-          <button className="btn btn-primary" type="submit">Save</button>
-        </form>
-        <ReceiptRule />
-        <div className="mono text-[10px] text-ink-3">WITH AN ENVELOPE SET, <Link href="/search" className="underline">SEARCH</Link> HOLDS ANYTHING PRICED OVER WHAT&apos;S LEFT FOR 48 HOURS. THE PAGE NEVER SAYS &quot;YOU CAN STILL SPEND $X.&quot;</div>
-      </Receipt>
-    </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {hasEnvelope && (s.overBy > 0 || onYou > 0) && (
+          <Card>
+            <CardTitle hint={s.overBy > 0 ? `The ${usd(s.overBy)} over` : `This month's ${usd(onYou)}`}>What this could be instead</CardTitle>
+            {describe(instead).map((d) => <Row key={d} label={d} value="" muted />)}
+            <Row label="Invested 10 years at 7%" value={usd(investedTenYears(instead))} muted />
+            <Note className="mt-3">Opportunity cost, shown plainly. Not a suggestion to spend elsewhere.</Note>
+          </Card>
+        )}
+
+        <Card>
+          <CardTitle hint="All arithmetic, no model calls">Set the envelope</CardTitle>
+          <form action={saveBudget} className="space-y-4">
+            <Field label="Monthly take-home pay"><input name="income" inputMode="decimal" defaultValue={budget?.monthly_income_cents ? (budget.monthly_income_cents / 100).toFixed(0) : ''} placeholder="4200" className="input" /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Share for clothes (%)"><input name="pct" type="number" min={1} max={50} step={0.5} defaultValue={budget ? Number(budget.clothing_pct) : 5} className="input" /></Field>
+              <Field label="Or a flat monthly envelope" hint="Overrides the %"><input name="override" inputMode="decimal" defaultValue={budget?.envelope_override_cents ? (budget.envelope_override_cents / 100).toFixed(0) : ''} placeholder="optional" className="input" /></Field>
+            </div>
+            <button className="btn btn-primary" type="submit">Save</button>
+          </form>
+          <Note className="mt-4">With an envelope set, <Link href="/search" className="underline">search</Link> holds anything priced over what&apos;s left for 48 hours. The page never says &quot;you can still spend $X.&quot;</Note>
+        </Card>
+      </div>
+    </Page>
   );
 }

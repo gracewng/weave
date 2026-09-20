@@ -1,15 +1,10 @@
-/** Route-group loading state: the printer is working. Covers every page under (app). */
+/* Route-group loading state: the page's shape in soft tiles. */
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-lg" aria-busy="true" aria-live="polite">
-      <section className="receipt print">
-        <div className="mono text-center text-[10px] tracking-[.3em] text-ink-2">WEAVE</div>
-        <div className="mono mt-1 text-center text-xs uppercase text-ink-3">Printing…</div>
-        <div className="rule-dashed my-3" />
-        {[72, 48, 64, 40, 56].map((w, i) => (
-          <div key={i} className="leader text-[13px] text-ink-3"><span className="l inline-block h-3 bg-paper" style={{ width: `${w}%` }} /><span className="dots" /><span className="v inline-block h-3 w-10 bg-paper" /></div>
-        ))}
-      </section>
+    <div className="mx-auto max-w-6xl animate-pulse space-y-8" aria-busy="true" aria-live="polite">
+      <div className="space-y-2"><div className="h-4 w-24 rounded-full bg-mist" /><div className="h-8 w-56 rounded-full bg-mist" /></div>
+      <div className="grid gap-3 sm:grid-cols-3">{[0, 1, 2].map((i) => <div key={i} className="h-24 rounded-3xl bg-mist" />)}</div>
+      <div className="h-56 rounded-3xl bg-mist" />
     </div>
   );
 }

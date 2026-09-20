@@ -24,6 +24,8 @@ export interface Profile {
   gender: Gender | null;
   shops_department: Department | null;
   onboarded_at: string | null;
+  /** True once the whole onboarding (basics + bank step) is done. */
+  onboarding_complete: boolean;
 }
 export type AgeRange = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_plus' | 'prefer_not';
 export type Gender = 'woman' | 'man' | 'non_binary' | 'prefer_not';

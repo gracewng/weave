@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
+import { Page, PageHeader, Card, CardTitle, SectionTitle, Stat, StatGrid, Row, Note, Badge, Empty, usd } from '@/components/ui';
+import { IconCard } from '@/components/icons';
 import { summarizeCoverage } from '@weave/shared/coverage';
 import type { Transaction } from '@weave/shared/types';
 import { ChargeActions } from './ChargeActions';
@@ -30,63 +31,84 @@ export default async function ChargesPage() {
     transactions: all.map((t) => ({ id: t.id, date: t.date ?? '', isClothing: t.is_clothing, matchStatus: t.match_status, decision: t.decision, hasReceipt: (t.item_ids?.length ?? 0) > 0 })),
     emailOrders,
   });
-  const bar = cov.detected ? Math.round((cov.ratio ?? 0) * 40) : 0;
+  const segments = 40;
+  const bar = cov.detected ? Math.round((cov.ratio ?? 0) * segments) : 0;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Receipt>
-        <ReceiptHeader title="Charges" subtitle="THE CARD IS THE SOURCE OF TRUTH" />
-        <ReceiptRule />
+    <Page>
+      <PageHeader title="Charges" subtitle="The card is the source of truth. Charges with a matching receipt email resolve on their own; the rest ask one question." />
+
+      <Card>
         <ChargesLive userId={user.id} linked={(linked ?? []).length} />
-        <div className="mt-2"><PushEnable compact /></div>
-        <ReceiptRule />
-        <ReceiptLine label="NEW CHARGES TO CONFIRM" value={String(fresh.length)} valueClass={fresh.length ? '' : ''} />
-        <ReceiptLine label="MYSTERY PURCHASES" value={String(mystery.length)} />
-        <ReceiptLine label="MATCHED TO RECEIPTS" value={String(matched.length)} muted />
-        <ReceiptRule />
-        <ReceiptLine label="CLOSET COVERAGE" value={cov.ratio == null ? 'NOT ENOUGH PURCHASE HISTORY' : `${cov.resolved} OF ${cov.detected} RECORDS RESOLVED = ${Math.round(cov.ratio * 100)}%`} />
-        {cov.detected > 0 && (
-          <div className="mono mt-1 flex items-end gap-px" aria-hidden>{Array.from({ length: 40 }).map((_, i) => <span key={i} className="inline-block w-1.5" style={{ height: i % 3 === 0 ? 22 : 16, background: i < bar ? 'var(--ink)' : 'transparent', borderBottom: i < bar ? 'none' : '2px solid var(--rule)' }} />)}</div>
+        <div className="mt-3"><PushEnable compact /></div>
+      </Card>
+
+      <StatGrid>
+        <Stat value={fresh.length} label="new charges to confirm" />
+        <Stat value={mystery.length} label="mystery purchases" />
+        <Stat value={matched.length} label="matched to receipts" />
+      </StatGrid>
+
+      <Card>
+        <CardTitle hint={cov.detected ? `${dates[0]} to ${dates[dates.length - 1]}` : undefined}>Closet Coverage</CardTitle>
+        {cov.ratio == null ? (
+          <p className="text-sm text-ink-2">Not enough purchase history. Link a card or scan your inbox to start.</p>
+        ) : (
+          <>
+            <p className="text-sm"><span className="display text-2xl font-semibold text-pine">{Math.round(cov.ratio * 100)}%</span><span className="ml-2 text-ink-2">{cov.resolved} of {cov.detected} purchase records resolved</span></p>
+            <div className="mt-3 flex gap-1" aria-hidden>
+              {Array.from({ length: segments }).map((_, i) => <span key={i} className="h-3 flex-1 rounded-full" style={{ background: i < bar ? 'var(--fern)' : 'var(--dust)' }} />)}
+            </div>
+            <Note className="mt-3">{cov.unresolved} unresolved, including {cov.missingReceipts} missing receipts. Answering “not clothes” removes a record from the total.</Note>
+          </>
         )}
-        <div className="mono mt-2 text-[10px] text-ink-3">{cov.detected ? `${dates[0]} → ${dates[dates.length - 1]} · ${cov.unresolved} UNRESOLVED · ${cov.missingReceipts} MISSING RECEIPTS · "NOT CLOTHES" LEAVES THE DENOMINATOR` : 'LINK A CARD OR SCAN YOUR INBOX TO START.'}</div>
-      </Receipt>
+      </Card>
 
       {fresh.length > 0 && (
-        <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">New · one question each</div>
-          {fresh.map((t) => (
-            <Receipt key={t.id} print>
-              <div className="flex items-start justify-between gap-2"><div className="truncate text-sm">{t.merchant}</div><span className="mono text-sm">{usd(t.amount_cents)}</span></div>
-              <div className="mono text-[10px] text-ink-3">{t.date} · NO MATCHING RECEIPT EMAIL{t.source === 'mock' ? ' · DEMO CHARGE' : ''}</div>
-              <ChargeActions txId={t.id} merchant={t.merchant ?? ''} amountCents={t.amount_cents ?? 0} decision={t.decision} kind="new" />
-            </Receipt>
-          ))}
-        </div>
+        <section>
+          <SectionTitle hint="one question each">New</SectionTitle>
+          <div className="grid gap-3 md:grid-cols-2">
+            {fresh.map((t) => (
+              <Card key={t.id} tone="sprout">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0"><div className="truncate text-sm font-medium">{t.merchant}</div><div className="mt-0.5 text-xs text-ink-2">{t.date} · no matching receipt email</div></div>
+                  <div className="flex shrink-0 items-center gap-2">{t.source === 'mock' && <Badge tone="warn">Demo charge</Badge>}<span className="display text-lg font-semibold text-pine">{usd(t.amount_cents)}</span></div>
+                </div>
+                <ChargeActions txId={t.id} merchant={t.merchant ?? ''} amountCents={t.amount_cents ?? 0} decision={t.decision} kind="new" />
+              </Card>
+            ))}
+          </div>
+        </section>
       )}
 
       {mystery.length > 0 && (
-        <div className="space-y-3">
-          <div className="mono text-[11px] uppercase tracking-wider text-ink-3">Mystery purchases · what was it?</div>
-          {mystery.slice(0, 8).map((t) => (
-            <Receipt key={t.id}>
-              <div className="flex items-start justify-between gap-2"><div className="truncate text-sm">You spent <span className="mono">{usd(t.amount_cents)}</span> at {t.merchant}</div><span className="mono text-[10px] text-ink-3">{t.date}</span></div>
-              <div className="mono text-[10px] text-ink-3">THE ITEM LINE IS BLANK UNTIL YOU FILL IT IN · <span className="opacity-40">▒▒▒▒▒▒▒▒▒▒▒▒</span></div>
-              <ChargeActions txId={t.id} merchant={t.merchant ?? ''} amountCents={t.amount_cents ?? 0} decision={t.decision} kind="mystery" />
-            </Receipt>
-          ))}
-          {mystery.length > 8 && <div className="mono text-[10px] text-ink-3">+{mystery.length - 8} MORE</div>}
-        </div>
+        <section>
+          <SectionTitle hint="what was it?">Mystery purchases</SectionTitle>
+          <div className="grid gap-3 md:grid-cols-2">
+            {mystery.slice(0, 8).map((t) => (
+              <Card key={t.id}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 text-sm">You spent <span className="font-medium">{usd(t.amount_cents)}</span> at {t.merchant}</div>
+                  <span className="shrink-0 text-xs text-ink-3">{t.date}</span>
+                </div>
+                <div className="mt-2 h-3 w-2/3 rounded-full bg-paper" aria-hidden />
+                <Note className="mt-1">The item line stays blank until you fill it in.</Note>
+                <ChargeActions txId={t.id} merchant={t.merchant ?? ''} amountCents={t.amount_cents ?? 0} decision={t.decision} kind="mystery" />
+              </Card>
+            ))}
+          </div>
+          {mystery.length > 8 && <Note className="mt-2">{mystery.length - 8} more</Note>}
+        </section>
       )}
 
       {matched.length > 0 && (
-        <Receipt>
-          <ReceiptHeader title="Matched" subtitle="CHARGE ↔ RECEIPT" />
-          <ReceiptRule />
-          {matched.slice(0, 12).map((t) => <ReceiptLine key={t.id} label={`${t.date} · ${(t.merchant ?? '').slice(0, 24)}`} value={`${usd(t.amount_cents)} · ${t.match_status === 'captured' ? 'SNAPPED' : `${t.item_ids.length} ITEM${t.item_ids.length === 1 ? '' : 'S'}`}`} muted />)}
-        </Receipt>
+        <Card tone="paper">
+          <CardTitle hint="charge and receipt">Matched</CardTitle>
+          {matched.slice(0, 12).map((t) => <Row key={t.id} label={`${t.date} · ${(t.merchant ?? '').slice(0, 32)}`} value={`${usd(t.amount_cents)} · ${t.match_status === 'captured' ? 'snapped' : `${t.item_ids.length} item${t.item_ids.length === 1 ? '' : 's'}`}`} muted />)}
+        </Card>
       )}
 
-      {all.length === 0 && <Receipt><p className="text-sm text-ink-2">Link a card and every clothing charge shows up here. Charges with a matching receipt email resolve on their own; the rest ask one question. <Link href="/wardrobe" className="underline">Wardrobe</Link></p></Receipt>}
-    </div>
+      {all.length === 0 && <Empty icon={IconCard} title="No charges yet." body={<>Link a card and every clothing charge shows up here. Or start from your <Link href="/wardrobe" className="underline">wardrobe</Link>.</>} />}
+    </Page>
   );
 }
