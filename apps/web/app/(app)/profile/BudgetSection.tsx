@@ -25,7 +25,7 @@ export async function BudgetSection({ supabase, userId }: { supabase: SupabaseCl
   return (
     <Card className="scroll-mt-6" >
       <div id="budget" />
-      <CardTitle hint={has ? `Take-home pay × your clothes share. Fills from receipts and card automatically.` : 'Set take-home pay and Weave sets a monthly clothing envelope.'}>Budget · {month}</CardTitle>
+      <CardTitle hint={has ? undefined : 'Enter take-home pay to set a monthly clothing envelope.'}>Budget · {month}</CardTitle>
 
       {has && (
         <div className="mb-4">
