@@ -1,7 +1,6 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Item } from '@weave/shared/types';
-import { FALLBACK_RETAILERS } from '@/lib/ingest/retailers-fallback';
 import { retailerData } from '@weave/data';
 
 export interface ReturnRow { item: Item; daysLeft: number; policyDays: number | null; atStakeCents: number }
@@ -15,8 +14,8 @@ export function daysBetween(fromISO: string, toISO: string): number {
 export function policyDaysFor(retailer: string | null): number | null {
   if (!retailer) return null;
   const r = retailer.toLowerCase();
-  if (retailerData.retailers.length) { const m = retailerData.retailers.find((x) => x.name.toLowerCase() === r); return m ? retailerData.returnWindowFor(m.id) : null; }
-  return FALLBACK_RETAILERS.find((x) => x.name.toLowerCase() === r)?.returnDays ?? null;
+  const m = retailerData.retailers.find((x) => x.name.toLowerCase() === r || x.id === r);
+  return m ? retailerData.returnWindowFor(m.id) : null;
 }
 
 /** Open windows (owned, return_by ≥ today), soonest first; plus pending returns and confirmed refunds. */

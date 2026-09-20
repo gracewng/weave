@@ -2,7 +2,6 @@ import 'server-only';
 import { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode, type Transaction as PlaidTx } from 'plaid';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { matchTransaction } from '@weave/shared/matcher';
-import { FALLBACK_RETAILERS } from '@/lib/ingest/retailers-fallback';
 import { retailerData } from '@weave/data';
 import { sendPush } from '@/lib/push';
 
@@ -37,9 +36,7 @@ export async function exchangeAndStore(admin: SupabaseClient, userId: string, pu
 /** Plaid's clothing category, or a merchant string that names a known clothing retailer. */
 export function looksLikeClothing(tx: { merchant: string; category: string | null }): boolean {
   if (tx.category && /CLOTHING|APPAREL|SHOE/i.test(tx.category)) return true;
-  const m = tx.merchant.toUpperCase();
-  if (retailerData.retailers.length) return !!retailerData.byMerchant(tx.merchant);
-  return FALLBACK_RETAILERS.some((r) => m.includes(r.name.toUpperCase()) || r.domains.some((d) => m.includes(d.split('.')[0]!.toUpperCase())));
+  return !!retailerData.byMerchant(tx.merchant);
 }
 
 export interface SyncSummary { added: number; clothing: number; matched: number; mystery: number; unmatched: number; removed: number }

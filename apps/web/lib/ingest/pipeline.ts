@@ -9,7 +9,6 @@ import { ORDER_QUERY, retailerQuery, getMessage, listMessageIds, type GmailMessa
 import { prepareEmail } from './html';
 import { prefilter, allowlistDomains } from './prefilter';
 import { insertExtractedItems, markSold } from './persist';
-import { SAMPLE_EMAILS } from './sample-emails';
 import { fixtures } from '@/fixtures';
 
 export interface Counters {
@@ -56,11 +55,8 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T, i: number) =
 
 /** Devin's fixtures (task 3) win when present; otherwise the stopgap samples. */
 function loadFixtureEmails(): EmailInput[] {
-  const emails = fixtures?.emails;
-  if (emails?.length) {
-    return emails.map((e) => ({ ...e, text: null, expected: fixtures?.llm?.extract_email?.[e.id] as ExtractEmailResult | undefined }));
-  }
-  return SAMPLE_EMAILS.map((e) => ({ ...e, text: null }));
+  const emails = fixtures?.emails ?? [];
+  return emails.map((e) => ({ ...e, text: null, expected: fixtures?.llm?.extract_email?.[e.id] as ExtractEmailResult | undefined }));
 }
 
 export async function runIngestion(opts: RunOptions): Promise<Counters> {

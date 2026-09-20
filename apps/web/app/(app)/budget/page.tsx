@@ -2,7 +2,10 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
 import { summarizeBudget } from '@weave/shared/budget';
-import { describe, investedTenYears } from '@/lib/alternatives';
+import { describeAlternatives } from '@weave/data';
+
+/** Invested for 10 years at 7%, compounded annually. A scenario, not a promise. */
+const investedTenYears = (cents: number) => Math.round(cents * Math.pow(1.07, 10));
 import { saveBudget } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +59,7 @@ export default async function BudgetPage() {
         <Receipt>
           <ReceiptHeader title="What this could be instead" subtitle={s.overBy > 0 ? `THE ${usd(s.overBy)} OVER` : `THIS MONTH'S ${usd(onYou)}`} />
           <ReceiptRule />
-          {describe(s.overBy > 0 ? s.overBy : onYou).map((d) => <ReceiptLine key={d} label={d.toUpperCase()} value="" muted />)}
+          {describeAlternatives(s.overBy > 0 ? s.overBy : onYou).map((d) => <ReceiptLine key={d} label={d.toUpperCase()} value="" muted />)}
           <ReceiptLine label="INVESTED 10 YEARS AT 7%" value={usd(investedTenYears(s.overBy > 0 ? s.overBy : onYou))} muted />
         </Receipt>
       )}
