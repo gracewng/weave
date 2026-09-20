@@ -19,6 +19,9 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
   const admin = createAdminClient();
   const [friends, loans, karma] = await Promise.all([listFriends(supabase, user.id), loansFor(supabase, user.id), admin ? karmaFor(admin, user.id) : Promise.resolve({ lent: 0, helpedKeepCents: 0, borrowed: 0 })]);
   const link = `${env.appUrl}/join/${profile?.invite_code ?? ''}`;
+  const myArea = (profile?.area ?? '').trim().toLowerCase();
+  const near = (a: string | null) => !!myArea && !!a && a.trim().toLowerCase() === myArea;
+  const nearCount = friends.filter((f) => near(f.area)).length;
   const open = loans.filter((l) => ['requested', 'accepted', 'out'].includes(l.status));
   const past = loans.filter((l) => ['returned', 'declined'].includes(l.status)).slice(0, 10);
 
@@ -77,14 +80,14 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
       )}
 
       <Receipt>
-        <ReceiptHeader title="Friends" subtitle={friends.length ? `${friends.length} · TAP TO BROWSE` : 'NO FRIENDS YET'} />
+        <ReceiptHeader title="Friends" subtitle={friends.length ? `${friends.length}${nearCount ? ` · ${nearCount} NEAR YOU` : ''} · TAP TO BROWSE` : 'NO FRIENDS YET'} />
         <ReceiptRule />
         {friends.length === 0 && <p className="text-sm text-ink-2">Share your code. Friends' items show up here, in your size.</p>}
         <div className="grid gap-2 sm:grid-cols-2">
           {friends.map((f) => (
             <Link key={f.id} href={`/friends/${f.id}`} className="cutout flex items-center gap-3 p-2 hover:border-ink">
               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-paper-2">{f.avatar_url && <img src={f.avatar_url} alt="" className="h-full w-full object-cover" />}</div>
-              <div className="min-w-0"><div className="truncate text-sm">{f.display_name ?? 'Friend'}</div><div className="mono text-[10px] text-ink-3">{Object.entries(f.sizes ?? {}).map(([k, v]) => `${k.toUpperCase()} ${v}`).join(' · ') || 'NO SIZES SET'}</div></div>
+              <div className="min-w-0"><div className="flex items-center gap-2 truncate text-sm">{f.display_name ?? 'Friend'}{near(f.area) && <span className="stamp saved !text-[8px]">NEAR YOU</span>}</div><div className="mono truncate text-[10px] text-ink-3">{[f.area, Object.entries(f.sizes ?? {}).map(([k, v]) => `${k.toUpperCase()} ${v}`).join(' · ') || null].filter(Boolean).join(' · ') || 'NO SIZES SET'}</div>{f.bio && <div className="truncate text-[11px] text-ink-2">{f.bio}</div>}</div>
             </Link>
           ))}
         </div>
