@@ -6,7 +6,7 @@ Fill this in as PRs land; it becomes a slide for the Devin judges.
 | # | Task | PR | Time Devin took | Est. human time | Notes (what worked, what needed fixing) |
 |---|------|----|-----------------|-----------------|------------------------------------------|
 | 1 | Retailer data (`/packages/data`) | | | ~3h (60 retailers + 25 return policies with sources) | |
-| 2 | API clients + mocks (`/packages/clients`) | | | ~4h | |
+| 2 | API clients + mocks (`/packages/clients`) | #4 | ~40m | ~4h | eBay Browse (client-credentials OAuth, token cached) + ElevenLabs TTS (sha256(text+voice) cache, injectable store) are real; SerpAPI and Plaid keep the working app implementations and are injected into `getClients({ serp, plaid })`. Every real client is proxied so a throw falls back to the fixture per call — the demo cannot die on an external service. eBay has no sold-price endpoint outside limited-release Marketplace Insights, so `soldMedianCents` uses the median asking price of the cheapest 50 used listings, documented in code. |
 | 3 | Fixtures + seed script (`/apps/web/fixtures`, `/scripts/seed-demo.ts`) | | | ~4h | |
 | 4 | Tests (matcher, return dates, verdicts, budget math, price memory, wears) | | | ~2.5h | |
 | 5 | Marketplace links + money alternatives (`/packages/data`) | | | ~1.5h | |
