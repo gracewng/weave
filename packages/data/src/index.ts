@@ -8,6 +8,8 @@ import { returnPolicies } from './returnPolicies';
 
 export { retailers } from './retailers';
 export { returnPolicies } from './returnPolicies';
+export { marketplaces, secondhandLinks, retailLinks } from './marketplaces';
+export { alternatives, bestAlternatives, describeAlternatives, type Alternative } from './alternatives';
 
 const DEFAULT_RETURN_WINDOW_DAYS = 30;
 
