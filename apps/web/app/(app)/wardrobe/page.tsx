@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { IngestPanel } from '@/components/IngestPanel';
-import { CardMenu } from '@/components/CardMenu';
+import { HangTag } from '@/components/HangTag';
 import { Tape, TapeHeader, TapeLine, TapeRule, TapeTotal, Barcode, Stamp, usd } from '@/components/Tape';
 import type { Item } from '@weave/shared/types';
 import { Icon } from '@/components/Icon';
@@ -15,7 +15,6 @@ const SORTS: Array<[Sort, string]> = [['newest', 'Newest'], ['price', 'Paid']];
 const MONTH = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 const closetNo = (id: string) => id.replace(/-/g, '').slice(0, 12).toUpperCase().replace(/(.{4})/g, '$1 ').trim();
-const shortDate = (d: string | null) => (d ? `${d.slice(5, 7)}/${d.slice(8, 10)}` : '');
 
 export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string; returnable?: string; view?: string }> }) {
   const { sort = 'newest', returnable: retOnly, view: viewParam } = await searchParams;
@@ -97,29 +96,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
 
       {view === 'rack' ? (
         <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {sorted.map((i) => {
-            const returnableNow = i.status === 'owned' && !!i.return_by && i.return_by >= today;
-            return (
-              <div key={i.id} className="hook group">
-                <div className="tag">
-                  <CardMenu itemId={i.id} name={i.name} hasImage={!!i.image_url} />
-                  <Link href={`/wardrobe/${i.id}`} className="block">
-                    <div className="relative mt-1 aspect-[3/4] w-full bg-white">
-                      {i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-ink-3"><Icon name="image" size={22} /></div>}
-                      {!i.shareable && <span className="absolute left-1 top-1 bg-white/90 p-1 text-ink-3" title="Private"><Icon name="lock" size={12} /></span>}
-                      {i.profile_mismatch && <Stamp tone="warn" className="absolute bottom-1 left-1">Yours?</Stamp>}
-                      {i.status === 'returning' && <Stamp className="absolute bottom-1 right-1">Returning</Stamp>}
-                      {returnableNow && !retOnly && <span className="absolute bottom-1 right-1 bg-white/90 p-1 text-ink-3" title={`Returnable until ${i.return_by}`}><Icon name="undo" size={12} /></span>}
-                    </div>
-                    <div className="mt-2 truncate font-sans text-[15px] leading-tight" title={i.name}>{i.name}</div>
-                    <div className="leader muted mt-0.5"><span className="l">{i.brand ?? i.retailer ?? 'Unknown'}{i.size ? ` · ${i.size}` : ''}</span><span className="dots" /><span className="v text-ink">{usd(i.price_cents)}</span></div>
-                    <Barcode seed={i.id} height={16} className="mt-2 opacity-80" />
-                    <div className="mt-0.5 flex justify-between text-[9px] tracking-wider text-ink-3"><span>{shortDate(i.purchase_date)}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
+          {sorted.map((i) => <HangTag key={i.id} item={i} today={today} showReturnable={!retOnly} />)}
         </div>
       ) : (
         <Tape className="mx-auto max-w-2xl">

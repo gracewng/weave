@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { returnBoard } from '@/lib/returns';
 import { Page, PageHeader, Stat, StatGrid, SectionTitle, Empty } from '@/components/ui';
+import { HangTag } from '@/components/HangTag';
 import { IconBag, IconEnvelope, IconCard } from '@/components/icons';
 import { usd } from '@/components/ui';
 import type { Item } from '@weave/shared/types';
@@ -18,14 +19,15 @@ export default async function HomePage() {
   const ym = new Date().toISOString().slice(0, 7);
   const [{ data: profile }, { data: itemsData }, board] = await Promise.all([
     db.from('profiles').select('display_name').eq('id', user.id).maybeSingle(),
-    db.from('items').select('id,name,brand,image_url,created_at,purchase_date,price_cents,status').eq('user_id', user.id).in('status', ['owned', 'returning']).order('created_at', { ascending: false }),
+    db.from('items').select('id,name,brand,retailer,size,image_url,created_at,purchase_date,price_cents,status,shareable,profile_mismatch,return_by').eq('user_id', user.id).in('status', ['owned', 'returning']).order('created_at', { ascending: false }),
     returnBoard(db, user.id),
   ]);
-  const items = (itemsData ?? []) as Pick<Item, 'id' | 'name' | 'brand' | 'image_url' | 'created_at' | 'purchase_date' | 'price_cents' | 'status'>[];
+  const items = (itemsData ?? []) as Pick<Item, 'id' | 'name' | 'brand' | 'retailer' | 'size' | 'image_url' | 'created_at' | 'purchase_date' | 'price_cents' | 'status' | 'shareable' | 'profile_mismatch' | 'return_by'>[];
   const name = profile?.display_name?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'there';
   const soonest = board.open[0];
   const spentMonth = items.filter((i) => i.purchase_date?.startsWith(ym)).reduce((s, i) => s + (i.price_cents ?? 0), 0);
   const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long' });
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <Page>
@@ -38,19 +40,12 @@ export default async function HomePage() {
       </StatGrid>
 
       <section>
-        <SectionTitle>Latest in your wardrobe</SectionTitle>
+        <SectionTitle action={<Link href="/wardrobe" className="text-xs underline underline-offset-4 text-ink-2 hover:text-ink">All items</Link>}>Latest in your wardrobe</SectionTitle>
         {items.length === 0 ? (
           <Empty icon={IconEnvelope} title="Scan your inbox to fill it." body="Order emails become items with prices, sizes and return windows." href="/wardrobe" />
         ) : (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-            {items.slice(0, 6).map((i) => (
-              <Link key={i.id} href={`/wardrobe/${i.id}`} className="cutout block p-1.5 transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="aspect-[3/4] rounded-xl bg-paper-2">
-                  {i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-[10px] text-ink-3">No photo</div>}
-                </div>
-                <div className="mt-1 truncate px-1 text-xs" title={i.name}>{i.name}</div>
-              </Link>
-            ))}
+          <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+            {items.slice(0, 4).map((i) => <HangTag key={i.id} item={i} today={today} menu={false} />)}
           </div>
         )}
       </section>

@@ -78,8 +78,8 @@ export function SearchClient({ initialQ }: { initialQ: string }) {
         <ReceiptHeader title="Before you buy" subtitle="BORROW · SECOND HAND · NEW" />
         <ReceiptRule />
         <div className="flex flex-col gap-2 sm:flex-row">
-          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="black slip dress for a wedding" className="input flex-1" />
-          <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$ price (optional)" inputMode="decimal" className="input sm:w-36" />
+          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="black slip dress for a wedding" className="input min-w-0 flex-1" />
+          <span className="block shrink-0 sm:w-36"><input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$ price" inputMode="decimal" className="input" /></span>
           <button className="btn btn-primary" type="submit" disabled={stage === 'local' || stage === 'market'}>Check</button>
         </div>
         {error && <div className="mono mt-2 text-[11px] text-warn">{error}</div>}
