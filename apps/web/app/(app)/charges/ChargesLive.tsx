@@ -39,10 +39,10 @@ export function ChargesLive({ userId, linked, hero = false }: { userId: string; 
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center gap-2">
       {linked > 0 && <button className="btn btn-sm" disabled={busy} onClick={sync}><Icon name="refresh" size={12} />Sync</button>}
-      <button className="btn btn-sm btn-outline" disabled={busy} onClick={link}><Icon name="link" size={12} />Link another</button>
-      {msg && <span className="w-full text-xs text-ink-2">{msg}</span>}
+      <button className="btn-icon" disabled={busy} onClick={link} title="Link a card" aria-label="Link a card"><Icon name="link" size={16} /></button>
+      {msg && <span className="text-xs text-ink-2">{msg}</span>}
     </div>
   );
 }

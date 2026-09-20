@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { Page, PageHeader, Card, CardTitle, Row, Note, Badge, Stat, StatGrid, usd } from '@/components/ui';
-import { IconCard } from '@/components/icons';
+import { Page, PageHeader, Card, CardTitle, Row, Badge, usd } from '@/components/ui';
+import { PrintedTape, TapeHeader, TapeRule, TapeLine } from '@/components/Tape';
 import type { Transaction } from '@weave/shared/types';
 import { ChargeActions } from './ChargeActions';
 import { ChargesLive } from './ChargesLive';
@@ -24,14 +24,13 @@ export default async function ChargesPage() {
   const lastSync = accounts.map((a) => a.last_sync_at).filter(Boolean).sort().pop() ?? null;
   const waitingCents = todo.reduce((s, t) => s + (t.amount_cents ?? 0), 0);
 
-  // First visit: one job, link a card.
   if (accounts.length === 0 && all.length === 0) {
     return (
       <Page>
-        <PageHeader title="Charges" subtitle="Card purchases with no order email still become items." icon={IconCard} />
-        <Card tone="sprout" className="max-w-2xl">
-          <CardTitle>Link a card to start</CardTitle>
-          <p className="mb-4 text-sm text-ink-2">Weave keeps only the store, amount and date of each charge, flags the ones that look like clothing, and asks you for details once.</p>
+        <PageHeader title="Charges" />
+        <Card tone="sprout" className="max-w-xl">
+          <CardTitle>Link a card</CardTitle>
+          <p className="mb-4 text-sm text-ink-2">Clothing charges show up here. Add details once and each becomes an item.</p>
           <ChargesLive userId={user.id} linked={0} hero />
         </Card>
       </Page>
@@ -42,44 +41,37 @@ export default async function ChargesPage() {
     <Page>
       <PageHeader
         title="Charges"
-        subtitle={`${accounts.length} card${accounts.length === 1 ? '' : 's'} linked${lastSync ? ` · synced ${lastSync.slice(0, 10)}` : ''}`}
-        icon={IconCard}
+        subtitle={`${accounts.length} card${accounts.length === 1 ? '' : 's'}${lastSync ? ` · synced ${lastSync.slice(5, 10).replace('-', '/')}` : ''}`}
         actions={<ChargesLive userId={user.id} linked={accounts.length} />}
       />
 
-      <StatGrid>
-        <Stat value={todo.length} label={todo.length === 1 ? 'charge needs details' : 'charges need details'} tone={todo.length ? 'sprout' : 'mist'} />
-        <Stat value={usd(waitingCents)} label="waiting to be added" />
-        <Stat value={done.length} label="added to your wardrobe" />
-      </StatGrid>
-
-      <Card>
-        <CardTitle hint={todo.length ? 'Likely clothing, by store or category. Add details and it becomes an item.' : 'Every clothing charge has details.'}>Needs details</CardTitle>
-        {todo.length === 0 && <Note>Nothing waiting. New charges show up here as they sync.</Note>}
-        <div className="divide-y divide-dust/60">
-          {todo.map((t) => (
-            <div key={t.id} className="flex flex-wrap items-center gap-3 py-3">
+      <div className="mx-auto w-full max-w-2xl">
+        <PrintedTape>
+          <TapeHeader title="To add" subtitle={todo.length ? `${todo.length} charge${todo.length === 1 ? '' : 's'} · ${usd(waitingCents)}` : 'Nothing waiting'} />
+          <TapeRule />
+          {todo.length === 0 && <div className="py-3 text-center text-[11px] uppercase tracking-wider text-ink-3">Every clothing charge has details</div>}
+          {todo.map((t, i) => (
+            <div key={t.id} className={`flex flex-wrap items-center gap-x-4 gap-y-2 py-3 ${i > 0 ? 'border-t border-dashed border-ink/20' : ''}`}>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{t.merchant}</div>
-                <div className="text-xs text-ink-3">{t.date}{t.source === 'mock' && <Badge className="ml-2">demo</Badge>}</div>
+                <div className="truncate font-sans text-[15px]">{t.merchant}</div>
+                <div className="text-[10px] uppercase tracking-wider text-ink-3">{t.date}{t.source === 'mock' && <Badge className="ml-2 !font-mono">demo</Badge>}</div>
               </div>
-              <div className="display text-base tabular-nums">{usd(t.amount_cents)}</div>
+              <div className="text-base font-semibold tabular-nums">{usd(t.amount_cents)}</div>
               <ChargeActions txId={t.id} />
             </div>
           ))}
-        </div>
-      </Card>
+        </PrintedTape>
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card tone="paper">
           <CardTitle>Added</CardTitle>
-          {done.length === 0 && <Note>Charges you add details to land here.</Note>}
+          {done.length === 0 && <div className="text-sm text-ink-3">None yet.</div>}
           {done.slice(0, 15).map((t) => <Row key={t.id} label={<Link href={`/wardrobe/${t.item_ids[0]}`} className="hover:underline">{`${t.date} · ${(t.merchant ?? '').slice(0, 28)}`}</Link>} value={usd(t.amount_cents)} muted />)}
         </Card>
         <Card tone="paper">
-          <CardTitle hint="One push when a clothing charge lands">Cards</CardTitle>
+          <CardTitle action={<PushEnable compact />}>Cards</CardTitle>
           {accounts.map((a, i) => <Row key={i} label={a.institution ?? 'Card'} value={a.last_sync_at ? `synced ${a.last_sync_at.slice(0, 10)}` : 'linked'} muted />)}
-          <div className="mt-3"><PushEnable compact /></div>
         </Card>
       </div>
     </Page>

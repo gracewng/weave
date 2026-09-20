@@ -81,9 +81,18 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
       </div>
 
       {visible.length === 0 ? (
-        <div className="py-10 text-center text-sm text-ink-3">{q ? 'Nothing here matches. Try fewer words.' : 'Nothing in the return window right now.'}</div>
+        <div className="py-10 text-center text-sm text-ink-3">{q ? 'Nothing here matches. Try fewer words.' : 'Nothing in the return window right now.'}{!q && !retOnly && <div className="mt-3"><Link href="/wardrobe/add" className="btn btn-sm">Add your own</Link></div>}</div>
       ) : view === 'rack' ? (
         <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {!q && !retOnly && (
+            <div className="hook">
+              <Link href="/wardrobe/add" className="tag flex aspect-[3/4.9] flex-col items-center justify-center gap-2 !border-dashed !border-sage !bg-transparent !shadow-none text-ink-2 hover:!border-fern hover:text-ink">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-mist"><Icon name="camera" size={22} /></span>
+                <span className="font-sans text-[15px]">Add your own</span>
+                <span className="text-[10px] uppercase tracking-wider text-ink-3">Photo or name</span>
+              </Link>
+            </div>
+          )}
           {sorted.map((i) => <HangTag key={i.id} item={i} today={today} showReturnable={!retOnly} />)}
         </div>
       ) : (
