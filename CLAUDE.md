@@ -512,6 +512,10 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
+- 2026-09-20 Gmail is now an optional second consent: `/auth/signin` asks for the basic profile only (no
+  unverified-app warning), `/auth/gmail` asks for `gmail.readonly` with offline access, and `/auth/callback`
+  stores the refresh token only after Google's tokeninfo confirms the grant includes Gmail (`?gmail=connected`
+  or `?gmail=denied` on return). The wardrobe shows Connect Gmail until a token exists.
 - 2026-09-20 search matching: owned/friend hits must share the query's parsed category (untagged items pass) and
   clear a 0.5 display floor, so shoes no longer show as a match for a top. Verdict thresholds unchanged.
 - 2026-09-20: PR #19 (Toryn's redesign + the lead's UI passes: tape wardrobe, hang tags, printer scan, search rack,

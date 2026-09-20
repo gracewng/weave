@@ -3,10 +3,24 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { originFrom } from '@/lib/env';
 
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+
+/** Ask Google which scopes an access token actually carries. Fails closed: no answer means no Gmail. */
+async function grantsGmail(accessToken: string | null | undefined): Promise<boolean> {
+  if (!accessToken) return false;
+  try {
+    const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`, { cache: 'no-store' });
+    if (!r.ok) return false;
+    const j = (await r.json()) as { scope?: string };
+    return (j.scope ?? '').split(/\s+/).includes(GMAIL_SCOPE);
+  } catch { return false; }
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
   const next = url.searchParams.get('next') ?? '/home';
+  const wantedGmail = url.searchParams.get('gmail') === '1';
   const origin = originFrom(req);
   if (!code) return NextResponse.redirect(`${origin}/?error=missing_code`);
 
@@ -16,12 +30,14 @@ export async function GET(req: Request) {
 
   const { session, user } = data;
   const admin = createAdminClient();
+  let gmailConnected = false;
   if (admin) {
-    // Capture the Gmail refresh token NOW — it is not available on later sessions.
-    if (session.provider_refresh_token) {
+    // The refresh token only appears on this first session. Keep it only when the grant really covers Gmail,
+    // so a plain sign-in never overwrites a working Gmail token with a basic-scope one.
+    if (session.provider_refresh_token && (await grantsGmail(session.provider_token))) {
       await admin.from('gmail_tokens').upsert({ user_id: user.id, refresh_token: session.provider_refresh_token, updated_at: new Date().toISOString() });
+      gmailConnected = true;
     }
-    // Belt-and-braces: the DB trigger creates the profile, but make sure it exists.
     const { data: prof } = await admin.from('profiles').select('id').eq('id', user.id).maybeSingle();
     if (!prof) {
       const meta = user.user_metadata ?? {};
@@ -34,5 +50,6 @@ export async function GET(req: Request) {
     }
   }
   const safeNext = next.startsWith('/') ? next : '/home';
-  return NextResponse.redirect(`${origin}${safeNext}`);
+  const flag = wantedGmail ? (gmailConnected ? 'gmail=connected' : 'gmail=denied') : '';
+  return NextResponse.redirect(`${origin}${safeNext}${flag ? (safeNext.includes('?') ? '&' : '?') + flag : ''}`);
 }
