@@ -6,19 +6,19 @@ import { HangTag } from '@/components/HangTag';
 import { Tape, PrintedTape, TapeHeader, TapeLine, TapeRule, TapeTotal, Barcode, Stamp, usd } from '@/components/Tape';
 import type { Item } from '@weave/shared/types';
 import { Icon } from '@/components/Icon';
+import { WardrobeFilters, type Sort, type View } from './WardrobeFilters';
 
 export const dynamic = 'force-dynamic';
 
-type Sort = 'newest' | 'price';
-type View = 'rack' | 'tape';
-const SORTS: Array<[Sort, string]> = [['newest', 'Newest'], ['price', 'Paid']];
 const MONTH = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 const closetNo = (id: string) => id.replace(/-/g, '').slice(0, 12).toUpperCase().replace(/(.{4})/g, '$1 ').trim();
 
-export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string; returnable?: string; view?: string }> }) {
-  const { sort = 'newest', returnable: retOnly, view: viewParam } = await searchParams;
-  const view: View = viewParam === 'tape' ? 'tape' : 'rack';
+export default async function WardrobePage({ searchParams }: { searchParams: Promise<{ sort?: string; returnable?: string; view?: string; q?: string }> }) {
+  const { sort: sortParam, returnable: retOnly, view: viewParam, q: qParam = '' } = await searchParams;
+  const sort: Sort = sortParam === 'price' ? 'price' : 'newest';
+  const view: View = viewParam === 'summary' || viewParam === 'tape' ? 'summary' : 'rack';
+  const q = qParam.trim().toLowerCase();
   const { supabase, user } = await requireUser();
   const admin = createAdminClient();
   const [{ data: itemsData }, { data: tok }] = await Promise.all([
@@ -46,7 +46,8 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
     );
   }
 
-  const visible = retOnly ? items.filter((i) => i.status === 'owned' && i.return_by && i.return_by >= today) : items;
+  const matches = (i: Item) => !q || [i.name, i.brand, i.retailer, i.color, i.category, i.size, i.description].some((f) => f && f.toLowerCase().includes(q));
+  const visible = items.filter((i) => matches(i) && (!retOnly || (i.status === 'owned' && i.return_by && i.return_by >= today)));
   const sorted = [...visible].sort((a, b) => {
     if (sort === 'price') return (b.price_cents ?? 0) - (a.price_cents ?? 0);
     return (b.purchase_date ?? b.created_at).localeCompare(a.purchase_date ?? a.created_at);
@@ -55,14 +56,6 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
   const paid = items.reduce((s, i) => s + (i.price_cents ?? 0), 0);
   const since = new Date(); since.setUTCDate(since.getUTCDate() - 30); const sinceISO = since.toISOString().slice(0, 10);
   const spent30 = items.filter((i) => i.purchase_date && i.purchase_date >= sinceISO).reduce((s, i) => s + (i.price_cents ?? 0), 0);
-
-  const href = (o: { sort?: Sort; returnable?: boolean; view?: View }) => {
-    const q = new URLSearchParams();
-    const s = o.sort ?? (sort as Sort); if (s !== 'newest') q.set('sort', s);
-    const r = o.returnable ?? !!retOnly; if (r) q.set('returnable', '1');
-    const v = o.view ?? view; if (v !== 'rack') q.set('view', v);
-    const qs = q.toString(); return `/wardrobe${qs ? `?${qs}` : ''}`;
-  };
 
   // Tape view: one long receipt, grouped by purchase month with a subtotal per month.
   const groups = new Map<string, Item[]>();
@@ -82,27 +75,20 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
       </PrintedTape>
 
-      <div className="mono mt-7 flex flex-wrap items-center justify-between gap-x-5 gap-y-2 text-[11px] uppercase tracking-wider text-ink-3">
-        <span className="flex items-center gap-2">
-          <span>View</span>
-          <Link href={href({ view: 'rack' })} className={`flex items-center gap-1 ${view === 'rack' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="Hang tags on a rail"><Icon name="wardrobe" size={12} />Rack</Link>
-          <Link href={href({ view: 'tape' })} className={`flex items-center gap-1 ${view === 'tape' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="One long receipt, month by month"><Icon name="receipt" size={12} />Tape</Link>
-        </span>
-        <span className="flex items-center gap-2">
-          <span>Sort</span>
-          {SORTS.map(([k, label]) => <Link key={k} href={href({ sort: k })} className={k === sort ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}>{label}</Link>)}
-        </span>
-        <Link href={href({ returnable: !retOnly })} className={`flex items-center gap-1 ${retOnly ? 'text-save' : 'hover:text-ink'}`} title="Only items still inside their return window"><Icon name="undo" size={12} />Returnable{retOnly ? ' · on' : ''}</Link>
+      <div className="mt-7">
+        <WardrobeFilters q={qParam.trim()} sort={sort} returnable={!!retOnly} view={view} count={visible.length} />
       </div>
       </div>
 
-      {view === 'rack' ? (
+      {visible.length === 0 ? (
+        <div className="py-10 text-center text-sm text-ink-3">{q ? 'Nothing here matches. Try fewer words.' : 'Nothing in the return window right now.'}</div>
+      ) : view === 'rack' ? (
         <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {sorted.map((i) => <HangTag key={i.id} item={i} today={today} showReturnable={!retOnly} />)}
         </div>
       ) : (
         <Tape className="mx-auto max-w-2xl">
-          <TapeHeader title="Closet ledger" subtitle={`${sorted.length} lines · ${retOnly ? 'returnable only' : 'everything you own'}`} />
+          <TapeHeader title="Summary" subtitle={`${sorted.length} lines${q ? ` · matching “${qParam.trim()}”` : ''}${retOnly ? ' · returnable only' : ''}`} />
           {[...groups.entries()].map(([k, list]) => {
             const subtotal = list.reduce((s, i) => s + (i.price_cents ?? 0), 0);
             const label = k === 'undated' ? 'Undated' : MONTH.format(new Date(`${k}-01T00:00:00Z`));
