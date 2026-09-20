@@ -47,7 +47,7 @@ export async function BudgetSection({ supabase, userId }: { supabase: SupabaseCl
         <Field label="Take-home / mo"><input name="income" inputMode="decimal" defaultValue={budget?.monthly_income_cents ? (budget.monthly_income_cents / 100).toFixed(0) : ''} placeholder="4200" className="input" /></Field>
         <Field label="Clothes %"><input name="pct" type="number" min={1} max={50} step={0.5} defaultValue={budget ? Number(budget.clothing_pct) : 5} className="input" /></Field>
         <Field label="Or a flat $" hint="Overrides the %"><input name="override" inputMode="decimal" defaultValue={budget?.envelope_override_cents ? (budget.envelope_override_cents / 100).toFixed(0) : ''} placeholder="optional" className="input" /></Field>
-        <div className="col-span-3"><button className="btn btn-sm" type="submit">Save budget</button></div>
+        <div className="col-span-3"><button className="btn btn-primary !px-8 !py-3 !text-sm" type="submit">Save budget</button></div>
       </form>
     </Card>
   );

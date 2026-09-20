@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getProfile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { Page, PageHeader, Card, CardTitle, Field, Note, Badge } from '@/components/ui';
+import { Page, PageHeader, Card, CardTitle, Field, Badge } from '@/components/ui';
 import { IconReceipt, IconReturn, IconStats } from '@/components/icons';
 import { updateSettings } from './actions';
 import { BudgetSection } from './BudgetSection';
@@ -47,10 +47,7 @@ export default async function ProfilePage() {
             </div>
           </Card>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="btn btn-primary" type="submit">Save</button>
-          <Note>Friends never see prices, dates or stores.</Note>
-        </div>
+        <button className="btn btn-primary !px-8 !py-3 !text-sm" type="submit">Save profile</button>
       </form>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

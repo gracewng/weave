@@ -214,6 +214,17 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
   transform: rotate(-3deg); opacity: .9; white-space: nowrap;
 }
 
+/* Printer slot + feed: the header receipt comes out of a slit, like the landing page, without the 3D. */
+.printer { position: relative; padding-top: 14px; }
+.printer .slot { position: absolute; left: -10px; right: -10px; top: 0; height: 14px; border-radius: 7px; background: var(--pine); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .45), 0 6px 14px -8px rgba(31, 42, 36, .7); z-index: 2; }
+.printer .slot::after { content: ''; position: absolute; left: 14px; right: 14px; top: 5px; height: 4px; border-radius: 2px; background: #0d1512; }
+.printer .tape { margin-top: 0; }
+.tape.feed { animation: feed 1.4s cubic-bezier(.2, .7, .2, 1) both; transform-origin: 50% 0; }
+@keyframes feed {
+  from { clip-path: inset(0 0 100% 0); transform: translateY(-10px); }
+  to { clip-path: inset(0 0 -12px 0); transform: none; }
+}
+
 /* ─── The rack: hang tags on a rail ─────────────────────────────────────── */
 .rack { display: grid; gap: 14px 12px; overflow: hidden; padding-top: 2px; }
 .hook { position: relative; padding-top: 22px; }
@@ -234,4 +245,5 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 
 @media (prefers-reduced-motion: reduce) {
   .tag, .tag:hover { transition: none !important; transform: none !important; }
+  .tape.feed { animation: none; clip-path: none; }
 }

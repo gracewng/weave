@@ -10,6 +10,16 @@ export function Tape({ children, className = '', id }: { children: ReactNode; cl
   return <section id={id} className={`tape ${className}`}>{children}</section>;
 }
 
+/** The same tape, printed: a dark slot above it and the paper feeds out on load (instant under reduced motion). */
+export function PrintedTape({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`printer ${className}`}>
+      <div className="slot" aria-hidden="true" />
+      <section className="tape feed">{children}</section>
+    </div>
+  );
+}
+
 export function TapeHeader({ title, subtitle, brand = false }: { title: ReactNode; subtitle?: ReactNode; brand?: boolean }) {
   return (
     <div className="text-center">

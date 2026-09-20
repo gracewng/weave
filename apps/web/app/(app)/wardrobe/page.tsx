@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { IngestPanel } from '@/components/IngestPanel';
 import { HangTag } from '@/components/HangTag';
-import { Tape, TapeHeader, TapeLine, TapeRule, TapeTotal, Barcode, Stamp, usd } from '@/components/Tape';
+import { Tape, PrintedTape, TapeHeader, TapeLine, TapeRule, TapeTotal, Barcode, Stamp, usd } from '@/components/Tape';
 import type { Item } from '@weave/shared/types';
 import { Icon } from '@/components/Icon';
 
@@ -72,17 +72,17 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
     <div className="space-y-6">
       <IngestPanel hasGmail={hasGmail} itemCount={items.length} compact />
 
-      <div className="mx-auto w-full max-w-md space-y-4">
-      <Tape>
+      <div className="mx-auto w-full max-w-md">
+      <PrintedTape>
         <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} brand />
         <TapeRule />
         <TapeLine label="Spent, last 30 days" value={usd(spent30)} />
         <TapeLine label="Paid in total" value={usd(paid)} muted />
         <TapeRule />
         <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
-      </Tape>
+      </PrintedTape>
 
-      <div className="mono flex flex-wrap items-center justify-between gap-x-5 gap-y-2 text-[11px] uppercase tracking-wider text-ink-3">
+      <div className="mono mt-7 flex flex-wrap items-center justify-between gap-x-5 gap-y-2 text-[11px] uppercase tracking-wider text-ink-3">
         <span className="flex items-center gap-2">
           <span>View</span>
           <Link href={href({ view: 'rack' })} className={`flex items-center gap-1 ${view === 'rack' ? 'text-ink underline underline-offset-4' : 'hover:text-ink'}`} title="Hang tags on a rail"><Icon name="wardrobe" size={12} />Rack</Link>

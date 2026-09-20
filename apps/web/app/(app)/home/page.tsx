@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/auth';
 import { returnBoard } from '@/lib/returns';
 import { Page, PageHeader, Stat, StatGrid, SectionTitle, Empty } from '@/components/ui';
 import { HangTag } from '@/components/HangTag';
-import { IconBag, IconEnvelope, IconCard } from '@/components/icons';
+import { IconBag, IconEnvelope, IconCoins } from '@/components/icons';
 import { usd } from '@/components/ui';
 import type { Item } from '@weave/shared/types';
 
@@ -54,7 +54,7 @@ export default async function HomePage() {
         {[
           ['/search', 'Search before you buy', IconBag],
           ['/wardrobe', 'Scan my inbox', IconEnvelope],
-          ['/charges', 'Charges', IconCard],
+          ['/profile#budget', 'Set a budget', IconCoins],
         ].map(([href, label, Icon]) => {
           const I = Icon as typeof IconBag;
           return (
