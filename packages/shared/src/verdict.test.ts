@@ -4,7 +4,7 @@ import { THRESHOLDS, decideVerdict, verdictReason } from './verdict';
 
 const base: VerdictInputs = {
   topOwnedSimilarity: null,
-  topOwnedWears: null,
+  
   topFriendSimilarity: null,
   friendItemLendable: false,
   oneTimeNeedSignal: false,
