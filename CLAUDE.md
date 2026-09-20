@@ -3,6 +3,8 @@
 **Read this first.** Single source of truth for product, architecture, conventions, ownership, and status.
 Keep it current: done / mocked / known issues / contract changes / open Devin tasks.
 Re-planned 2026-09-19: **no Chrome extension, no crews, no outfit engine, no per-item impact numbers.**
+**2026-09-20 (lead decision): no wear tracking** — no wear log, cost-per-wear, #30wears or wear stamps. The
+money's-worth levers are now: not buying, borrowing, buying used, returning in time, selling, lending.
 
 ## What we're building (one paragraph)
 **Weave is a bank statement for your closet: an anti-shopping agent powered by your purchase history.** It
@@ -53,9 +55,8 @@ list; confirm official rules before submitting.)
    matching email → push "Snap the receipt" → photo read by Muse Spark → item + receipt photo on the item.
 3. **Purchase confirmation prompt.** Every new charge asks one question: **keep / returning / not clothes.**
    "Returning" lands on the return board. Older unmatched charges → **Mystery Purchases** quiz.
-4. **Wardrobe** (the aesthetic hero). Clean cutouts on paper. Item page = mini receipt: paid, wears, cost-per-wear,
-   **#30wears ring**, last worn, return window, "receipt on file". "Wore today" one-tap. **Purchase Autopsy** is a
-   small expansion on the item page (see below).
+4. **Wardrobe** (the aesthetic hero). Clean cutouts on paper. Item page = mini receipt: paid, bought when/where,
+   days owned, return window, "receipt on file", where the image came from, sharing toggles, similar items.
 5. **Budget from income.** Take-home × clothing % (default 5) = monthly envelope; filled live from email + card;
    projection; "what this could be instead" (months of a subscription, weeks of groceries, invested 10y at 7%).
 6. **Return policy board.** Every item inside its window, sorted by days left, retailer policy, dollars at stake.
@@ -88,7 +89,7 @@ list; confirm official rules before submitting.)
 A decision flow with four fixed sections, not a blended feed. The verdict engine is unchanged (rules below); the
 model parses intent and writes one explanatory line. A `buy` verdict means no earlier rule fired, not an
 endorsement. **Skip** and **Hold 48h** are always available.
-1. **You already own this.** Owned items with wears, paid price, cost per wear. Primary: **Wear mine.**
+1. **You already own this.** Owned items with paid price. Primary: **Use mine.**
    Similarity is a retrieval signal, never shown as a calibrated probability.
 2. **Borrow.** Size-compatible, shareable, lendable friend items. Primary: **Ask to borrow.** A request is pending
    until accepted; acceptance alone does not confirm an avoided purchase.
@@ -106,14 +107,14 @@ Each ghost is a **purchase intention**, not an owned item. Its mini receipt: can
 source, decision date, outcome, alternative used, potential or confirmed Money Kept. Ghosts are excluded from
 inventory counts, wear rates, and spend totals.
 
-Lifecycle (`holds.status`): **held** → **skipped** (wore mine / didn't need it) · **borrowed** · **bought_used** ·
+Lifecycle (`holds.status`): **held** → **skipped** (used mine / didn't need it) · **borrowed** · **bought_used** ·
 **bought** · **released** (expired, unanswered). Repeated searches and 48h re-checks update the same intention;
 buying later reverses the prior credit. Expiry asks "what happened?"; silence does not confirm a skip.
 
 ```text
 SEPTEMBER GHOST RACK — THE CLOTHES YOU ALMOST OWNED
 Slip dress          intended $148 → borrowed, paid $0
-White tee           intended  $45 → wore mine, paid $0
+White tee           intended  $45 → used mine, paid $0
 Jeans               intended  $98 → bought used, paid $37
 -----------------------------------------------------
 ESTIMATED MONEY KEPT                              $254
@@ -128,7 +129,7 @@ estimate of avoided intended spending, not a bank balance or proven behavior cha
 | Event | Headline treatment | Evidence |
 |---|---|---|
 | Hold / unanswered reminder | Potential only; excluded from Money Kept | Candidate + price recorded |
-| Skip / wear mine | Intended price, once | User confirms the purchase was skipped |
+| Skip / use mine | Intended price, once | User confirms the purchase was skipped |
 | Borrow instead | Intended price − borrowing cost, floor 0 | Loan reached `out` and user confirms it replaced the purchase |
 | Buy used | Intended new price − actual used total, floor 0 | User confirms purchase + actual paid |
 | Return initiated / marked returning | Pending; excluded from Money Recovered | Return action recorded |
@@ -150,13 +151,9 @@ Zero records → "Not enough purchase history," not 100%. Show fraction + date r
 count: **40 of 46 purchase records resolved = 87%; 6 mystery purchases, including 3 missing receipts.** A charge
 never invents a garment. Pure math in `packages/shared/src/coverage.ts`.
 
-### Purchase Autopsy and purchase memory
-Autopsy is an item-page expansion: purchase price, days owned, logged wears, cost per wear, days since last wear,
-and a reuse scenario: **$120 sweater / 2 wears = $60 per wear; at 30 wears = $4 per wear.** Zero wears → "No wears
-logged." An evidence-backed "What happened?" line may connect known facts (sale purchase, similar owned items,
-inactivity) — never inferred motive. "What Weave would have shown that day" restricts matches to items owned at
-that date and is labeled a reconstruction. Purchase memory beside an intervention uses the category median
-(brand median only with ≥ 3 samples), shows sample size, and never turns history into a target. No model calls.
+### Purchase memory
+Purchase memory beside an intervention uses the category median (brand median only with ≥ 3 samples), shows sample
+size, and never turns history into a target. No model calls. (Purchase Autopsy was removed with wear tracking.)
 
 ### One receipt language; one intervention timeline
 Borrowing prints a **Shared Receipt** (both names, item, status, due date; no prices, retailer, or history — the
@@ -168,7 +165,7 @@ confirmed kept/recovered amounts; pending states are neutral ink. Receipts refle
 ```text
 SEP 18  Wanted a $168 dress → borrowed instead → $168 kept*
 SEP 14  Returned trousers → refund confirmed  →  $79 recovered
-SEP 09  Wanted a $45 tee   → wore mine         →  $45 kept*
+SEP 09  Wanted a $45 tee   → used mine         →  $45 kept*
 SEP 02  Intended $98 new   → paid $42 used     →  $56 kept*
 ------------------------------------------------------------
 MONEY KEPT* $269                 MONEY RECOVERED $79
@@ -222,7 +219,7 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 | ElevenLabs | Optional accessible spoken Statement | One real playback with cache behavior |
 | Token optimization | Measured filtering, batching, caching, short outputs | `/stats` + controlled before/after sample with quality held constant |
 | Meta (bring people closer) | A real shared wardrobe, not a feed; Meta Model API does extraction/parsing | Two accounts complete a loan; private fields shown excluded |
-| Sustainability | Reduced new consumption, reuse, lending | Confirmed avoided purchases, borrows, used buys, repeat wears. No carbon/water figures |
+| Sustainability | Reduced new consumption, reuse, lending | Confirmed avoided purchases, borrows, used buys, returns, lending. No carbon/water figures |
 | Interactive Media | Printer slot, tear-to-decide, stamps, receipt printing, timeline reacting to decisions | Motion communicates state; reduced-motion respected |
 | Education | Price awareness and cost per wear from one's own purchases | Autopsy + purchase memory; no invented outcomes |
 
@@ -252,7 +249,7 @@ ElevenLabs (optional) · PWA (web push, camera via file input) · optional FastA
 ## Repo layout (pnpm workspaces)
 ```
 apps/web              Next.js app + API routes            (Claude)   fixtures/ is Devin's
-packages/shared       models, llm, prompts, contracts, types, budget, verdict, matcher, returns, kept, coverage, wears  (Claude; *.test.ts Devin)
+packages/shared       models, llm, prompts, contracts, types, budget, verdict, matcher, kept, coverage  (Claude; *.test.ts Devin)
 packages/data         retailer allowlist, return policies, marketplace links, money alternatives  (Devin)
 packages/clients      eBay, SerpAPI, ElevenLabs, Plaid + mocks (Devin)
 scripts               seed-demo.ts etc.                     (Devin)
@@ -296,8 +293,8 @@ first, variable `input` last; `cached_tokens` logged. zod → `json_schema` stri
 ## Data model (see `/supabase/migrations`)
 `profiles` · `items` (embedding, `receipt_url`, `image_source`, `line_index`, `shareable`, `lendable`, `return_by`, `status` incl. `returning`,
 `return_initiated_at`, `refund_cents`, `refunded_at`, `est_resale_cents`) · `friendships` · `loans` · `transactions`
-(match_status, decision keep/returning/not_clothes) · `wears` · `budgets` · `holds` (Ghost Rack: intended
-price/source, verdict, status, `outcome_confirmed_at`, `actual_paid_cents`, `loan_id`, `wore_item_id`,
+(match_status, decision keep/returning/not_clothes/gift) · `budgets` · `holds` (Ghost Rack: intended
+price/source, verdict, status, `outcome_confirmed_at`, `actual_paid_cents`, `loan_id`, `owned_item_id`,
 `kept_cents`, `release_at`) · `llm_calls` · `gmail_tokens` (service role) · `push_subscriptions` · `audio_cache` · `email_records` (per processed message: subject, retailer, items found,
 cost; never the body).
 RLS everywhere. View `friend_items` (no money fields). Functions: `match_items`, `match_friend_items`
@@ -312,7 +309,6 @@ Budget: envelope = override ?? income × pct; remaining = envelope − spent; pr
 Purchase memory: category median; brand median only with ≥ 3 samples; show n.
 Money Kept: per the table above; `kept_cents` set only at confirmation; reversal on later purchase.
 Coverage: resolved / detected records in period; "not clothes" leaves the denominator.
-Cost per wear: price / wears; 0 wears → "No wears logged".
 
 ## Token optimization (prize track — shown on `/stats`)
 1. Gmail query + sender-domain allowlist before any LLM call · 2. HTML strip, boilerplate removal, ~6k-char
@@ -332,11 +328,10 @@ maps to a known effect; every rule below closes a known failure mode.
 | **Opportunity-cost neglect** — people don't picture the alternative use of money | "What this could be instead" beside every price and the month's overspend | Never followed by a buy button |
 | **Cooling-off / delay discounting** — desire peaks at search and decays | Hold 48h is the primary action on a `wait` verdict; sections print in order (owned first) to slow the moment | A hold is never counted as savings |
 | **Anchoring** — retailers anchor with strike-through prices | Purchase memory anchors on *your* median ("$28 across 6 purchases") | Never show retailer was/now anchors; never celebrate a "deal" |
-| **Sunk cost, used constructively** — past spend feels wasted | Cost-per-wear and the #30wears ring turn past spend into something recoverable **through use, not more buying** | Zero wears → "No wears logged", never "wasted" |
 | **Default effect / choice architecture** — order is a recommendation | Fixed order owned → borrow → used → new; "Buy anyway" is always present, plain text, last | Never hidden, never shamed |
 | **Peak-end rule** — flows are remembered by their end | Every not-buy ends on a printed receipt; buying ends on a plain "noted" receipt | Not buying gets the satisfying animation |
 | **Commitment + Zeigarnik** — open loops nag | A hold is a commitment with a 48h check-in; pending holds are text-only (no product image) | Check-in offers "bought anyway" in one tap with no judgment, or people lie or abandon |
-| **Identity** — behavior follows self-image | Stamps, % worn, "stood in for" credits build "someone who wears what they own" | Never "frugal", "saver", or a score |
+| **Identity** — behavior follows self-image | "Stood in for" credits and the Statement build "someone who uses what they own" | Never "frugal", "saver", or a score |
 | **Social norms, not social comparison** | Lending is visible and warm (Closet Karma); friends see items, never money | No feed, no likes, no rankings, no spend comparison |
 | **Loss aversion, used narrowly** | "$89 at stake, 3 days left" on the return board only | Everywhere else uses gain framing ("kept"), never "wasted" |
 
@@ -350,7 +345,7 @@ maps to a known effect; every rule below closes a known failure mode.
   you own, so it always looks complete. Confirmed outcomes are torn receipt stubs with a VOIDED stamp; the credit
   goes to the owned item that stood in ("STOOD IN FOR $148 DRESS · SEP 18").
 - **Deal excitement.** Secondhand shows price plainly. No "40% off!", no urgency, no countdowns except return windows.
-- **Gamification creep.** Wear stamps are self-tracking, not streaks. No points, badges, or leaderboards.
+- **Gamification creep.** No points, badges, streaks, or leaderboards.
 - **Tracking anxiety.** Monthly cadence, calm ink, green only for confirmed kept/recovered, no alarms. A quiet
   month is a feature.
 - **Overclaiming.** Every estimate is labeled; broken trust ends the product.
@@ -360,7 +355,7 @@ treat, wishlist, missing, gap, saved for later, wasted, frugal, score, streak. "
 "Skip" is the neutral opposite.
 
 **Notification policy.** Exactly three kinds, each at most once per event: a new clothing charge (immediate), a
-return window at 4 days with zero wears (once), a hold check-in at 48h (once). Never marketing, never nudges to shop.
+return window at 4 days (once), a hold check-in at 48h (once). Never marketing, never nudges to shop.
 
 ## Design direction
 Aesthetic digital wardrobe on receipt paper. **The app is a thermal printer:** every decision produces a receipt,
@@ -375,8 +370,7 @@ change); receipts are real text. Primitives: `apps/web/components/Receipt.tsx`.
    Completed receipts curl into a spool icon that unrolls into the Statement. Latency becomes theater.
 2. **Stand-in stamps + stub ledger.** Owned items that replaced a purchase get a stamp on their receipt; the Ghost
    Rack is a ledger of torn, VOIDED stubs (intended price struck through, kept amount in green). No silhouettes.
-3. **Wear stamps and a ticking price.** Tap a cutout → rubber stamp "WORN SEP 19" → cost-per-wear ticks down
-   toward $4. Stamps accumulate like a passport. One tap, no form.
+3. *(removed 2026-09-20 with wear tracking)*
 4. **Search prints in order.** Owned prints first while the rest fetch; empty sections still print
    ("NOTHING OWNED ........ that's fine") so the order is never hidden.
 5. **Tear to decide.** Results and stubs sit on a perforation; drag across to skip / confirm. Button fallback
@@ -393,8 +387,7 @@ A `profile_mismatch` item shows a "Might not be yours?" banner with *Not mine* (
 **Decision-surface rules.** Owned alternative is the largest image; pending holds are text-only; "Buy anyway" is
 plain text, same size, last; one primary action per section; every printed receipt shows VOID for ten seconds.
 Mystery Purchases are receipts with the item line thermally faded; resolving re-inks it. "Bought anyway" prints a
-plain receipt with "$45 / 0 wears" and invites the first wear log — a purchase becomes a use commitment. Search's
-owned section sorts by fewest wears (rediscovery). Wardrobe has a "least recently worn" sort.
+plain receipt, nothing more. Search's owned section sorts by similarity.
 
 **Stretch (Phase 10):** budget as receipt length (remaining money = remaining paper, projection as a dotted
 extension), Shared Receipt that tears in half on return, optional printer sound (off by default).
@@ -437,7 +430,7 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
       instead" from `lib/alternatives.ts` (stopgap until Devin task 5) + invested-10y scenario. Zero model calls.
       Activates search rule 4 (over what's left → hold 48h) and the Statement's envelope lines.
 - [x] **Phase 6 — Return board** (2h). `lib/returns.ts`, `/returns` (open windows soonest-first with days-left stamp,
-      $ at stake, policy days, wears, receipt-on-file; Return Pending → Refund Confirmed with the actual amount →
+      $ at stake, policy days, receipt-on-file; Return Pending → Refund Confirmed with the actual amount →
       Money Recovered; "keeping it after all"), `GET /api/cron/returns` (daily 14:00 UTC via `vercel.json`; lists
       unworn items closing within 4 days — push delivery is Phase 10), demo panel "Seed confirmed refund".
 - [x] **Phase 7 — Search + Ghost Rack** (5h). Built: `packages/shared/src/{verdict,budget,kept}.ts` (rules, calibrated
@@ -482,7 +475,7 @@ Live vs fixture is always labeled; the recorded fallback is ready.
 | Time | Show | Proves |
 |---|---|---|
 | 0:00–0:15 | "Weave is a bank statement for your closet." Reconstruction fills the wardrobe with a real or labeled-fixture count, the logged token cost, and the provider that answered. | Commerce data becomes wardrobe memory with no manual entry (technical proof #1). |
-| 0:15–0:25 | One mini receipt: paid $128, 1 wear, $128/wear. Closet Coverage + one unresolved charge. | Financial context; admits what it doesn't know. |
+| 0:15–0:25 | One mini receipt: paid $128, bought Aug 14, return window closed. Closet Coverage + one unresolved charge. | Financial context; admits what it doesn't know. |
 | 0:25–0:45 | Search "black dress for a wedding." Owned first, then Maya's size-match, then used, then new. Request loan; second account accepts (or demo-panel accept). Shared Receipt prints. | An intention becomes a real social alternative. |
 | 0:45–1:00 | Search a $45 tee: three owned alternatives + purchase memory. Hold 48h prints a Purchase Paused stub. Labeled time-advance or "I skipped it" → stub is VOIDED, the owned tee gets a stand-in stamp, Money Kept +$45. | The alternate timeline; a hold is not yet savings. |
 | 1:00–1:12 | Unworn item, 3 days left, $89 at stake → Return Pending → seeded Refund Confirmed. | Reminder, return, and refund are different states. |
@@ -504,6 +497,9 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
+- 2026-09-20: a direct push to `main` ("changes") removed wear tracking and broke the build; resolved on branch
+  `remove-wear-tracking` (duplicate `/onboarding` + conflicting migration removed, Returns nav restored). Reminder:
+  nobody pushes to `main`; PRs only.
 - `judge_images` can be refused by the model for intimates imagery (lingerie thumbnails); the lookup then
   falls back to the unjudged ranking, which may pick a model shot. Intimates are private anyway. Regular garments judge fine.
 - SerpAPI fresh searches take ~20–25s; identical queries are served from SerpAPI's cache instantly and free.
@@ -514,6 +510,8 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - Meta `cached_tokens` field location unverified in a real response — `extractUsage()` accepts both
   `usage.prompt_tokens_details.cached_tokens` and `usage.cached_tokens`; confirm on first live call.
 ### Contract changes
+- 2026-09-20 wear removal: `VerdictInputs.topOwnedWears` removed; `wears.ts` deleted (Devin task 4: drop its
+  tests); `holds.wore_item_id` → `owned_item_id`; `wears` table dropped (migration 0012).
 - 2026-09-19 re-plan: removed crew/outfit/intervention shapes; added `MarketplaceLink`, `MoneyAlternative`,
   `BudgetInputs`/`BudgetSummary`; `VerdictInputs.outfitsUnlocked` → `budgetRemainingCents`; fixtures gained
   `parse_query` and `search_note`, lost `crew_fits`.
@@ -521,7 +519,6 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
 - 2026-09-19 accounting: added `KeptInputs`/`KeptSummary`, `CoverageInputs`/`CoverageSummary`; fixture holds must
   include confirmed outcomes with `actual_paid_cents`; seed includes one confirmed refund.
 ### Open Devin tasks
-- `/docs/devin-tasks.md`: 1 retailer data · 2 API clients · 3 fixtures + seed · 4 tests (now incl. kept, coverage,
-  wears) · 5 marketplace links + money alternatives.
+- `/docs/devin-tasks.md`: 1 retailer data · 2 API clients · 3 fixtures + seed · 4 tests (kept, coverage; wears tests dropped) · 5 marketplace links + money alternatives.
 ### TODOs for Devin-owned folders
 - (none yet)

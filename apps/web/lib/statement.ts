@@ -47,8 +47,8 @@ export async function buildStatement(supabase: SupabaseClient, userId: string, y
     else ev.push({ date: d, kind: 'released', text: `${want} → expired, unanswered`, amountCents: null, kept: false, recovered: false, href: '/ghosts' });
   }
   for (const i of monthReturns) {
-    if (i.status === 'returned') ev.push({ date: (i.refunded_at ?? '').slice(0, 10), kind: 'returned', text: `Returned ${i.name} → refund confirmed`, amountCents: i.refund_cents, kept: false, recovered: true, href: '/wardrobe' });
-    else ev.push({ date: (i.return_initiated_at ?? '').slice(0, 10), kind: 'returning', text: `Returning ${i.name} → pending`, amountCents: null, kept: false, recovered: false, href: '/wardrobe' });
+    if (i.status === 'returned') ev.push({ date: (i.refunded_at ?? '').slice(0, 10), kind: 'returned', text: `Returned ${i.name} → refund confirmed`, amountCents: i.refund_cents, kept: false, recovered: true, href: '/returns' });
+    else ev.push({ date: (i.return_initiated_at ?? '').slice(0, 10), kind: 'returning', text: `Returning ${i.name} → pending`, amountCents: null, kept: false, recovered: false, href: '/returns' });
   }
   for (const l of L.filter((l) => l.owner_id === userId && ['out', 'returned'].includes(l.status) && inMonth(l.updated_at))) {
     ev.push({ date: l.updated_at.slice(0, 10), kind: 'loan', text: `Lent an item to a friend${l.event_name ? ` for ${l.event_name}` : ''}`, amountCents: null, kept: false, recovered: false, href: '/friends' });
