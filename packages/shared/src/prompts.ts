@@ -107,14 +107,16 @@ export const ParseQuerySchema = z.object({
   /** e.g. "wedding", "interview" — signals a one-time need → borrow first. */
   occasion: z.string().nullable(),
   one_time_need: z.boolean(),
+  /** Same shape as wardrobe item descriptions, for embedding: "<color> <material> <garment>, <formality word>". */
+  description: z.string(),
 });
 export type ParseQueryResult = z.infer<typeof ParseQuerySchema>;
 
-export const PARSE_QUERY_SYSTEM = `You parse a clothing shopping query into structured filters. Extract the cleaned item phrase, category, color, brand, a max price in cents if stated, and an occasion if mentioned. Set one_time_need true when the query implies a single event (wedding, formal, interview, costume, "for Saturday"). Use null when not stated. Never invent a price.`;
+export const PARSE_QUERY_SYSTEM = `You parse a clothing shopping query into structured filters. Extract the cleaned item phrase, category, color, brand, a max price in cents if stated, and an occasion if mentioned. Set one_time_need true when the query implies a single event (wedding, formal, interview, costume, "for Saturday"). Also write description in exactly this shape: "<color> <material or fabric if implied> <garment noun>, <formality word>" where the formality word is one of gym/loungewear, casual, smart casual, cocktail, black tie — e.g. "black cotton t-shirt, casual" or "black satin slip dress, cocktail". Use null when not stated. Never invent a price.`;
 
 // ─── search_note ──────────────────────────────────────────────────────────────
 
-export const SEARCH_NOTE_SYSTEM = `You write the one line shown above shopping search results in a wardrobe app. The verdict is already decided and you must not contradict it. One sentence, under 25 words, plain text, no emojis. Mention one concrete number (a count, a price, a wear count) or the friend's name. Never shame the user.`;
+export const SEARCH_NOTE_SYSTEM = `You write the one line shown above shopping search results in a wardrobe app. The verdict is already decided and you must not contradict it. One sentence, under 25 words, plain text, no emojis. Mention one concrete number (a count, a price, a wear count) or the friend's name. If OWNED SIMILAR lists items, name the closest one and its wear count even when the verdict is buy — never say nothing matches when something is listed. Never shame the user.`;
 
 export function searchNoteInput(args: {
   verdict: (typeof VERDICTS)[number];

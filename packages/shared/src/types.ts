@@ -4,13 +4,13 @@ export type Category = 'top' | 'bottom' | 'dress' | 'outerwear' | 'shoes' | 'acc
 export type Slot = 'top' | 'bottom' | 'one_piece' | 'outer' | 'shoes' | 'accessory';
 export type ItemSource = 'email' | 'receipt' | 'tag' | 'photo' | 'quick_add' | 'mystery' | 'search';
 export type ImageSource = 'email' | 'shopping' | 'lens' | 'user_photo' | 'cutout';
-export type ItemStatus = 'owned' | 'returning' | 'returned' | 'sold' | 'donated';
+export type ItemStatus = 'owned' | 'returning' | 'returned' | 'sold' | 'donated' | 'gifted';
 export type VoicePersona = 'bestie' | 'stylist' | 'cfo';
 export type LoanStatus = 'requested' | 'accepted' | 'declined' | 'out' | 'returned';
 export type MatchStatus = 'unmatched' | 'matched' | 'captured' | 'mystery' | 'skipped';
 export type Verdict = 'skip' | 'borrow' | 'secondhand' | 'wait' | 'buy';
 export type HoldStatus = 'held' | 'skipped' | 'borrowed' | 'bought_used' | 'bought' | 'released';
-export type ChargeDecision = 'keep' | 'returning' | 'not_clothes';
+export type ChargeDecision = 'keep' | 'returning' | 'not_clothes' | 'gift';
 
 export interface Profile {
   id: string;
@@ -132,6 +132,8 @@ export interface Hold {
   wore_item_id: string | null;
   /** Money Kept — valid only when outcome_confirmed_at is set. */
   kept_cents: number;
+  for_other: boolean;
+  note: string | null;
   release_at: string | null;
   created_at: string;
   updated_at: string;

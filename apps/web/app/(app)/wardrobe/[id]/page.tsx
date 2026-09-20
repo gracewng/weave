@@ -17,9 +17,10 @@ export const dynamic = 'force-dynamic';
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase, user } = await requireUser();
-  const [{ data: item }, { data: wearRows }] = await Promise.all([
+  const [{ data: item }, { data: wearRows }, { data: stoodIn }] = await Promise.all([
     supabase.from('items').select('*').eq('id', id).eq('user_id', user.id).maybeSingle(),
     supabase.from('wears').select('worn_on').eq('item_id', id).order('worn_on', { ascending: false }),
+    supabase.from('holds').select('title,price_cents,created_at').eq('wore_item_id', id).eq('status', 'skipped').order('created_at', { ascending: false }),
   ]);
   if (!item) notFound();
   const it = item as Item;
@@ -42,6 +43,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {wears.slice(0, 12).map((w, i) => <span key={i} className="stamp">WORN {w.worn_on.slice(5).replace('-', '/')}</span>)}
+            {((stoodIn ?? []) as Array<{ title: string; price_cents: number; created_at: string }>).map((h, i) => <span key={`s${i}`} className="stamp saved">STOOD IN FOR {h.price_cents > 0 ? usd(h.price_cents) : 'A'} {h.title.toUpperCase().slice(0, 18)} · {h.created_at.slice(5, 10).replace('-', '/')}</span>)}
           </div>
           <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} />
         </div>

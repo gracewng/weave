@@ -198,6 +198,8 @@ export interface VerdictInputs {
   cheapestUsedCents: number | null;
   /** Monthly envelope minus spend so far; null when no budget set. */
   budgetRemainingCents: number | null;
+  /** Shopping for someone else: owned/borrow rules cannot fire. */
+  forOther: boolean;
 }
 
 // ─── Money Kept / Recovered (pure, in /packages/shared/src/kept.ts; tests are Devin's) ─

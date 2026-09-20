@@ -298,9 +298,9 @@ RLS everywhere. View `friend_items` (no money fields). Functions: `match_items`,
 Dedupe: unique `(user_id, retailer, lower(name), size, purchase_date)` where source='email'.
 
 ## Deterministic rules (the LLM only writes one line)
-Verdict, in order: (1) owned similarity > 0.88 → `skip` · (2) friend lendable similarity > 0.85 + one-time-need
-signal → `borrow` · (3) cheapest used ≥ 40% cheaper → `secondhand` · (4) price > budget remaining (when a budget
-exists) → `wait` · (5) else `buy`.
+Verdict, in order (`verdict.ts`): (0) "for someone else" disables rules 1–2 · (1) owned similarity ≥ 0.60 → `skip` ·
+(2) friend lendable similarity ≥ 0.55 + one-time-need signal → `borrow` · (3) cheapest used ≥ 40% cheaper →
+`secondhand` · (4) price > budget remaining (when a budget exists) → `wait` · (5) else `buy`.
 Budget: envelope = override ?? income × pct; remaining = envelope − spent; projected = spent / day × days.
 Purchase memory: category median; brand median only with ≥ 3 samples; show n.
 Money Kept: per the table above; `kept_cents` set only at confirmation; reversal on later purchase.
@@ -423,9 +423,19 @@ extension), Shared Receipt that tears in half on return, optional printer sound 
 - [ ] **Phase 5 — Budget** (2h). Envelope, live spend, projection, alternatives, over-budget state.
 - [ ] **Phase 6 — Return board** (2h). Open windows by days left, policy, $ at stake, receipt badge; **Return
       Pending** → **Refund Confirmed** (amount entered) credits Money Recovered; daily cron push at 4 days.
-- [ ] **Phase 7 — Search + Ghost Rack** (5h). `parse_query` → embed → owned / friends / used / retail; verdict;
-      `search_note`; purchase memory with n; actions; Hold → `holds`; stub ledger + stand-in stamps; confirmation
-      prompts (skipped / borrowed / bought used / bought) set `kept_cents`; 48h re-check + push (demo time-advance first).
+- [x] **Phase 7 — Search + Ghost Rack** (5h). Built: `packages/shared/src/{verdict,budget,kept}.ts` (rules, calibrated
+      thresholds skip ≥ 0.60 / borrow ≥ 0.55), `lib/search/run.ts` two stages (`local`: `parse_query` → description-
+      shaped embedding → `match_items` + `match_friend_items` + price memory + budget + provisional verdict;
+      `market`: one cached SerpAPI search split into used (resale merchants) vs retail, final verdict, `search_note`),
+      `POST /api/search`, `/search` UI (four sections print in order; Wear mine · Ask to borrow · Buy used · Skip ·
+      Hold 48h · Buy anyway; `/` focuses the bar; **"for someone else"** toggle skips owned/friends and rules 1–2),
+      `holds` decisions with `kept_cents` via `keptForHold`, `/ghosts` stub ledger (pending with "What happened?",
+      confirmed with VOIDED/BOUGHT USED stamps, Money Kept breakdown), stand-in stamps on items, demo panel (D×3:
+      advance 48h, reset holds). Marketplace links are a stopgap in `lib/search/marketplaces.ts` until Devin task 5.
+      **Verified live:** "plain black tee" → skip on the black tees (0.65); "black slip dress for a wedding" → skip on
+      the slip midi dress (0.67), note "Skip it—the closest match is your Slip Midi Dress, worn 0x." ~$0.0003/search
+      + 1 SerpAPI search per distinct query. **Deferred to Phase 10:** the 48h cron re-check + push (demo panel
+      time-advance covers the demo).
       Accept: near-duplicate tee shows owned first "worn 2×"; formal dress shows "Borrow from Maya"; Hold prints a
       Purchase Paused stub; confirming a skip turns it green and raises Money Kept by exactly the intended price.
 - [ ] **Phase 8 — Friend wardrobes + borrowing** (3h). Invite + QR, friend grid (in my size), loan flow, Realtime,
@@ -464,10 +474,9 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   falls back to the unjudged ranking, which may pick a model shot. Intimates are private anyway. Regular garments judge fine.
 - SerpAPI fresh searches take ~20–25s; identical queries are served from SerpAPI's cache instantly and free.
   Free plan: 250 searches/month. Our DB cache means each distinct query costs one search, ever.
-- **Similarity thresholds need calibration.** With `text-embedding-3-small`, a near-exact owned match scores
-  ~0.66 and a category match ~0.43, so the spec's 0.88 / 0.85 verdict thresholds would never fire. Phase 7 sets
-  the constants from real data (start: skip ≥ 0.60, borrow ≥ 0.55) and embeds the parsed query in the same
-  "<color> <material> <garment>, <formality>" shape as item descriptions to tighten the match. Rule order is unchanged.
+- Similarity thresholds are calibrated for `text-embedding-3-small` (skip ≥ 0.60, borrow ≥ 0.55 in `verdict.ts`);
+  queries are embedded in the item-description shape via `parse_query.description`. Re-check after Devin's seed
+  data lands (friends' items).
 - Meta `cached_tokens` field location unverified in a real response — `extractUsage()` accepts both
   `usage.prompt_tokens_details.cached_tokens` and `usage.cached_tokens`; confirm on first live call.
 ### Contract changes
