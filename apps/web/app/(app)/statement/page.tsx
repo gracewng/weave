@@ -43,7 +43,7 @@ export default async function StatementPage({ searchParams }: { searchParams: Pr
         )}
         <ReceiptRule />
         <ReceiptLine label="MONEY KEPT*" value={usd(s.kept.keptCents)} valueClass={s.kept.keptCents > 0 ? 'saved' : ''} />
-        <ReceiptLine label="  SKIPPED / WORE MINE" value={usd(s.kept.byOutcome.skipped)} muted />
+        <ReceiptLine label="  SKIPPED / USED MINE" value={usd(s.kept.byOutcome.skipped)} muted />
         <ReceiptLine label="  BORROWED INSTEAD" value={usd(s.kept.byOutcome.borrowed)} muted />
         <ReceiptLine label="  BOUGHT USED" value={usd(s.kept.byOutcome.boughtUsed)} muted />
         <ReceiptLine label="MONEY RECOVERED" value={usd(s.kept.recoveredCents)} valueClass={s.kept.recoveredCents > 0 ? 'saved' : ''} />
@@ -68,16 +68,6 @@ export default async function StatementPage({ searchParams }: { searchParams: Pr
         ) : <ReceiptLine label="ENVELOPE" value={<Link href="/budget" className="underline">no budget set</Link>} muted />}
       </Receipt>
 
-      <Receipt>
-        <ReceiptHeader title="Getting your money's worth" subtitle={`${s.ownedCount} ITEMS OWNED`} />
-        <ReceiptRule />
-        <ReceiptLine label="WORN IN THE LAST 90 DAYS" value={`${Math.round(s.worn * 100)}%`} />
-        <ReceiptLine label="BEST COST PER WEAR" value={s.best ? `${usd(s.best.cpw)} · ${s.best.item.name.slice(0, 22)}` : 'NO WEARS LOGGED'} muted />
-        <ReceiptLine label="WORST COST PER WEAR" value={s.worst ? `${usd(s.worst.cpw)} · ${s.worst.item.name.slice(0, 22)}` : '—'} muted />
-        <ReceiptLine label="DORMANT 90+ DAYS" value={`${s.dormantCount} ITEMS · ${usd(s.dormantCents)}`} muted />
-        <ReceiptRule />
-        <div className="mono text-[10px] text-ink-3">DORMANT ITEMS: WEAR THEM, LEND THEM, OR LET THEM GO. <Link href="/wardrobe?sort=least_worn" className="underline">SEE THEM</Link></div>
-      </Receipt>
     </div>
   );
 }

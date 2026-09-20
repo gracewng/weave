@@ -39,7 +39,7 @@ export default async function GhostsPage() {
         <ReceiptLine label="PENDING (HELD)" value={String(pending.length)} muted />
         <ReceiptLine label="POTENTIAL, NOT YET KEPT" value={usd(kept.potentialKeptCents)} muted />
         <ReceiptLine label="CONFIRMED OUTCOMES" value={String(kept.actionsCount)} />
-        <ReceiptLine label="  SKIPPED / WORE MINE" value={usd(kept.byOutcome.skipped)} />
+        <ReceiptLine label="  SKIPPED / USED MINE" value={usd(kept.byOutcome.skipped)} />
         <ReceiptLine label="  BORROWED INSTEAD" value={usd(kept.byOutcome.borrowed)} />
         <ReceiptLine label="  BOUGHT USED" value={usd(kept.byOutcome.boughtUsed)} />
         {kept.unpricedActions > 0 && <ReceiptLine label="  WITHOUT A PRICE (NOT COUNTED)" value={String(kept.unpricedActions)} muted />}
@@ -87,7 +87,6 @@ export default async function GhostsPage() {
               <ReceiptLine label="INTENDED" value={h.price_cents > 0 ? usd(h.price_cents) : 'NO PRICE'} />
               {h.actual_paid_cents != null && <ReceiptLine label="PAID" value={usd(h.actual_paid_cents)} />}
               {h.status !== 'bought' && <ReceiptLine label="MONEY KEPT" value={h.price_cents > 0 ? usd(h.kept_cents) : 'NOT COUNTED'} valueClass={h.kept_cents > 0 ? 'saved' : ''} />}
-              {h.status === 'bought' && <ReceiptLine label="COST PER WEAR" value={`${usd(h.price_cents)} / 0 WEARS`} muted />}
             </Receipt>
           ))}
         </div>

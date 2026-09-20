@@ -13,7 +13,6 @@
     "./contracts": "./src/contracts.ts",
     "./types": "./src/types.ts",
     "./env": "./src/env.ts",
-    "./wears": "./src/wears.ts",
     "./verdict": "./src/verdict.ts",
     "./budget": "./src/budget.ts",
     "./kept": "./src/kept.ts",
