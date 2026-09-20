@@ -31,7 +31,7 @@ export default async function SettingsPage() {
         <label className="block">
           <div className="mono text-xs uppercase text-ink-3">Current area</div>
           <input name="area" maxLength={80} defaultValue={profile?.area ?? ''} placeholder="Cambridge, MA" className="mt-1 w-full border border-rule bg-paper p-2 text-sm" />
-          <div className="mono mt-1 text-[10px] text-ink-3">TYPED BY YOU, NEVER YOUR DEVICE LOCATION. FRIENDS IN THE SAME AREA SHOW AS NEAR YOU.</div>
+          <div className="mono mt-1 text-[10px] text-ink-3">TYPED, NEVER TRACKED. SAME AREA = NEAR YOU.</div>
         </label>
         <fieldset>
           <legend className="mono text-xs uppercase text-ink-3">Sizes (for borrowing)</legend>
@@ -55,14 +55,14 @@ export default async function SettingsPage() {
         <ReceiptRule />
         <div className="mono text-[11px] text-ink-3">
           <div>INVITE CODE · {profile?.invite_code ?? '—'}</div>
-          <div className="mt-1">FRIENDS NEVER SEE PRICES, DATES OR STORES.</div>
+          <div className="mt-1">FRIENDS NEVER SEE PRICES.</div>
         </div>
         <button className="btn btn-primary" type="submit">Save</button>
       </form>
       <ReceiptRule />
       <div className="mono mb-1 text-xs uppercase text-ink-3">Notifications</div>
       <PushEnable />
-      <div className="mono mt-1 text-[10px] text-ink-3">NEW CHARGE · RETURN WINDOW · 48H CHECK-IN. EACH ONCE.</div>
+      <div className="mono mt-1 text-[10px] text-ink-3">NEW CHARGE · RETURN WINDOW · CHECK-IN. EACH ONCE.</div>
     </Receipt>
   );
 }

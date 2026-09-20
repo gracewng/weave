@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Icon } from '@/components/Icon';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
@@ -9,6 +10,7 @@ import { candidatesFor } from '@/lib/identify';
 import { ImageOptions } from './ImageOptions';
 import { EditDetails } from './EditDetails';
 import { ItemTools } from './ItemTools';
+import { ReturnActions } from '@/app/(app)/returns/ReturnActions';
 import { MismatchBanner } from './MismatchBanner';
 import type { Item } from '@weave/shared/types';
 
@@ -26,7 +28,9 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
   const today = new Date().toISOString().slice(0, 10);
   const owned = it.purchase_date ? daysBetween(it.purchase_date, today) : null;
   const returnOpen = !!it.return_by && it.return_by >= today;
-  const similar = it.embedding ? await similarOwned(user.id, { itemId: it.id }, 4).catch(() => []) : [];
+  const similarAll = it.embedding ? await similarOwned(user.id, { itemId: it.id }, 8).catch(() => []) : [];
+  const seenNames = new Set<string>([it.name.toLowerCase()]);
+  const similar = similarAll.filter((s) => { const k = s.name.toLowerCase(); if (seenNames.has(k)) return false; seenNames.add(k); return true; }).slice(0, 4);
   const { results: candidates } = await candidatesFor(it, false).catch(() => ({ results: [] }));
 
   return (
@@ -47,28 +51,31 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       <div className="space-y-4">
         {it.profile_mismatch && <MismatchBanner itemId={it.id} department={it.department} />}
         <Receipt>
-          <ReceiptHeader title={it.name} subtitle={[it.brand, it.size ? `SIZE ${it.size}` : null, it.color].filter(Boolean).join(' · ').toUpperCase()} />
+          <ReceiptHeader title={it.name} subtitle={[it.brand, it.size ? `SIZE ${it.size}` : null, it.color && it.color.toLowerCase() !== 'unknown' ? it.color : null].filter(Boolean).join(' · ').toUpperCase()} />
           <ReceiptRule />
           <div className="mb-2 flex flex-wrap gap-2"><EditDetails itemId={it.id} name={it.name} brand={it.brand} color={it.color} size={it.size} /><ItemTools itemId={it.id} name={it.name} /></div>
           <ReceiptLine label="PAID" value={usd(it.price_cents)} />
           <ReceiptLine label="BOUGHT" value={it.purchase_date ?? '—'} muted />
           <ReceiptLine label="AT" value={it.retailer ?? '—'} muted />
-          <ReceiptLine label="SOURCE" value={it.source === 'email' ? 'ORDER EMAIL' : it.source.toUpperCase()} muted />
-          {it.receipt_url && <ReceiptLine label="RECEIPT" value="ON FILE" muted />}
-          {it.identifier && <ReceiptLine label="ITEM NO." value={it.identifier} muted />}
-          {it.image_url && it.image_source && <ReceiptLine label="IMAGE FROM" value={it.image_source.replace('_', ' ').toUpperCase()} muted />}
-          <ReceiptRule />
-          {returnOpen && <ReceiptLine label="RETURNABLE" value={`${daysBetween(today, it.return_by!)} DAYS LEFT · ${usd(it.price_cents)} AT STAKE`} />}
-          {returnOpen && <div className="mono mt-1 text-[11px] text-ink-3">STILL RETURNABLE · {usd(it.price_cents)} AT STAKE</div>}
+          {it.receipt_url && <ReceiptLine label="RECEIPT" value={<a href={it.receipt_url} target="_blank" rel="noreferrer" className="underline">ON FILE</a>} muted />}
+          {(returnOpen || it.status === 'returning') && (
+            <>
+              <ReceiptRule />
+              {returnOpen && <ReceiptLine label={<span className="flex items-center gap-1"><Icon name="undo" size={12} />RETURNABLE</span>} value={`${daysBetween(today, it.return_by!)} DAYS LEFT`} />}
+              {it.status === 'returning' && <ReceiptLine label="RETURN" value="PENDING" />}
+              <ReturnActions itemId={it.id} name={it.name} priceCents={it.price_cents} status={it.status === 'returning' ? 'returning' : 'owned'} />
+            </>
+          )}
           <ReceiptRule />
           <ShareToggles itemId={it.id} shareable={it.shareable} lendable={it.lendable} intimates={it.category === 'intimates'} />
         </Receipt>
 
         <Receipt>
-          <ReceiptHeader title="Purchase details" subtitle="WHAT WE KNOW ABOUT THIS ITEM" />
+          <ReceiptHeader title="Details" />
           <ReceiptRule />
           <ReceiptLine label="DAYS OWNED" value={owned != null ? String(owned) : '—'} />
-          {it.description && <><ReceiptRule /><div className="mono text-[11px] text-ink-3">TAGGED AS · {it.description}{it.formality ? ` · FORMALITY ${it.formality}/5` : ''}</div></>}
+          {it.identifier && <ReceiptLine label="ITEM NO." value={it.identifier} muted />}
+          {it.description && <ReceiptLine label="TAGGED" value={it.description.replace(/^unknown\s+/i, '').slice(0, 40)} muted />}
         </Receipt>
 
         {similar.length > 0 && (

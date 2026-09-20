@@ -86,7 +86,7 @@ export function SearchClient({ initialQ }: { initialQ: string }) {
 
       {stage !== 'idle' && local && (
         <>
-          <Receipt print>
+          <Receipt>
             {market ? (
               <>
                 <div className="mono text-center text-[10px] tracking-[.3em] text-ink-2">VERDICT</div>

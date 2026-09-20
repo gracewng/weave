@@ -9,6 +9,7 @@ import { InviteQR } from './InviteQR';
 import { LoansLive } from './LoansLive';
 import { LoanActions } from './LoanActions';
 import { JoinForm } from './JoinForm';
+import { Icon } from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,13 +34,13 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
 
       <div className="grid gap-6 md:grid-cols-2">
         <Receipt>
-          <ReceiptHeader title="Closet karma" subtitle={(profile?.display_name ?? 'YOU').toUpperCase()} />
+          <ReceiptHeader title="Closet karma" />
           <ReceiptRule />
-          <ReceiptLine label="LENT" value={`${karma.lent} TIME${karma.lent === 1 ? '' : 'S'}`} />
-          <ReceiptLine label="HELPED FRIENDS KEEP" value={usd(karma.helpedKeepCents)} valueClass={karma.helpedKeepCents > 0 ? 'saved' : ''} />
-          <ReceiptLine label="BORROWED" value={`${karma.borrowed} TIME${karma.borrowed === 1 ? '' : 'S'}`} muted />
-          <ReceiptRule />
-          <div className="mono text-[11px] text-ink-3">NO FEED. NO LIKES.</div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="cutout p-2"><Icon name="hand" size={18} className="text-ink-3" /><div className="mono mt-1 text-lg">{karma.lent}</div><div className="mono text-[9px] uppercase text-ink-3">Lent</div></div>
+            <div className="cutout p-2"><Icon name="receipt" size={18} className={karma.helpedKeepCents > 0 ? 'text-save' : 'text-ink-3'} /><div className={`mono mt-1 text-lg ${karma.helpedKeepCents > 0 ? 'saved' : ''}`}>{usd(karma.helpedKeepCents)}</div><div className="mono text-[9px] uppercase text-ink-3">Friends kept</div></div>
+            <div className="cutout p-2"><Icon name="undo" size={18} className="text-ink-3" /><div className="mono mt-1 text-lg">{karma.borrowed}</div><div className="mono text-[9px] uppercase text-ink-3">Borrowed</div></div>
+          </div>
         </Receipt>
         <Receipt>
           <ReceiptHeader title="Invite" subtitle="SCAN OR SHARE" />
