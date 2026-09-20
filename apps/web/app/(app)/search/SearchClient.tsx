@@ -1,28 +1,29 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Page, PageHeader, Card, CardTitle, Row, Note, Badge, usd } from '@/components/ui';
+import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
 import { printReceipt } from '@/lib/printer';
 import { recordDecision, type DecisionInput } from './actions';
 import type { LocalStage, MarketStage, Listing } from '@/lib/search/run';
+import { BuyModal } from './BuyModal';
+import { Icon } from '@/components/Icon';
 
 type Stage = 'idle' | 'local' | 'market' | 'done' | 'error';
-const VERDICT_LABEL: Record<string, string> = { skip: 'You already own this', borrow: 'Borrow it', secondhand: 'Buy it used', wait: 'Hold 48 hours', buy: 'Buying is allowed' };
+const VERDICT_LABEL: Record<string, string> = { skip: 'You already own this', borrow: 'Borrow it', secondhand: 'Buy it used', wait: 'Hold 48 hours', buy: 'Your call' };
 
-export function SearchClient({ initialQ, initialForOther }: { initialQ: string; initialForOther: boolean }) {
+export function SearchClient({ initialQ }: { initialQ: string }) {
   const [q, setQ] = useState(initialQ);
-  const [forOther, setForOther] = useState(initialForOther);
   const [price, setPrice] = useState('');
   const [stage, setStage] = useState<Stage>('idle');
   const [local, setLocal] = useState<LocalStage | null>(null);
   const [market, setMarket] = useState<MarketStage | null>(null);
   const [error, setError] = useState('');
   const [decided, setDecided] = useState<string | null>(null);
-  const [usedPaid, setUsedPaid] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [buying, setBuying] = useState<Listing | null>(null);
 
-  useEffect(() => { if (initialQ) void run(initialQ, initialForOther); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (initialQ) void run(initialQ, false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') { e.preventDefault(); inputRef.current?.focus(); } };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
@@ -31,7 +32,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
   async function run(query: string, other: boolean) {
     const qq = query.trim(); if (!qq) return;
     setStage('local'); setLocal(null); setMarket(null); setError(''); setDecided(null);
-    history.replaceState(null, '', `/search?q=${encodeURIComponent(qq)}${other ? '&for=other' : ''}`);
+    history.replaceState(null, '', `/search?q=${encodeURIComponent(qq)}`);
     try {
       const r1 = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stage: 'local', q: qq, forOther: other }) });
       if (!r1.ok) throw new Error((await r1.json()).error ?? r1.statusText);
@@ -46,7 +47,7 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
   function base(): Omit<DecisionInput, 'decision'> {
     const top = market?.retail[0];
     return { title: top?.title ?? local?.parsed.query ?? q, url: top?.url ?? null, imageUrl: top?.imageUrl ?? null, priceCents: market?.priceCents ?? null, query: q, verdict: market?.verdict ?? local?.provisional ?? null,
-      similarIds: local?.owned.slice(0, 3).map((o) => o.id) ?? [], friendIds: local?.friends.slice(0, 3).map((f) => f.id) ?? [], cheapestUsedCents: market?.cheapestUsedCents ?? null, forOther, source: top?.merchant ?? null };
+      similarIds: local?.owned.slice(0, 3).map((o) => o.id) ?? [], friendIds: local?.friends.slice(0, 3).map((f) => f.id) ?? [], cheapestUsedCents: market?.cheapestUsedCents ?? null, forOther: false, source: top?.merchant ?? null };
   }
 
   async function decide(d: DecisionInput, receipt: { title: string; lines: Array<{ label: string; value: string; saved?: boolean; muted?: boolean }>; footer?: string }) {
@@ -59,148 +60,98 @@ export function SearchClient({ initialQ, initialForOther }: { initialQ: string; 
   }
 
   const priceLabel = market?.priceCents != null ? usd(market.priceCents) : null;
-  const unpriced = market != null && market.priceCents == null;
-  const searching = stage === 'local' || stage === 'market';
-  const memoryScope = local?.memory ? (local.memory.scope === 'brand' ? (local.parsed.brand ?? '') : (local.parsed.category ?? 'item')) : '';
+
+  type Card = { key: string; kind: 'mine' | 'friend' | 'used' | 'new'; tag: string; title: string; image: string | null; sub: string; price: number | null; href?: string; action?: () => void; actionLabel?: string };
+  const cards: Card[] = [];
+  if (local) {
+    for (const f of local.friends.slice(0, 4)) cards.push({ key: `f-${f.id}`, kind: 'friend', tag: `BORROW FROM ${(f.owner_name ?? 'A FRIEND').toUpperCase()}`, title: f.name, image: f.image_url, sub: `${f.size ?? '?'} · ${Math.round(f.similarity * 100)}% MATCH`, price: null, href: `/friends/${f.owner_id}?item=${f.id}${market?.priceCents != null ? `&price=${market.priceCents}` : ''}&q=${encodeURIComponent(q)}`, actionLabel: 'Ask to borrow' });
+  }
+  if (market) {
+    for (const [i, u] of market.used.entries()) cards.push({ key: `u-${i}`, kind: 'used', tag: 'SECOND HAND', title: u.title, image: u.imageUrl, sub: u.merchant ?? '', price: u.priceCents, href: u.url ?? undefined, actionLabel: 'Buy used' });
+    for (const [i, r] of market.retail.entries()) cards.push({ key: `n-${i}`, kind: 'new', tag: 'NEW', title: r.title, image: r.imageUrl, sub: r.merchant ?? '', price: r.priceCents, href: r.url ?? undefined, actionLabel: 'Buy', action: () => setBuying(r) });
+  }
+  const TAG: Record<Card['kind'], string> = { mine: 'bg-ink text-paper', friend: 'bg-save text-white', used: 'border border-ink text-ink', new: 'border border-rule text-ink-3' };
 
   return (
-    <Page>
-      <PageHeader title="Before you buy" subtitle={forOther ? 'Shopping for someone else. Your wardrobe and friends are skipped.' : 'Your wardrobe first, then friends, then secondhand. New retail comes last.'} />
+    <div className="mx-auto max-w-3xl space-y-6">
+      <form className="card card-mist" onSubmit={(e) => { e.preventDefault(); void run(q, false); }}>
+        <ReceiptHeader title="Before you buy" subtitle="BORROW · SECOND HAND · NEW" />
+        <ReceiptRule />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="black slip dress for a wedding" className="input flex-1" />
+          <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$ price (optional)" inputMode="decimal" className="input sm:w-36" />
+          <button className="btn btn-primary" type="submit" disabled={stage === 'local' || stage === 'market'}>Check</button>
+        </div>
+        {error && <div className="mono mt-2 text-[11px] text-warn">{error}</div>}
+      </form>
 
-      <Card>
-        <form onSubmit={(e) => { e.preventDefault(); void run(q, forOther); }}>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="black slip dress for a wedding   (press / anywhere)" className="input flex-1" />
-            <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$ price (optional)" inputMode="decimal" className="input sm:w-40" />
-            <button className="btn btn-primary" type="submit" disabled={searching}>{searching ? 'Checking…' : 'Check'}</button>
-          </div>
-          <label className="mt-3 flex items-center gap-2 text-xs text-ink-2"><input type="checkbox" checked={forOther} onChange={(e) => setForOther(e.target.checked)} /> For someone else (skips your wardrobe and friends)</label>
-          {error && <div className="mt-2 text-xs text-warn">{error}</div>}
-        </form>
-      </Card>
-
+      {buying && market && <BuyModal item={buying} used={market.used} onClose={() => setBuying(null)} />}
       {stage !== 'idle' && local && (
         <>
-          {/* Verdict: provisional after the local stage, final after market */}
-          <Card tone="pine">
-            <div className="text-xs text-white/70">Verdict</div>
+          <Receipt>
             {market ? (
               <>
-                <div className="display mt-1 text-2xl font-semibold sm:text-3xl">{VERDICT_LABEL[market.verdict]}</div>
-                <div className="mt-1 text-sm text-white/75">{market.reason}</div>
-                <p className="mt-4 text-base">{market.note}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge tone="outline" className="!border-white/30 !text-white/80">{market.noteProvider === 'fixture' ? 'Note: fixture' : `Note: ${market.noteProvider}`}</Badge>
-                  <Badge tone="outline" className="!border-white/30 !text-white/80">{priceLabel ? `Price ${priceLabel} (${market.priceSource === 'user' ? 'you entered' : 'from a retail result'})` : 'No price known, so no dollar amount will be claimed'}</Badge>
-                </div>
+                <div className="mono text-center text-[10px] tracking-[.3em] text-ink-2">VERDICT</div>
+                <div className="mono text-center text-lg font-semibold uppercase">{VERDICT_LABEL[market.verdict]}</div>
+                <div className="mono mt-1 text-center text-[11px] text-ink-3">{market.reason}</div>
+                <ReceiptRule />
+                <p className="text-center text-sm">{market.note}</p>
+                <div className="mono mt-2 text-center text-[10px] text-ink-3">{market.noteProvider.toUpperCase()} · {priceLabel ? `${priceLabel} ${market.priceSource === 'user' ? 'ENTERED' : 'FROM RETAIL'}` : 'NO PRICE · NOTHING COUNTED'}</div>
               </>
             ) : (
               <>
-                <div className="display mt-1 text-2xl font-semibold sm:text-3xl">{local.provisional ? VERDICT_LABEL[local.provisional] : 'Checking secondhand and retail…'}</div>
-                <div className="mt-1 text-sm text-white/75">{local.provisional ? 'Decided from your wardrobe alone. Still checking prices.' : 'Your wardrobe and friends are in. Prices next.'}</div>
+                <div className="mono text-center text-[10px] tracking-[.3em] text-ink-2">VERDICT</div>
+                <div className="mono text-center text-lg font-semibold uppercase">{local.provisional ? VERDICT_LABEL[local.provisional] : 'Checking prices…'}</div>
+                <div className="mono mt-1 text-center text-[11px] text-ink-3">{local.provisional ? 'From your wardrobe. Checking prices…' : 'Checking prices…'}</div>
               </>
             )}
-            {(local.memory && !forOther) || local.budgetRemainingCents != null ? (
-              <div className="mt-4 border-t border-white/15 pt-2">
-                {local.memory && !forOther && <Row label={`Your median ${memoryScope} purchase`} value={`${usd(local.memory.medianCents)} across ${local.memory.n}`} />}
-                {local.budgetRemainingCents != null && <Row label="Left in this month's envelope" value={usd(local.budgetRemainingCents)} />}
-              </div>
-            ) : null}
-          </Card>
+            {local.memory && <><ReceiptRule /><ReceiptLine label={`YOU USUALLY PAY (${local.memory.scope === 'brand' ? (local.parsed.brand ?? '').toUpperCase() : (local.parsed.category ?? 'ITEM').toUpperCase()})`} value={`${usd(local.memory.medianCents)} · ${local.memory.n} BUYS`} muted /></>}
+            {local.budgetRemainingCents != null && <ReceiptLine label="ENVELOPE LEFT" value={usd(local.budgetRemainingCents)} muted />}
+          </Receipt>
 
-          {/* 1. You already own this */}
-          {!forOther && (
-            <Card>
-              <CardTitle action={local.owned.length > 0 ? <Badge tone="pine">{local.owned.length} similar</Badge> : undefined}>You already own this</CardTitle>
-              {local.owned.length === 0 && <Note>Nothing owned that matches. That&apos;s fine.</Note>}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {local.owned.slice(0, 3).map((o) => (
-                  <div key={o.id} className="cutout p-2">
-                    <Link href={`/wardrobe/${o.id}`} className="block aspect-[3/4] w-full rounded-xl bg-paper-2">{o.image_url ? <img src={o.image_url} alt={o.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-[10px] text-ink-3">No image</div>}</Link>
-                    <div className="mt-2 truncate px-1 text-sm">{o.name}</div>
-                    <div className="px-1 text-xs text-ink-3">{Math.round(o.similarity * 100)}% match{o.price_cents != null ? ` · paid ${usd(o.price_cents)}` : ''}</div>
-                    <button className="btn btn-save btn-sm mt-2 w-full" disabled={busy || !!decided} onClick={() => decide({ ...base(), decision: 'use_mine', ownedItemId: o.id },
-                      { title: 'Purchase voided', lines: [{ label: 'Intended', value: priceLabel ?? 'No price' }, { label: 'Stood in', value: o.name.slice(0, 22) }, { label: 'Paid', value: '$0.00' }, { label: 'Money kept', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'Estimated against your intended price' : 'Counted as an action, no dollars claimed' })}>Use mine</button>
+          {local.owned.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto py-1">
+              <span className="mono shrink-0 text-[10px] uppercase text-ink-3">You own</span>
+              {local.owned.slice(0, 6).map((o) => (
+                <div key={o.id} className="flex shrink-0 items-center gap-1.5 border border-dashed border-rule p-1 opacity-80">
+                  <Link href={`/wardrobe/${o.id}`} className="block h-12 w-9 bg-paper-2">{o.image_url ? <img src={o.image_url} alt={o.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-ink-3"><Icon name="image" size={12} /></div>}</Link>
+                  <div className="w-24"><div className="truncate text-[11px]" title={o.name}>{o.name}</div><div className="mono text-[9px] text-ink-3">{Math.round(o.similarity * 100)}%</div>
+                    {!decided && <button className="mono text-[9px] uppercase text-save hover:underline" disabled={busy} onClick={() => decide({ ...base(), decision: 'use_mine', ownedItemId: o.id }, { title: 'Purchase voided', lines: [{ label: 'INTENDED', value: priceLabel ?? 'NO PRICE' }, { label: 'USED', value: o.name.toUpperCase().slice(0, 22) }, { label: 'MONEY KEPT', value: priceLabel ?? '—', saved: !!priceLabel }], footer: priceLabel ? 'ESTIMATE' : 'COUNTED, NO DOLLARS' })}>Use mine</button>}
                   </div>
-                ))}
-              </div>
-            </Card>
+                </div>
+              ))}
+            </div>
           )}
-
-          {/* 2. Borrow */}
-          {!forOther && (
-            <Card>
-              <CardTitle action={local.friends.length > 0 ? <Badge tone="pine">{local.friends.length} from friends, in your size</Badge> : undefined}>Borrow</CardTitle>
-              {local.friends.length === 0 && <Note>No friend has one in your size. <Link href="/friends" className="underline">Invite friends</Link>.</Note>}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {local.friends.slice(0, 3).map((f) => (
-                  <div key={f.id} className="cutout p-2">
-                    <div className="aspect-[3/4] w-full rounded-xl bg-paper-2">{f.image_url && <img src={f.image_url} alt={f.name} className="h-full w-full object-contain" />}</div>
-                    <div className="mt-2 truncate px-1 text-sm">{f.name}</div>
-                    <div className="px-1 text-xs text-ink-3">{f.owner_name ?? 'Friend'} · {f.size ?? '?'} · {Math.round(f.similarity * 100)}% match</div>
-                    <Link href={`/friends/${f.owner_id}?item=${f.id}${market?.priceCents != null ? `&price=${market.priceCents}` : ''}&q=${encodeURIComponent(q)}`} className="btn btn-save btn-sm mt-2 w-full">Ask to borrow</Link>
-                  </div>
-                ))}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {cards.map((c) => (
+              <div key={c.key} className="cutout flex flex-col p-2">
+                <span className={`mono self-start px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${TAG[c.kind]}`}>{c.tag}</span>
+                {c.href && (c.kind === 'mine' || c.kind === 'friend') ? (
+                  <Link href={c.href} className="mt-2 block aspect-[3/4] w-full bg-paper-2">{c.image ? <img src={c.image} alt={c.title} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center text-[10px] text-ink-3">NO IMAGE</div>}</Link>
+                ) : (
+                  <a href={c.href ?? '#'} target="_blank" rel="noreferrer" className="mt-2 block aspect-[3/4] w-full bg-paper-2">{c.image && <img src={c.image} alt="" className="h-full w-full object-contain" />}</a>
+                )}
+                <div className="mt-1 truncate text-xs" title={c.title}>{c.title}</div>
+                <div className="mono flex justify-between text-[10px] text-ink-3"><span className="truncate">{c.sub}</span>{c.price != null && <span>{usd(c.price)}</span>}</div>
+                {c.actionLabel && (c.action
+                  ? <button className={`btn mt-2 w-full !py-1 !text-[10px] ${c.kind === 'new' ? 'btn-primary' : 'btn-save'}`} disabled={busy} onClick={c.action}>{c.actionLabel}</button>
+                  : c.kind === 'friend'
+                    ? <Link href={c.href!} className="btn btn-save mt-2 block w-full !py-1 text-center !text-[10px]">{c.actionLabel}</Link>
+                    : <a href={c.href ?? '#'} target="_blank" rel="noreferrer" className={`btn mt-2 block w-full !py-1 text-center !text-[10px] ${c.kind === 'new' ? '' : ''}`}>{c.actionLabel}</a>)}
               </div>
-            </Card>
+            ))}
+            {market && cards.length === 0 && <div className="mono col-span-full text-[11px] text-ink-3">NOTHING FOUND. TRY FEWER WORDS.</div>}
+          </div>
+          {market && (
+            <div className="mono flex flex-wrap gap-x-4 gap-y-1 text-[10px] uppercase text-ink-3">
+              {market.links.secondhand.map((l) => <a key={l.id} href={l.url} target="_blank" rel="noreferrer" className="hover:text-ink">{l.name} ↗</a>)}
+              {market.links.retail.map((l) => <a key={l.id} href={l.url} target="_blank" rel="noreferrer" className="hover:text-ink">{l.name} ↗</a>)}
+              {decided && <span className="ml-auto text-save">RECORDED · <Link href="/search" className="underline">ALMOST BOUGHT</Link></span>}
+            </div>
           )}
-
-          {/* 3. Secondhand */}
-          <Card>
-            <CardTitle hint={market ? (market.used.length ? 'Cheapest first' : 'No used listings in this search') : 'Searching…'} action={market && market.used.length > 0 ? <Badge tone="pine">{market.used.length} used listings</Badge> : undefined}>Secondhand</CardTitle>
-            {market && (
-              <>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                  {market.used.map((u, i) => <ListingCard key={i} l={u} busy={busy || !!decided} paid={usedPaid[i] ?? ''} onPaid={(v) => setUsedPaid({ ...usedPaid, [i]: v })}
-                    onBuyUsed={() => { const actual = usedPaid[i] ? Math.round(Number(usedPaid[i]) * 100) : u.priceCents; decide({ ...base(), decision: 'bought_used', actualPaidCents: actual, url: u.url, imageUrl: u.imageUrl, source: u.merchant },
-                      { title: 'Bought used', lines: [{ label: 'New price', value: priceLabel ?? 'No price' }, { label: 'Paid', value: actual != null ? usd(actual) : '—' }, { label: 'Money kept', value: priceLabel && actual != null ? usd(Math.max(0, (market.priceCents ?? 0) - actual)) : '—', saved: !!priceLabel }], footer: 'Confirmed by you' }); }} />)}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">{market.links.secondhand.map((l) => <a key={l.id} href={l.url} target="_blank" rel="noreferrer" className="badge badge-outline hover:bg-paper">{l.name} ↗</a>)}</div>
-              </>
-            )}
-          </Card>
-
-          {/* 4. New */}
-          <Card>
-            <CardTitle hint={market ? (market.retail.length ? 'Retail, last' : 'No retail results') : 'Searching…'}>New</CardTitle>
-            {market && (
-              <>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                  {market.retail.map((r, i) => <ListingCard key={i} l={r} busy={busy || !!decided} />)}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">{market.links.retail.map((l) => <a key={l.id} href={l.url} target="_blank" rel="noreferrer" className="badge badge-outline hover:bg-paper">{l.name} ↗</a>)}</div>
-                <div className="mt-5 border-t border-dust/60 pt-4">
-                  {decided ? (
-                    <div className="text-sm text-ink-2">Recorded: {decided.replace('_', ' ')}. See the <Link href="/ghosts" className="underline">Ghost Rack</Link>.</div>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'skip' }, { title: 'Purchase voided', lines: [{ label: 'Intended', value: priceLabel ?? 'No price' }, { label: 'Paid', value: '$0.00' }, { label: 'Money kept', value: priceLabel ?? '—', saved: !!priceLabel }], footer: unpriced ? 'Counted as an action, no dollars claimed' : 'Estimated against your intended price' })}>Skip</button>
-                      <button className="btn" disabled={busy} onClick={() => decide({ ...base(), decision: 'hold' }, { title: 'Purchase paused', lines: [{ label: 'Intended', value: priceLabel ?? 'No price' }, { label: 'Next check', value: 'in 48 hours', muted: true }, { label: 'Potential kept', value: priceLabel ?? '—', muted: true }], footer: 'A hold is not yet kept money' })}>Hold 48h</button>
-                      <button className="btn-text" disabled={busy} onClick={() => decide({ ...base(), decision: 'buy' }, { title: 'Noted', lines: [{ label: 'Paid', value: priceLabel ?? '—' }], footer: 'Confirmed by you' })}>Buy anyway</button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </Card>
         </>
-      )}
-    </Page>
-  );
-}
-
-function ListingCard({ l, busy, paid, onPaid, onBuyUsed }: { l: Listing; busy: boolean; paid?: string; onPaid?: (v: string) => void; onBuyUsed?: () => void }) {
-  return (
-    <div className="cutout p-2">
-      <a href={l.url ?? '#'} target="_blank" rel="noreferrer" className="block aspect-[3/4] w-full rounded-xl bg-paper-2">{l.imageUrl && <img src={l.imageUrl} alt="" className="h-full w-full object-contain" />}</a>
-      <div className="mt-2 truncate px-1 text-xs" title={l.title}>{l.title}</div>
-      <div className="flex justify-between px-1 text-xs text-ink-3"><span className="truncate">{l.merchant ?? ''}</span><span className="tabular-nums">{l.priceCents != null ? usd(l.priceCents) : '—'}</span></div>
-      {onBuyUsed && (
-        <div className="mt-2 flex gap-1">
-          <input value={paid} onChange={(e) => onPaid?.(e.target.value)} placeholder={l.priceCents != null ? (l.priceCents / 100).toFixed(2) : 'paid'} inputMode="decimal" className="input input-sm w-20" />
-          <button className="btn btn-sm flex-1" disabled={busy} onClick={onBuyUsed}>Buy used</button>
-        </div>
       )}
     </div>
   );
 }
+

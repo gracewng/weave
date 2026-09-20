@@ -1,14 +1,12 @@
 /** Cheap gates that run BEFORE any model call. Pure. */
 import { retailerData } from '@weave/data';
-import { FALLBACK_RETAILERS } from './retailers-fallback';
 
 export interface RetailerMatch { id: string; name: string; returnWindowDays: number | null; mixed: boolean }
 
 /** Root domains for the Gmail `from:` pass (Devin's list when present, else the fallback). */
 export function allowlistDomains(): string[] {
-  const src = retailerData.retailers.length > 0 ? retailerData.retailers.map((r) => r.senderDomains) : FALLBACK_RETAILERS.map((r) => r.domains);
   const roots = new Set<string>();
-  for (const list of src) for (const d of list) { const parts = d.toLowerCase().split('.'); roots.add(parts.slice(-2).join('.')); }
+  for (const r of retailerData.retailers) for (const d of r.senderDomains) { const parts = d.toLowerCase().split('.'); roots.add(parts.slice(-2).join('.')); }
   return [...roots];
 }
 
@@ -19,13 +17,8 @@ export function senderDomain(from: string): string {
 }
 
 export function resolveRetailer(domain: string): RetailerMatch | undefined {
-  const d = domain.toLowerCase();
-  if (retailerData.retailers.length > 0) {
-    const r = retailerData.bySenderDomain(d);
-    return r ? { id: r.id, name: r.name, returnWindowDays: retailerData.returnWindowFor(r.id), mixed: r.mixed } : undefined;
-  }
-  const f = FALLBACK_RETAILERS.find((r) => r.domains.some((x) => d === x || d.endsWith('.' + x)));
-  return f ? { id: f.id, name: f.name, returnWindowDays: f.returnDays, mixed: !!f.mixed } : undefined;
+  const r = retailerData.bySenderDomain(domain.toLowerCase());
+  return r ? { id: r.id, name: r.name, returnWindowDays: retailerData.returnWindowFor(r.id), mixed: r.mixed } : undefined;
 }
 
 const ORDER_RE = /\b(order|receipt|purchase|invoice|confirmation|thank you for (your|shopping))\b/i;

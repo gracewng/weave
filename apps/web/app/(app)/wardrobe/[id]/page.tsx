@@ -1,21 +1,20 @@
 import Link from 'next/link';
+import { Icon } from '@/components/Icon';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
-import { Page, PageHeader, Card, CardTitle, Row, Note, Badge, Divider, usd } from '@/components/ui';
+import { Receipt, ReceiptHeader, ReceiptLine, ReceiptRule, usd } from '@/components/Receipt';
 import { ShareToggles } from './ShareToggles';
 import { daysBetween } from '@/lib/returns';
 import { similarOwned } from '@/lib/tagging';
 import { candidatesFor } from '@/lib/identify';
-import { Candidates } from './Candidates';
+import { ImageOptions } from './ImageOptions';
 import { EditDetails } from './EditDetails';
 import { ItemTools } from './ItemTools';
+import { ReturnActions } from '@/app/(app)/returns/ReturnActions';
 import { MismatchBanner } from './MismatchBanner';
 import type { Item } from '@weave/shared/types';
 
 export const dynamic = 'force-dynamic';
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-function shortDate(iso: string) { return `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`; }
 
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,78 +28,71 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
   const today = new Date().toISOString().slice(0, 10);
   const owned = it.purchase_date ? daysBetween(it.purchase_date, today) : null;
   const returnOpen = !!it.return_by && it.return_by >= today;
-  const similar = it.embedding ? await similarOwned(user.id, { itemId: it.id }, 4).catch(() => []) : [];
+  const similarAll = it.embedding ? await similarOwned(user.id, { itemId: it.id }, 8).catch(() => []) : [];
+  const seenNames = new Set<string>([it.name.toLowerCase()]);
+  const similar = similarAll.filter((s) => { const k = s.name.toLowerCase(); if (seenNames.has(k)) return false; seenNames.add(k); return true; }).slice(0, 4);
   const { results: candidates } = await candidatesFor(it, false).catch(() => ({ results: [] }));
-  const credits = (stoodIn ?? []) as Array<{ title: string; price_cents: number; created_at: string }>;
-  const subtitle = [it.brand, it.size ? `Size ${it.size}` : null, it.color && it.color !== 'unknown' ? it.color : null].filter(Boolean).join(' · ');
 
   return (
-    <Page>
-      <PageHeader
-        eyebrow={<Link href="/wardrobe" className="hover:text-ink">← Wardrobe</Link>}
-        title={it.name}
-        subtitle={subtitle || undefined}
-        actions={returnOpen ? <Badge tone="save">Returnable · {daysBetween(today, it.return_by!)} days left</Badge> : it.status === 'returning' ? <Badge tone="pine">Return pending</Badge> : undefined}
-      />
-
-      {it.profile_mismatch && <MismatchBanner itemId={it.id} department={it.department} />}
-
-      <div className="grid gap-6 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="space-y-4">
-          <Card tone="paper">
-            <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl bg-paper-2">
-              {it.image_url ? <img src={it.image_url} alt={it.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center px-4 text-center text-sm text-ink-3">No image yet</div>}
-            </div>
-            {credits.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {credits.map((h, i) => <Badge key={`s${i}`} tone="save">Stood in for {h.price_cents > 0 ? `${usd(h.price_cents)} ` : ''}{h.title.slice(0, 24)} · {shortDate(h.created_at)}</Badge>)}
-              </div>
-            )}
-            <Candidates itemId={it.id} initial={candidates} hasImage={!!it.image_url} imageSource={it.image_source} />
-            <Divider />
-            <ItemTools itemId={it.id} name={it.name} hasImage={!!it.image_url} />
-          </Card>
+    <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div>
+        <div className="cutout p-3">
+          <div className="aspect-[3/4] w-full bg-paper-2">
+            {it.image_url ? <img src={it.image_url} alt={it.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center px-4 text-center text-[11px] text-ink-3">NO IMAGE YET</div>}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {((stoodIn ?? []) as Array<{ title: string; price_cents: number; created_at: string }>).map((h, i) => <span key={`s${i}`} className="badge badge-save">STOOD IN FOR {h.price_cents > 0 ? usd(h.price_cents) : 'A'} {h.title.toUpperCase().slice(0, 18)} · {h.created_at.slice(5, 10).replace('-', '/')}</span>)}
+          </div>
+          <ImageOptions itemId={it.id} initial={candidates} hasImage={!!it.image_url} />
         </div>
-
-        <div className="space-y-4">
-          <Card>
-            <CardTitle action={<EditDetails itemId={it.id} name={it.name} brand={it.brand} color={it.color} size={it.size} />}>Purchase</CardTitle>
-            <Row label="Paid" value={usd(it.price_cents)} />
-            <Row label="Bought" value={it.purchase_date ?? '—'} muted />
-            <Row label="At" value={it.retailer ?? '—'} muted />
-            <Row label="Source" value={it.source === 'email' ? 'Order email' : it.source} muted />
-            {it.receipt_url && <Row label="Receipt" value="On file" muted />}
-            {it.identifier && <Row label="Item no." value={it.identifier} muted />}
-            {it.image_url && it.image_source && <Row label="Image from" value={it.image_source.replace('_', ' ')} muted />}
-            <Row label="Days owned" value={owned != null ? String(owned) : '—'} muted />
-            <Divider />
-            {returnOpen
-              ? <Row label="Return window" value={`Open · ${daysBetween(today, it.return_by!)} days left`} />
-              : <Row label="Return window" value={it.return_by ? `Closed ${it.return_by}` : 'Unknown'} muted />}
-            {returnOpen && <Note className="mt-1">Still returnable. {usd(it.price_cents)} at stake.</Note>}
-          </Card>
-
-          <Card>
-            <CardTitle>Sharing</CardTitle>
-            <ShareToggles itemId={it.id} shareable={it.shareable} lendable={it.lendable} intimates={it.category === 'intimates'} />
-            <Note className="mt-3">Friends see shareable items only. Never the price, purchase date, store or return window.</Note>
-          </Card>
-
-          {it.description && (
-            <Card>
-              <CardTitle hint="What we know about this item">Tagged as</CardTitle>
-              <p className="text-sm text-ink-2">{it.description}{it.formality ? ` · formality ${it.formality}/5` : ''}</p>
-            </Card>
-          )}
-
-          {similar.length > 0 && (
-            <Card>
-              <CardTitle hint="Semantic neighbors, the “you already own this” signal">Similar in your wardrobe</CardTitle>
-              {similar.map((s) => <Row key={s.id} label={<Link href={`/wardrobe/${s.id}`} className="hover:underline">{s.name}</Link>} value={`${Math.round(s.similarity * 100)}%`} muted />)}
-            </Card>
-          )}
-        </div>
+        <div className="mono mt-3 text-[11px] text-ink-3"><Link href="/wardrobe" className="hover:text-ink">← WARDROBE</Link></div>
       </div>
-    </Page>
+
+      <div className="space-y-4">
+        {it.profile_mismatch && <MismatchBanner itemId={it.id} department={it.department} />}
+        <Receipt>
+          <ReceiptHeader title={it.name} subtitle={[it.brand, it.size ? `SIZE ${it.size}` : null, it.color && it.color.toLowerCase() !== 'unknown' ? it.color : null].filter(Boolean).join(' · ').toUpperCase()} />
+          <ReceiptRule />
+          <div className="mb-2 flex flex-wrap gap-2"><EditDetails itemId={it.id} name={it.name} brand={it.brand} color={it.color} size={it.size} /><ItemTools itemId={it.id} name={it.name} /></div>
+          <ReceiptLine label="PAID" value={usd(it.price_cents)} />
+          <ReceiptLine label="BOUGHT" value={it.purchase_date ?? '—'} muted />
+          <ReceiptLine label="AT" value={it.retailer ?? '—'} muted />
+          {it.receipt_url && <ReceiptLine label="RECEIPT" value={<a href={it.receipt_url} target="_blank" rel="noreferrer" className="underline">ON FILE</a>} muted />}
+          {(returnOpen || it.status === 'returning') && (
+            <>
+              <ReceiptRule />
+              {returnOpen && <ReceiptLine label={<span className="flex items-center gap-1"><Icon name="undo" size={12} />RETURNABLE</span>} value={`${daysBetween(today, it.return_by!)} DAYS LEFT`} />}
+              {it.status === 'returning' && <ReceiptLine label="RETURN" value="PENDING" />}
+              <ReturnActions itemId={it.id} name={it.name} priceCents={it.price_cents} status={it.status === 'returning' ? 'returning' : 'owned'} />
+            </>
+          )}
+          <ReceiptRule />
+          <ShareToggles itemId={it.id} shareable={it.shareable} lendable={it.lendable} intimates={it.category === 'intimates'} />
+        </Receipt>
+
+        <Receipt>
+          <ReceiptHeader title="Details" />
+          <ReceiptRule />
+          <ReceiptLine label="DAYS OWNED" value={owned != null ? String(owned) : '—'} />
+          {it.identifier && <ReceiptLine label="ITEM NO." value={it.identifier} muted />}
+          {it.description && <ReceiptLine label="TAGGED" value={it.description.replace(/^unknown\s+/i, '').slice(0, 64)} muted />}
+        </Receipt>
+
+        {similar.length > 0 && (
+          <div>
+            <div className="mono mb-2 text-[10px] uppercase tracking-wider text-ink-3">Similar in your wardrobe</div>
+            <div className="flex gap-2 overflow-x-auto">
+              {similar.map((s) => (
+                <Link key={s.id} href={`/wardrobe/${s.id}`} className="cutout w-24 shrink-0 p-1 hover:border-ink">
+                  <div className="aspect-[3/4] w-full bg-paper-2">{s.image_url ? <img src={s.image_url} alt={s.name} className="h-full w-full object-contain" /> : <div className="mono flex h-full items-center justify-center text-[9px] text-ink-3">NO IMAGE</div>}</div>
+                  <div className="mt-1 truncate text-[11px]">{s.name}</div>
+                  <div className="mono text-[9px] text-ink-3">{Math.round(s.similarity * 100)}%</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

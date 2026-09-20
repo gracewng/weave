@@ -26,6 +26,9 @@ export interface Profile {
   onboarded_at: string | null;
   /** True once the whole onboarding (basics + bank step) is done. */
   onboarding_complete: boolean;
+  bio: string | null;
+  /** Self-reported, free text ("Cambridge, MA"). Never device location. Shown to friends. */
+  area: string | null;
 }
 export type AgeRange = 'under_18' | '18_24' | '25_34' | '35_44' | '45_54' | '55_plus' | 'prefer_not';
 export type Gender = 'woman' | 'man' | 'non_binary' | 'prefer_not';

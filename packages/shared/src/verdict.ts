@@ -20,10 +20,10 @@ export function decideVerdict(i: VerdictInputs): Verdict {
 /** Which rule fired, for the "why" line under the verdict. */
 export function verdictReason(v: Verdict, i: VerdictInputs): string {
   switch (v) {
-    case 'skip': return `You already own something ${Math.round((i.topOwnedSimilarity ?? 0) * 100)}% like this`;
-    case 'borrow': return 'A friend has one you can borrow for this';
+    case 'skip': return `You own a ${Math.round((i.topOwnedSimilarity ?? 0) * 100)}% match`;
+    case 'borrow': return 'A friend can lend it';
     case 'secondhand': return `A used one is ${Math.round((1 - (i.cheapestUsedCents ?? 0) / Math.max(1, i.priceCents)) * 100)}% cheaper`;
-    case 'wait': return 'Over what is left in this month\'s envelope';
-    case 'buy': return i.forOther ? 'For someone else — nothing in your wardrobe or your friends\' applies' : 'No earlier rule fired. Buying is allowed, not required';
+    case 'wait': return 'Over your envelope';
+    case 'buy': return i.forOther ? 'For someone else' : 'No rule fired. Allowed, not required.';
   }
 }

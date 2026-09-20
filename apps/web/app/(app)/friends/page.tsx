@@ -21,6 +21,9 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
   const admin = createAdminClient();
   const [friends, loans, karma] = await Promise.all([listFriends(supabase, user.id), loansFor(supabase, user.id), admin ? karmaFor(admin, user.id) : Promise.resolve({ lent: 0, helpedKeepCents: 0, borrowed: 0 })]);
   const link = `${env.appUrl}/join/${profile?.invite_code ?? ''}`;
+  const myArea = (profile?.area ?? '').trim().toLowerCase();
+  const near = (a: string | null | undefined) => !!myArea && !!a && a.trim().toLowerCase() === myArea;
+  const nearCount = friends.filter((f) => near(f.area)).length;
   const open = loans.filter((l) => ['requested', 'accepted', 'out'].includes(l.status));
   const past = loans.filter((l) => ['returned', 'declined'].includes(l.status)).slice(0, 10);
 
@@ -79,13 +82,13 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
       )}
 
       <section>
-        <SectionTitle hint={friends.length ? `${friends.length} · tap to browse a wardrobe` : 'no friends yet'}>Friends</SectionTitle>
+        <SectionTitle hint={friends.length ? `${friends.length}${nearCount ? ` · ${nearCount} near you` : ''} · tap to browse a wardrobe` : 'no friends yet'}>Friends</SectionTitle>
         {friends.length === 0 && <p className="text-sm text-ink-2">Share your code. When a friend joins, their shareable items show up here, filtered to your size, ready to borrow before you buy.</p>}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {friends.map((f) => (
             <Link key={f.id} href={`/friends/${f.id}`} className="card card-paper card-hover flex items-center gap-3 !p-4">
               <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-mist">{f.avatar_url && <img src={f.avatar_url} alt="" className="h-full w-full object-cover" />}</div>
-              <div className="min-w-0"><div className="truncate text-sm font-medium">{f.display_name ?? 'Friend'}</div><div className="text-xs text-ink-3">{Object.entries(f.sizes ?? {}).map(([k, v]) => `${k} ${v}`).join(' · ') || 'No sizes set'}</div></div>
+              <div className="min-w-0"><div className="flex items-center gap-2 truncate text-sm font-medium">{f.display_name ?? 'Friend'}{near(f.area) && <Badge tone="save">Near you</Badge>}</div><div className="text-xs text-ink-3">{Object.entries(f.sizes ?? {}).map(([k, v]) => `${k} ${v}`).join(' · ') || 'No sizes set'}</div></div>
             </Link>
           ))}
         </div>

@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Snackbar />
       <DemoPanel />
       <div className="panel">
-        <Sidebar name={name} demo={isDemoMode()} />
+        <Sidebar name={name} demo={isDemoMode()} avatar={profile?.avatar_url ?? null} />
         <main className="min-w-0 flex-1 px-4 py-6 md:px-10 md:py-8">{children}</main>
       </div>
     </div>
