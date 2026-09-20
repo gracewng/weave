@@ -25,7 +25,7 @@ export function DemoPanel() {
       <div className="mono mb-2 flex items-center justify-between text-[10px] uppercase text-warn"><span>Demo panel</span><button onClick={() => setOpen(false)}>close</button></div>
       <div className="flex flex-col gap-2">
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('holds advanced 48h', demoAdvance48h)}>Advance 48h (holds)</button>
-        <button className="btn !py-1 !text-[10px]" disabled title="Phase 4">Fire mock charge</button>
+        <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => start(async () => { const r = await fetch('/api/demo/charge', { method: 'POST' }); const j = await r.json(); printReceipt({ title: 'Demo trigger', lines: [{ label: 'MOCK CHARGE', value: r.ok ? `$42.00 UNIQLO` : 'FAILED' }], footer: 'LABELED DEMO ACTION · NOT LIVE DATA', ttlMs: 3000 }); router.refresh(); void j; })}>Fire mock charge ($42 Uniqlo)</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('friend accepted + handed over', demoFriendAccepts)}>Friend accepts my request</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => run('refund seeded (cents)', demoSeedRefund)}>Seed confirmed refund</button>
         <button className="btn !py-1 !text-[10px]" disabled={pending} onClick={() => { if (confirm('Delete all of your holds?')) run('holds deleted', demoResetHolds); }}>Reset my holds</button>

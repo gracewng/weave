@@ -16,7 +16,9 @@
     "./wears": "./src/wears.ts",
     "./verdict": "./src/verdict.ts",
     "./budget": "./src/budget.ts",
-    "./kept": "./src/kept.ts"
+    "./kept": "./src/kept.ts",
+    "./matcher": "./src/matcher.ts",
+    "./coverage": "./src/coverage.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

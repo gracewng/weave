@@ -7,4 +7,6 @@ export * from './wears';
 export * from './verdict';
 export * from './budget';
 export * from './kept';
+export * from './matcher';
+export * from './coverage';
 export type { RetailerInfo, ReturnPolicy, RetailerData, UsedListing, EbayClient, ShoppingResult, SerpClient, TtsResult, TtsClient, PlaidTransaction, PlaidClient, Clients, FixtureEmail, FixtureCharge, FixtureProductPage, MarketplaceLink, MoneyAlternative, Fixtures, VerdictInputs, BudgetInputs, BudgetSummary, HoldOutcome, KeptInputs, KeptSummary, CoverageInputs, CoverageSummary } from "./contracts";

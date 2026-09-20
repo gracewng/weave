@@ -235,7 +235,7 @@ export interface KeptSummary {
 export interface CoverageInputs {
   periodStart: string;                  // YYYY-MM-DD
   periodEnd: string;
-  transactions: Array<{ id: string; date: string; isClothing: boolean | null; matchStatus: 'unmatched' | 'matched' | 'captured' | 'mystery' | 'skipped'; decision: 'keep' | 'returning' | 'not_clothes' | null; hasReceipt: boolean }>;
+  transactions: Array<{ id: string; date: string; isClothing: boolean | null; matchStatus: 'unmatched' | 'matched' | 'captured' | 'mystery' | 'skipped'; decision: 'keep' | 'returning' | 'not_clothes' | 'gift' | null; hasReceipt: boolean }>;
   /** Email orders = items grouped by (retailer, purchase_date); always resolved. */
   emailOrders: Array<{ key: string; date: string }>;
 }

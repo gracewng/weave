@@ -105,6 +105,9 @@ export interface Transaction {
   item_ids: string[];
   decision: ChargeDecision | null;
   decided_at: string | null;
+  plaid_category: string | null;
+  pending: boolean;
+  source: 'plaid' | 'mock';
 }
 
 export interface Budget {

@@ -205,7 +205,7 @@ estimated Money Kept / measured AI spend, with period and fixture/live status; "
 | P0 | One return rescue with honest pending/refund distinction | 6 |
 | P0 | Statement with traceable totals; `/stats` evidence | 9 |
 | P0 | Complete fixtures, visible fallback mode, recorded demo — before voice | 10 |
-| P1 | In-store capture: mock charge → push → camera → multimodal read → item with receipt on file | 4 |
+| P1 | In-store capture: mock charge → in-app banner → camera → multimodal read → item with receipt on file | 4 (built) |
 | P1 | One Mystery Purchase resolution with a coverage change | 4 |
 | P1 | Purchase Autopsy expansion | 3 / 9 |
 | P2 | Plaid Link walkthrough, elaborate budget alternatives, richer friend features | kept in plan, off main stage |
