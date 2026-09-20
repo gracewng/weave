@@ -1,6 +1,7 @@
 import { getProfile } from '@/lib/auth';
 import { Receipt, ReceiptHeader, ReceiptRule } from '@/components/Receipt';
 import { updateSettings } from './actions';
+import { PushEnable } from '@/components/PushEnable';
 
 const PERSONAS: Array<[string, string, string]> = [
   ['bestie', 'Bestie', 'Warm, hype, gently talks you down.'],
@@ -50,6 +51,10 @@ export default async function SettingsPage() {
         </div>
         <button className="btn btn-primary" type="submit">Save</button>
       </form>
+      <ReceiptRule />
+      <div className="mono mb-1 text-xs uppercase text-ink-3">Notifications</div>
+      <PushEnable />
+      <div className="mono mt-1 text-[10px] text-ink-3">EXACTLY THREE KINDS, EACH ONCE: A NEW CLOTHING CHARGE · A RETURN WINDOW AT 4 DAYS · A 48H HOLD CHECK-IN. NEVER MARKETING.</div>
     </Receipt>
   );
 }

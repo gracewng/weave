@@ -6,7 +6,7 @@ import { lookupMissingImages } from '@/lib/identify';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
+export const maxDuration = 60;   // Vercel Hobby limit; scans are resumable, the panel says "scan again to continue"
 
 /**
  * GET /api/ingest/gmail?max=300  — server-sent events.
@@ -28,7 +28,8 @@ export async function GET(req: Request) {
   if (!userId) return new Response('unauthorized', { status: 401 });
   const user = { id: userId };
 
-  const max = Math.max(1, Math.min(1000, Number(url.searchParams.get('max') ?? process.env.INGEST_MAX_EMAILS ?? 300)));
+  const hard = process.env.VERCEL ? 80 : 1000;   // ~80 messages fit in one 60s function run
+  const max = Math.max(1, Math.min(hard, Number(url.searchParams.get('max') ?? process.env.INGEST_MAX_EMAILS ?? 300)));
 
   const admin = createAdminClient();
   const { data: tok } = admin ? await admin.from('gmail_tokens').select('refresh_token').eq('user_id', user.id).maybeSingle() : { data: null };
