@@ -45,7 +45,10 @@ list; confirm official rules before submitting.)
 
 ## The features
 1. **Receipt tracker via email** (main ingestion). Gmail backfill → items with image, price, size, retailer,
-   purchase date, return_by. Raw email bodies are never stored.
+   purchase date, return_by. Raw email bodies are never stored. The extractor labels every email **purchase / sale /
+   refund / other**: a marketplace "you've made a sale" email never creates an item — it marks the matching owned
+   item **sold** (`sold_cents`, `sold_at`); offers, shipping and marketplace marketing are rejected before the model.
+   Depop "Your order is confirmed" = the user bought (secondhand); `sold@…` "sale confirmation" = the user sold.
 2. **In-person card transactions** (second ingestion). Plaid sandbox + mock charges. A clothing charge with no
    matching email → push "Snap the receipt" → photo read by Muse Spark → item + receipt photo on the item.
 3. **Purchase confirmation prompt.** Every new charge asks one question: **keep / returning / not clothes.**
