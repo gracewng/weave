@@ -142,11 +142,9 @@ describe('fixture llm outputs', () => {
     expect(ParseQuerySchema.parse(fixtures.llm.parse_query['plain black tee']).one_time_need).toBe(false);
   });
 
-  it('has a note, a spoken line and audio for every verdict', () => {
+  it('has a note for every verdict', () => {
     for (const v of VERDICTS) {
       expect(fixtures.llm.search_note[v]).toBeTruthy();
-      expect(fixtures.llm.spoken_line[v]!.split(/\s+/).length).toBeLessThan(31);
-      expect(fixtures.audio[v]).toMatch(/^data:audio\/mpeg;base64,/);
     }
     expect(fixtures.llm.borrow_message.split(/\s+/).length).toBeLessThan(41);
   });

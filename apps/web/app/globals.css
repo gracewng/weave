@@ -156,8 +156,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 /* ─── Canopy background + floating panel ────────────────────────────────── */
 .canopy {
   position: fixed; inset: 0; z-index: -1; overflow: hidden;
-  background: radial-gradient(120% 80% at 50% 0%, #f2f7ea 0%, #e3edd8 55%, #d3e2c5 100%);
+  /* Sun-printed leaf shadows on green cloth (public/canopy.jpg); the gradient shows until the image loads. */
+  background: url('/canopy.jpg') center / cover no-repeat, radial-gradient(120% 80% at 50% 0%, #f2f7ea 0%, #e3edd8 55%, #d3e2c5 100%);
 }
+.canopy::after { content: ''; position: absolute; inset: 0; background: rgba(238, 243, 230, .12); }
 
 .panel {
   background: var(--paper); border-radius: 28px; box-shadow: var(--shadow-panel);
@@ -178,4 +180,58 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--fern); width: 
 
 @media (prefers-reduced-motion: reduce) {
   .snackbar-card, .leaf, .card-hover { animation: none !important; transition: none !important; }
+}
+
+/* ─── Thermal tape (receipt) primitives ─────────────────────────────────── */
+:root { --tape: #fbfaf4; --tape-ink: #1f2a24; }
+.tape {
+  position: relative; background: var(--tape); color: var(--tape-ink);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  padding: 1.25rem 1.25rem 1.4rem; margin: 8px 0;
+  background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, .014) 0 1px, transparent 1px 3px);
+  box-shadow: 0 14px 30px -20px rgba(52, 78, 65, .55);
+}
+/* Perforated ends: sawtooth strips drawn with two diagonal gradients. */
+.tape::before, .tape::after { content: ''; position: absolute; left: 0; right: 0; height: 8px; pointer-events: none; }
+.tape::before { top: -8px; background: linear-gradient(45deg, var(--tape) 25%, transparent 25%) -8px 0 / 16px 16px, linear-gradient(-45deg, var(--tape) 25%, transparent 25%) -8px 0 / 16px 16px; }
+.tape::after { bottom: -8px; background: linear-gradient(135deg, var(--tape) 25%, transparent 25%) -8px 0 / 16px 16px, linear-gradient(225deg, var(--tape) 25%, transparent 25%) -8px 0 / 16px 16px; }
+
+.leader { display: flex; align-items: baseline; gap: .45rem; font-size: 12px; line-height: 1.75; }
+.leader > .l { flex: 0 1 auto; min-width: 0; max-width: 72%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: .4rem; }
+.leader > .dots { flex: 1 1 12px; min-width: 12px; border-bottom: 2px dotted rgba(31, 42, 36, .32); transform: translateY(-4px); }
+.leader > .v { flex: none; white-space: nowrap; }
+.leader.muted { color: rgba(31, 42, 36, .55); }
+.leader:has(img) { align-items: center; }
+.leader:has(img) > .dots { transform: none; }
+.tape .rule { border-top: 1.5px dashed rgba(31, 42, 36, .3); margin: .55rem 0; }
+.tape .total { border-top: 2px solid var(--tape-ink); border-bottom: 4px double var(--tape-ink); padding: .45rem 0; margin-top: .45rem; font-size: 13px; font-weight: 600; }
+.tape .btn, .tape .btn-text, .tape .input { font-family: var(--font-mono); }
+.tape .input { background: #fff; border-color: rgba(31, 42, 36, .2); border-radius: 6px; }
+.tape a { text-underline-offset: 3px; }
+.barcode { color: var(--tape-ink); }
+.stamp {
+  display: inline-block; border: 2px solid currentColor; border-radius: 4px; padding: .1rem .45rem;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  transform: rotate(-3deg); opacity: .9; white-space: nowrap;
+}
+
+/* ─── The rack: hang tags on a rail ─────────────────────────────────────── */
+.rack { display: grid; gap: 14px 12px; overflow: hidden; padding-top: 2px; }
+.hook { position: relative; padding-top: 22px; }
+.hook::before { content: ''; position: absolute; top: 6px; left: -6px; right: -6px; height: 4px; border-radius: 2px; background: var(--hunter); }
+.hook::after { content: ''; position: absolute; top: 10px; left: 50%; width: 1px; height: 12px; background: rgba(31, 42, 36, .45); }
+.tag {
+  position: relative; display: block; background: var(--tape); color: var(--tape-ink);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  border: 1px solid rgba(31, 42, 36, .1); border-radius: 5px; padding: 12px 8px 8px;
+  box-shadow: 0 8px 16px -14px rgba(31, 42, 36, .6);
+  transform-origin: 50% -12px; transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+}
+.tag::after { content: ''; position: absolute; top: 4px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--paper); box-shadow: inset 0 0 0 1px rgba(31, 42, 36, .3); }
+.hook:nth-child(odd) .tag:hover { transform: rotate(-1.5deg) translateY(1px); box-shadow: 0 16px 24px -16px rgba(31, 42, 36, .7); }
+.hook:nth-child(even) .tag:hover { transform: rotate(1.5deg) translateY(1px); box-shadow: 0 16px 24px -16px rgba(31, 42, 36, .7); }
+.tag .leader { font-size: 10.5px; line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tag, .tag:hover { transition: none !important; transform: none !important; }
 }

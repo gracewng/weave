@@ -5,7 +5,6 @@ export type Slot = 'top' | 'bottom' | 'one_piece' | 'outer' | 'shoes' | 'accesso
 export type ItemSource = 'email' | 'receipt' | 'tag' | 'photo' | 'quick_add' | 'mystery' | 'search';
 export type ImageSource = 'email' | 'product_page' | 'identifier' | 'shopping' | 'lens' | 'user_photo' | 'cutout' | 'none';
 export type ItemStatus = 'owned' | 'returning' | 'returned' | 'sold' | 'donated' | 'gifted';
-export type VoicePersona = 'bestie' | 'stylist' | 'cfo';
 export type LoanStatus = 'requested' | 'accepted' | 'declined' | 'out' | 'returned';
 export type MatchStatus = 'unmatched' | 'matched' | 'captured' | 'mystery' | 'skipped';
 export type Verdict = 'skip' | 'borrow' | 'secondhand' | 'wait' | 'buy';
@@ -17,7 +16,6 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   sizes: Record<string, string>;
-  voice_persona: VoicePersona;
   invite_code: string | null;
   /** Onboarding basics — image matching + mismatch flags only. Never shown to friends. */
   age_range: AgeRange | null;

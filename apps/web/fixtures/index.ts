@@ -7,8 +7,7 @@ import type { Fixtures, ShoppingResult, UsedListing } from '@weave/shared/contra
 import { fixtureEmails, fixtureExtractEmail } from './emails';
 import { fixtureCharges } from './charges';
 import { fixtureUsedListings, fixtureShoppingResults, fixtureProductPages } from './search';
-import { fixtureParseQuery, fixtureSearchNote, fixtureSpokenLine, fixtureBorrowMessage } from './llm';
-import { fixtureAudio } from './audio';
+import { fixtureParseQuery, fixtureSearchNote, fixtureBorrowMessage } from './llm';
 
 export const fixtures: Fixtures = {
   emails: fixtureEmails,
@@ -20,10 +19,8 @@ export const fixtures: Fixtures = {
     extract_email: fixtureExtractEmail,
     parse_query: fixtureParseQuery,
     search_note: fixtureSearchNote,
-    spoken_line: fixtureSpokenLine,
     borrow_message: fixtureBorrowMessage,
   },
-  audio: fixtureAudio,
 };
 
 /**
@@ -51,4 +48,3 @@ export * from './emails';
 export * from './charges';
 export * from './search';
 export * from './llm';
-export * from './audio';

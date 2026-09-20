@@ -5,8 +5,8 @@
  * Implementers (Devin):  /packages/data  /packages/clients  /apps/web/fixtures  /scripts
  * Consumers (Claude):    /apps/web  /apps/extension/src  /packages/shared
  */
-import type { VoicePersona, Verdict } from './types';
-export type { VoicePersona, Verdict };
+import type { Verdict } from './types';
+export type { Verdict };
 
 // ─── /packages/data ───────────────────────────────────────────────────────────
 
@@ -79,20 +79,6 @@ export interface SerpClient {
   lens(imageUrl: string, opts?: { limit?: number }): Promise<ShoppingResult[]>;
 }
 
-export interface TtsResult {
-  /** Public URL (Supabase Storage or data: URL in fixture mode). */
-  audioUrl: string;
-  /** true when served from the (text, voice) hash cache. */
-  cached: boolean;
-  /** Characters billed (0 when cached). */
-  chars: number;
-}
-
-export interface TtsClient {
-  /** Cache key = sha256(text + voice). Fixture mode returns a bundled mp3 data URL. */
-  speak(text: string, persona: VoicePersona): Promise<TtsResult>;
-}
-
 export interface PlaidTransaction {
   externalId: string;
   merchant: string;
@@ -116,7 +102,6 @@ export interface PlaidClient {
 export interface Clients {
   ebay: EbayClient;
   serp: SerpClient;
-  tts: TtsClient;
   plaid: PlaidClient;
 }
 
@@ -179,11 +164,8 @@ export interface Fixtures {
     extract_email: Record<string, unknown>;      // keyed by FixtureEmail.id — must pass ExtractEmailSchema
     parse_query: Record<string, unknown>;        // keyed by lowercased query — must pass ParseQuerySchema
     search_note: Record<string, string>;         // keyed by verdict
-    spoken_line: Record<string, string>;         // keyed by verdict
     borrow_message: string;
   };
-  /** ElevenLabs mp3 data URLs keyed by verdict for offline audio. */
-  audio: Record<string, string>;
 }
 
 // ─── Verdicts (rules live in /packages/shared; tests are Devin's) ─────────────
