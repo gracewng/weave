@@ -5,7 +5,7 @@ Fill this in as PRs land; it becomes a slide for the Devin judges.
 
 | # | Task | PR | Time Devin took | Est. human time | Notes (what worked, what needed fixing) |
 |---|------|----|-----------------|-----------------|------------------------------------------|
-| 1 | Retailer data (`/packages/data`) | | | ~3h (60 retailers + 25 return policies with sources) | |
+| 1 | Retailer data (`/packages/data`) | #1 | ~25m | ~3h (60 retailers + 25 return policies with sources) | 66 retailers, 56 return policies. Contract's `null` window means final sale, so retailers with *no* time limit (Patagonia, American Eagle) are capped at 365 with a note instead. |
 | 2 | API clients + mocks (`/packages/clients`) | | | ~4h | |
 | 3 | Fixtures + seed script (`/apps/web/fixtures`, `/scripts/seed-demo.ts`) | | | ~4h | |
 | 4 | Tests (matcher, return dates, verdicts, budget math, price memory, wears) | | | ~2.5h | |
