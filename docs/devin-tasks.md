@@ -1,5 +1,19 @@
 # Devin task briefs — Weave
 
+> **Status note (2026-09-20, read before starting).** Phases 1–4 and 6–9 are built by Claude Code and live on `main`.
+> Where a brief's output was needed before you arrived, Claude wrote a **stopgap inside its own folders**; your job is to
+> deliver the real thing in *your* folders so the stopgap can be deleted. The app switches to your package automatically
+> when it exports the contract shape. Stopgaps to replace:
+> - Task 1 → `apps/web/lib/ingest/retailers-fallback.ts` (35 retailers) and `apps/web/lib/returns.ts#policyDaysFor`
+> - Task 2 → SerpAPI lives in `apps/web/lib/identify.ts` and Plaid in `apps/web/lib/plaid.ts` (both working; keep the
+>   contract shapes). **Only eBay and ElevenLabs remain for you.** Skip SerpAPI/Plaid unless you're wrapping the existing code.
+> - Task 3 → `apps/web/lib/ingest/sample-emails.ts` (5 emails) and `apps/web/fixtures/index.ts` (`null`)
+> - Task 5 → `apps/web/lib/search/marketplaces.ts`
+> Contracts gained since the briefs were written (all in `packages/shared/src/contracts.ts`): `KeptInputs/Summary`,
+> `CoverageInputs/Summary`, `MarketplaceLink`, `MoneyAlternative`, `ShoppingResult.productOnly`, `SerpClient.lens`.
+> Pure functions that now exist and need your tests (task 4): `verdict.ts`, `budget.ts`, `kept.ts`, `wears.ts`,
+> `matcher.ts`, `coverage.ts` in `packages/shared/src`. Schema is in `supabase/migrations/0001…0009`.
+
 Paste each brief into Devin as-is. Every brief starts with the same preamble.
 
 ---
