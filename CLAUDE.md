@@ -499,6 +499,11 @@ Recovered**; combined only as "$302 kept + recovered". If time allows inside 90s
   root `apps/web`, auto-deploys from `main`; 18 env vars set via API; Supabase site URL + redirect list point at it;
   daily returns cron active). `VERCEL_TOKEN` in `.env.local` manages env + deploys from the CLI.
 ### Known issues
+- 2026-09-20 search/charges revision (lead): search shows one tagged grid (MINE · BORROW FROM <friend> · SECOND
+  HAND · NEW) with Use mine / Ask to borrow / Buy used / Buy (direct links; clicks are not recorded as purchases);
+  no "for someone else" toggle, no Hold/Skip buttons (holds still come from Use mine and loans). Charges = linked
+  cards at top, a list of likely-clothing charges with **Add Purchase Details** (name, brand, type, formality,
+  color, size, picture; a picture alone is read by the model), `/capture/[id]` redirects to that form.
 - 2026-09-20 restructure (lead): nav trimmed to five; `/budget` redirects to `/settings#budget`; `/returns`,
   `/statement`, `/ghosts`, `/stats` remain as routes linked from Settings; item page has Edit / Delete buttons, an
   image-options row (Clear · Other options · My own photo) and a shopping-style similar strip; the wardrobe header
