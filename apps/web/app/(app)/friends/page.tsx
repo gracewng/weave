@@ -35,21 +35,23 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
       {error && <div className="text-sm text-warn">{decodeURIComponent(error)}</div>}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardTitle hint={profile?.display_name ?? 'You'}>Closet Karma</CardTitle>
-          <div className="flex items-baseline gap-2"><span className="display text-3xl font-semibold text-pine">{karma.lent}</span><span className="text-sm text-ink-2">time{karma.lent === 1 ? '' : 's'} lent</span></div>
-          <div className="mt-3">
-            <Row label="Helped friends keep" value={usd(karma.helpedKeepCents)} valueClass={karma.helpedKeepCents > 0 ? 'saved' : ''} />
-            <Row label="Borrowed" value={`${karma.borrowed} time${karma.borrowed === 1 ? '' : 's'}`} muted />
+        <Card tone="pine">
+          <CardTitle>Closet Karma</CardTitle>
+          <div className="flex items-baseline gap-3">
+            <span className="display text-5xl font-semibold text-white">{karma.lent}</span>
+            <span className="text-sm text-white/75">time{karma.lent === 1 ? '' : 's'} lent</span>
           </div>
-          <Note className="mt-3">Lending is the status symbol. No feed, no likes, no rankings.</Note>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-white/10 p-3"><div className={`display text-xl ${karma.helpedKeepCents > 0 ? 'text-[#9fe3b4]' : 'text-white'}`}>{usd(karma.helpedKeepCents)}</div><div className="text-xs text-white/70">helped friends keep</div></div>
+            <div className="rounded-2xl bg-white/10 p-3"><div className="display text-xl text-white">{karma.borrowed}</div><div className="text-xs text-white/70">borrowed</div></div>
+          </div>
         </Card>
-        <Card>
-          <CardTitle hint="Scan or share">Invite</CardTitle>
+        <Card tone="paper">
+          <CardTitle hint="Scan or share">Invite a friend</CardTitle>
           <div className="flex items-start gap-4">
-            <div className="shrink-0 overflow-hidden rounded-2xl bg-paper p-2"><InviteQR url={link} /></div>
+            <div className="shrink-0 overflow-hidden rounded-2xl border border-dust p-1"><InviteQR url={link} /></div>
             <div className="min-w-0 flex-1">
-              <div className="display select-all rounded-2xl bg-paper px-3 py-2 text-center text-2xl font-semibold tracking-[.2em] text-pine">{profile?.invite_code ?? '—'}</div>
+              <div className="display select-all rounded-2xl bg-mist px-3 py-2 text-center text-2xl font-semibold tracking-[.2em] text-pine">{profile?.invite_code ?? '—'}</div>
               <div className="mt-2 break-all text-xs text-ink-3">{link}</div>
               <JoinForm />
             </div>

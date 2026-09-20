@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProfile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { Page, PageHeader, Card, CardTitle, Row, Note, Badge, Empty } from '@/components/ui';
+import { Page, PageHeader, Card, CardTitle, Row, Note, Empty } from '@/components/ui';
 import { IconFriends } from '@/components/icons';
 import { friendWardrobe, inMySize } from '@/lib/friends';
 import { BorrowForm } from './BorrowForm';
+import { FriendHangTag } from '@/components/HangTag';
 import type { Profile } from '@weave/shared/types';
 
 export const dynamic = 'force-dynamic';
@@ -57,16 +58,13 @@ export default async function FriendPage({ params, searchParams }: { params: Pro
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        {shown.map((i) => (
-          <Link key={i.id} href={`/friends/${id}?item=${i.id}${price ? `&price=${price}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${all ? '&all=1' : ''}`} className={`cutout block p-2 transition hover:-translate-y-0.5 hover:shadow-md ${selected?.id === i.id ? '!border-fern' : ''}`}>
-            <div className="aspect-[3/4] w-full rounded-xl bg-paper-2">{i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-[10px] text-ink-3">No image</div>}</div>
-            <div className="mt-2 truncate px-1 text-sm">{i.name}</div>
-            <div className="flex items-center justify-between gap-2 px-1 pb-1 text-xs text-ink-3"><span className="truncate">{i.brand ?? ''}{i.size ? ` · ${i.size}` : ''}</span>{i.lendable && <Badge tone="pine">Lendable</Badge>}</div>
-          </Link>
-        ))}
-        {shown.length === 0 && <div className="col-span-full text-sm text-ink-3">Nothing in your size yet{items.length ? '. Try “All sizes”' : ''}.</div>}
-      </div>
+      {shown.length === 0 ? (
+        <div className="py-10 text-center text-sm text-ink-3">Nothing in your size yet{items.length ? '. Try “All sizes”' : ''}.</div>
+      ) : (
+        <div className="rack grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+          {shown.map((i) => <FriendHangTag key={i.id} item={i} selected={selected?.id === i.id} href={`/friends/${id}?item=${i.id}${price ? `&price=${price}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${all ? '&all=1' : ''}`} />)}
+        </div>
+      )}
 
       <Note>You see what {name} marked shareable. No prices, dates or stores, ever.</Note>
     </Page>

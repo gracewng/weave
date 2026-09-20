@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CardMenu } from '@/components/CardMenu';
 import { Icon } from '@/components/Icon';
 import { Barcode, Stamp, usd } from '@/components/Tape';
-import type { Item } from '@weave/shared/types';
+import type { Item, FriendItem } from '@weave/shared/types';
 
 export type TagItem = Pick<Item, 'id' | 'name' | 'brand' | 'retailer' | 'size' | 'price_cents' | 'purchase_date' | 'image_url' | 'shareable' | 'profile_mismatch' | 'status' | 'return_by'>;
 
@@ -27,6 +27,28 @@ export function HangTag({ item: i, today, menu = true, showReturnable = true }: 
           <div className="leader muted mt-0.5"><span className="l">{i.brand ?? i.retailer ?? 'Unknown'}{i.size ? ` · ${i.size}` : ''}</span><span className="dots" /><span className="v text-ink">{usd(i.price_cents)}</span></div>
           <Barcode seed={i.id} height={16} className="mt-2 opacity-80" />
           <div className="mt-0.5 flex justify-between text-[9px] tracking-wider text-ink-3"><span>{shortDate(i.purchase_date)}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export type FriendTagItem = Pick<FriendItem, 'id' | 'name' | 'brand' | 'size' | 'image_url' | 'lendable'>;
+
+/** A friend's item on the same rail: no prices, dates or stores, ever. Shows size and whether it can be lent. */
+export function FriendHangTag({ item: i, href, selected = false }: { item: FriendTagItem; href: string; selected?: boolean }) {
+  return (
+    <div className="hook group">
+      <div className={`tag ${selected ? '!border-fern ring-2 ring-fern/40' : ''}`}>
+        <Link href={href} className="block">
+          <div className="relative mt-1 aspect-[3/4] w-full bg-white">
+            {i.image_url ? <img src={i.image_url} alt={i.name} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center text-ink-3"><Icon name="image" size={22} /></div>}
+            {i.lendable && <Stamp tone="save" className="absolute bottom-1 right-1">Lendable</Stamp>}
+          </div>
+          <div className="mt-2 truncate font-sans text-[15px] leading-tight" title={i.name}>{i.name}</div>
+          <div className="leader muted mt-0.5"><span className="l">{i.brand ?? 'Unknown'}</span><span className="dots" /><span className="v text-ink">{i.size ?? '—'}</span></div>
+          <Barcode seed={i.id} height={16} className="mt-2 opacity-80" />
+          <div className="mt-0.5 flex justify-between text-[9px] tracking-wider text-ink-3"><span>{i.lendable ? 'Ask to borrow' : 'Not lendable'}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
         </Link>
       </div>
     </div>
