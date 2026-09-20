@@ -20,12 +20,11 @@ export function PrintedTape({ children, className = '' }: { children: ReactNode;
   );
 }
 
-export function TapeHeader({ title, subtitle, brand = false }: { title: ReactNode; subtitle?: ReactNode; brand?: boolean }) {
+export function TapeHeader({ title, subtitle }: { title: ReactNode; subtitle?: ReactNode; brand?: boolean }) {
   return (
     <div className="text-center">
-      {brand && <div className="text-[10px] tracking-[.35em] text-ink-3">WEAVE</div>}
-      <h1 className="text-[13px] font-semibold uppercase tracking-[.18em]">{title}</h1>
-      {subtitle && <div className="mt-0.5 text-[10px] uppercase tracking-wider text-ink-3">{subtitle}</div>}
+      <h1 className="text-[15px] font-semibold">{title}</h1>
+      {subtitle && <div className="mt-0.5 text-[11px] text-ink-3">{subtitle}</div>}
     </div>
   );
 }
@@ -47,7 +46,7 @@ export function TapeRule() {
 export function TapeTotal({ label, value, valueClass = '' }: { label: ReactNode; value: ReactNode; valueClass?: string }) {
   return (
     <div className="total flex items-baseline justify-between gap-3">
-      <span className="uppercase tracking-wider">{label}</span>
+      <span>{label}</span>
       <span className={valueClass}>{value}</span>
     </div>
   );
@@ -81,7 +80,7 @@ export function Barcode({ seed, label, height = 26, className = '' }: { seed: st
   return (
     <div className={`barcode ${className}`}>
       <svg viewBox={`0 0 ${x} ${height}`} height={height} preserveAspectRatio="none" fill="currentColor" aria-hidden="true" className="block w-full">{rects}</svg>
-      {label && <div className="mt-1 text-center text-[9px] tracking-[.25em] text-ink-3">{label}</div>}
+      {label && <div className="mt-1 text-center text-[10px] text-ink-3">{label}</div>}
     </div>
   );
 }

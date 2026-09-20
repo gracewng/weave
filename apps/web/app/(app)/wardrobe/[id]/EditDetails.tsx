@@ -10,7 +10,7 @@ export function EditDetails({ itemId, name, brand, color, size }: { itemId: stri
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [f, setF] = useState({ name, brand: brand ?? '', color: color && color !== 'unknown' ? color : '', size: size ?? '' });
-  if (!open) return <button className="btn flex items-center gap-1 !py-1 !text-[10px]" onClick={() => setOpen(true)}><Icon name="edit" size={12} />Edit{!f.color ? ' · color?' : ''}</button>;
+  if (!open) return <button className="btn flex items-center gap-1 btn-sm" onClick={() => setOpen(true)}><Icon name="edit" size={12} />Edit{!f.color ? ' · color?' : ''}</button>;
   const field = (k: keyof typeof f, label: string) => (
     <label className="block"><div className="mono text-[10px] uppercase text-ink-3">{label}</div>
       <input className="input mt-0.5 " value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></label>
@@ -22,8 +22,8 @@ export function EditDetails({ itemId, name, brand, color, size }: { itemId: stri
     }); }}>
       {field('name', 'Name')}
       <div className="grid grid-cols-3 gap-2">{field('brand', 'Brand')}{field('color', 'Color')}{field('size', 'Size')}</div>
-      <div className="flex gap-2"><button className="btn btn-primary !py-1" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Save'}</button><button className="btn !py-1" type="button" onClick={() => setOpen(false)}>Cancel</button></div>
-      <div className="mono text-[10px] text-ink-3">Changing name, brand or color re-searches the image.</div>
+      <div className="flex gap-2"><button className="btn btn-primary btn-sm" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Save'}</button><button className="btn btn-sm btn-outline" type="button" onClick={() => setOpen(false)}>Cancel</button></div>
+      <div className="text-xs text-ink-3">Changing the name, brand or color searches for a new picture.</div>
     </form>
   );
 }

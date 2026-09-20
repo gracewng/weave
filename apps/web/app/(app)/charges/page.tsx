@@ -49,12 +49,12 @@ export default async function ChargesPage() {
         <PrintedTape>
           <TapeHeader title="To add" subtitle={todo.length ? `${todo.length} charge${todo.length === 1 ? '' : 's'} · ${usd(waitingCents)}` : 'Nothing waiting'} />
           <TapeRule />
-          {todo.length === 0 && <div className="py-3 text-center text-[11px] uppercase tracking-wider text-ink-3">Every clothing charge has details</div>}
+          {todo.length === 0 && <div className="py-3 text-center text-[11px] text-ink-3">Every clothing charge has details.</div>}
           {todo.map((t, i) => (
             <div key={t.id} className={`flex flex-wrap items-center gap-x-4 gap-y-2 py-3 ${i > 0 ? 'border-t border-dashed border-ink/20' : ''}`}>
               <div className="min-w-0 flex-1">
                 <div className="truncate font-sans text-[15px]">{t.merchant}</div>
-                <div className="text-[10px] uppercase tracking-wider text-ink-3">{t.date}{t.source === 'mock' && <Badge className="ml-2 !font-mono">demo</Badge>}</div>
+                <div className="text-[11px] text-ink-3">{t.date}{t.source === 'mock' && <Badge className="ml-2 !font-mono">demo</Badge>}</div>
               </div>
               <div className="text-base font-semibold tabular-nums">{usd(t.amount_cents)}</div>
               <ChargeActions txId={t.id} />

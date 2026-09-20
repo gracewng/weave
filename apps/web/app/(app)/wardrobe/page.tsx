@@ -35,12 +35,12 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
       <div className="mx-auto max-w-lg space-y-6">
         <IngestPanel hasGmail={hasGmail} itemCount={0} />
         <Tape>
-          <TapeHeader title="Wardrobe" subtitle={`Nothing printed yet · ${printed}`} brand />
+          <TapeHeader title="Wardrobe" subtitle={`Nothing printed yet · ${printed}`} />
           <TapeRule />
           <TapeLine label="Spent, last 30 days" value="$0.00" muted />
           <TapeLine label="Paid in total" value="$0.00" muted />
           <TapeRule />
-          <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
+          <Barcode seed={user.id} label={`Closet no. ${closetNo(user.id)}`} />
         </Tape>
       </div>
     );
@@ -67,12 +67,12 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
 
       <div className="mx-auto w-full max-w-md">
       <PrintedTape>
-        <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} brand />
+        <TapeHeader title="Wardrobe" subtitle={`${items.length} items · printed ${printed}`} />
         <TapeRule />
         <TapeLine label="Spent, last 30 days" value={usd(spent30)} />
         <TapeLine label="Paid in total" value={usd(paid)} muted />
         <TapeRule />
-        <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
+        <Barcode seed={user.id} label={`Closet no. ${closetNo(user.id)}`} />
       </PrintedTape>
       </div>
 
@@ -89,7 +89,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
               <Link href="/wardrobe/add" className="tag flex aspect-[3/4.9] flex-col items-center justify-center gap-2 !border-dashed !border-sage !bg-transparent !shadow-none text-ink-2 hover:!border-fern hover:text-ink">
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-mist"><Icon name="camera" size={22} /></span>
                 <span className="font-sans text-[15px]">Add your own</span>
-                <span className="text-[10px] uppercase tracking-wider text-ink-3">Photo or name</span>
+                <span className="text-[11px] text-ink-3">Photo or name</span>
               </Link>
             </div>
           )}
@@ -104,7 +104,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
             return (
               <div key={k}>
                 <TapeRule />
-                <div className="flex items-baseline justify-between text-[10px] uppercase tracking-[.2em] text-ink-3"><span>{label}</span><span>{list.length} item{list.length === 1 ? '' : 's'}</span></div>
+                <div className="flex items-baseline justify-between text-[11px] font-semibold"><span>{label}</span><span className="font-normal text-ink-3">{list.length} item{list.length === 1 ? '' : 's'}</span></div>
                 <div className="mt-1">
                   {list.map((i) => (
                     <TapeLine
@@ -127,8 +127,7 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
             );
           })}
           <TapeTotal label="Paid in total" value={usd(sorted.reduce((s, i) => s + (i.price_cents ?? 0), 0))} />
-          <div className="mt-3 text-center text-[9px] uppercase tracking-[.25em] text-ink-3">Keep this receipt · every line is something you own</div>
-          <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} className="mt-3" />
+          <Barcode seed={user.id} label={`Closet no. ${closetNo(user.id)}`} className="mt-3" />
         </Tape>
       )}
     </div>

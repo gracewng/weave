@@ -26,7 +26,7 @@ export function HangTag({ item: i, today, menu = true, showReturnable = true }: 
           <div className="mt-2 truncate font-sans text-[15px] leading-tight" title={i.name}>{i.name}</div>
           <div className="leader muted mt-0.5"><span className="l">{i.brand ?? i.retailer ?? 'Unknown'}{i.size ? ` · ${i.size}` : ''}</span><span className="dots" /><span className="v text-ink">{usd(i.price_cents)}</span></div>
           <Barcode seed={i.id} height={16} className="mt-2 opacity-80" />
-          <div className="mt-0.5 flex justify-between text-[9px] tracking-wider text-ink-3"><span>{shortDate(i.purchase_date)}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
+          <div className="mt-0.5 flex justify-between text-[9px] text-ink-3"><span>{shortDate(i.purchase_date)}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
         </Link>
       </div>
     </div>
@@ -48,7 +48,7 @@ export function FriendHangTag({ item: i, href, selected = false }: { item: Frien
           <div className="mt-2 truncate font-sans text-[15px] leading-tight" title={i.name}>{i.name}</div>
           <div className="leader muted mt-0.5"><span className="l">{i.brand ?? 'Unknown'}</span><span className="dots" /><span className="v text-ink">{i.size ?? '—'}</span></div>
           <Barcode seed={i.id} height={16} className="mt-2 opacity-80" />
-          <div className="mt-0.5 flex justify-between text-[9px] tracking-wider text-ink-3"><span>{i.lendable ? 'Ask to borrow' : 'Not lendable'}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
+          <div className="mt-0.5 flex justify-between text-[9px] text-ink-3"><span>{i.lendable ? 'Ask to borrow' : 'Not lendable'}</span><span>{i.id.slice(0, 6).toUpperCase()}</span></div>
         </Link>
       </div>
     </div>
