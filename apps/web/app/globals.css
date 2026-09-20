@@ -49,13 +49,15 @@
 
 html, body {
   overscroll-behavior: none; /* no rubber-band past the page edges */
-  background: var(--mist);
   color: var(--ink);
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
 }
+/* The canopy is a fixed layer at z-index -1. A body background would paint over it, so only html carries the fallback colour. */
+html { background: var(--mist); }
+body { background: transparent; }
 
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .display { font-family: var(--font-display); letter-spacing: -.01em; }
