@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProfile } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { Page, PageHeader, Card, CardTitle, Row, Note, Empty } from '@/components/ui';
+import { Page, PageHeader, Card, CardTitle, Note, Empty } from '@/components/ui';
 import { IconFriends } from '@/components/icons';
 import { friendWardrobe, inMySize } from '@/lib/friends';
 import { BorrowForm } from './BorrowForm';
@@ -40,20 +40,22 @@ export default async function FriendPage({ params, searchParams }: { params: Pro
 
       {selected && (
         <Card tone="sprout">
-          <CardTitle hint={selected.name.slice(0, 48)}>Ask to borrow</CardTitle>
-          <div className="flex gap-4">
-            <div className="h-40 w-32 shrink-0 overflow-hidden rounded-2xl bg-paper">{selected.image_url && <img src={selected.image_url} alt="" className="h-full w-full object-contain" />}</div>
-            <div className="min-w-0 flex-1">
-              <Row label="Owner" value={name} />
-              <Row label="Size" value={selected.size ?? '—'} muted />
-              <Row label="Lendable" value={selected.lendable ? 'Yes' : 'Not right now'} muted />
-              {price && <Row label="Instead of buying at" value={`$${(Number(price) / 100).toFixed(2)}`} muted />}
+          <div className="grid gap-6 md:grid-cols-[220px_minmax(0,1fr)]">
+            <div>
+              <div className="tag !p-2">
+                <div className="mt-1 aspect-[3/4] w-full bg-white">{selected.image_url && <img src={selected.image_url} alt="" className="h-full w-full object-contain" />}</div>
+                <div className="mt-2 truncate font-sans text-[15px] leading-tight" title={selected.name}>{selected.name}</div>
+                <div className="leader muted mt-0.5"><span className="l">{selected.brand ?? name}</span><span className="dots" /><span className="v text-ink">{selected.size ?? '—'}</span></div>
+              </div>
+              <div className="mt-3 space-y-1 text-xs text-ink-2">
+                <div>From <span className="font-medium text-ink">{name}</span></div>
+                {price && <div>Instead of buying at ${(Number(price) / 100).toFixed(2)}</div>}
+              </div>
             </div>
-          </div>
-          <div className="mt-4">
-            {selected.lendable
-              ? <BorrowForm itemId={selected.id} ownerId={id} friendName={name} itemName={selected.name} intendedPriceCents={price ? Number(price) : null} query={q ?? null} />
-              : <Note>{name} has this marked as not lendable.</Note>}
+            <div className="min-w-0">
+              <CardTitle hint={selected.lendable ? `${name} lends this. A request is pending until they accept.` : `${name} has this marked as not lendable.`}>Ask to borrow</CardTitle>
+              {selected.lendable && <BorrowForm itemId={selected.id} ownerId={id} friendName={name} itemName={selected.name} intendedPriceCents={price ? Number(price) : null} query={q ?? null} />}
+            </div>
           </div>
         </Card>
       )}

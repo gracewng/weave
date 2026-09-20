@@ -24,11 +24,11 @@ export function BorrowForm({ itemId, ownerId, friendName, itemName, intendedPric
         <Field label="Back by"><input type="date" value={dueBack} onChange={(e) => setDueBack(e.target.value)} className="input" /></Field>
       </div>
       <div>
-        <div className="mb-1 flex items-center justify-between"><span className="text-xs font-medium text-ink-2">Message</span><button type="button" className="btn-text" disabled={pending} onClick={() => start(async () => setMessage(await draftBorrowMessage({ friendName, itemName, event, neededOn, returnBy: dueBack })))}>{pending ? 'Drafting…' : 'Draft one for me'}</button></div>
-        <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder={`Hey ${friendName}, could I borrow your ${itemName}…`} className="input" />
+        <div className="mb-1 flex items-center justify-between"><span className="text-xs font-medium text-ink-2">Message to {friendName}</span><button type="button" className="btn btn-sm btn-outline" disabled={pending} onClick={() => start(async () => setMessage(await draftBorrowMessage({ friendName, itemName, event, neededOn, returnBy: dueBack })))}>{pending ? 'Drafting…' : 'Draft one for me'}</button></div>
+        <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder={`Hey ${friendName.split(' ')[0]}, could I borrow your ${itemName}…`} className="input" />
       </div>
       {!sent ? (
-        <button className="btn btn-primary" disabled={pending} onClick={() => start(async () => {
+        <button className="btn btn-primary !px-7 !py-3 !text-sm" disabled={pending} onClick={() => start(async () => {
           const r = await requestLoan({ itemId, ownerId, event, neededOn, dueBack, message, intendedPriceCents, query, title: intendedPriceCents != null ? `${itemName} (borrow instead)` : null });
           if (!r.ok) { alert(r.error); return; }
           setSent(true);
@@ -36,7 +36,7 @@ export function BorrowForm({ itemId, ownerId, friendName, itemName, intendedPric
           router.push('/friends');
         })}>{pending ? 'Sending…' : 'Send request'}</button>
       ) : <div className="text-sm text-save">Request sent</div>}
-      <Note>{intendedPriceCents != null ? 'If this replaces the purchase, Money Kept is credited once the item is handed over.' : 'A request is pending until your friend accepts.'}</Note>
+      {intendedPriceCents != null && <Note>Counts as money kept once the item is handed over.</Note>}
     </div>
   );
 }

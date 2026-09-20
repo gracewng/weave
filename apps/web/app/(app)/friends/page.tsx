@@ -13,6 +13,24 @@ import { JoinForm } from './JoinForm';
 export const dynamic = 'force-dynamic';
 
 const STATUS: Record<string, string> = { requested: 'Requested', accepted: 'Accepted', out: 'Out', returned: 'Returned', declined: 'Declined' };
+const STEPS: Array<[string, string]> = [['requested', 'Asked'], ['accepted', 'Accepted'], ['out', 'Handed over'], ['returned', 'Back']];
+
+/* Where a loan is, as four dots. Declined shows as a single quiet label. */
+function LoanSteps({ status }: { status: string }) {
+  if (status === 'declined') return <div className="text-xs text-ink-3">Declined</div>;
+  const idx = STEPS.findIndex(([k]) => k === status);
+  return (
+    <ol className="flex items-center gap-1 text-[10px] text-ink-3">
+      {STEPS.map(([k, label], i) => (
+        <li key={k} className="flex items-center gap-1">
+          <span className={`h-2 w-2 rounded-full ${i <= idx ? 'bg-fern' : 'bg-dust'}`} />
+          <span className={i === idx ? 'font-medium text-ink' : ''}>{label}</span>
+          {i < STEPS.length - 1 && <span className={`mx-1 h-px w-4 ${i < idx ? 'bg-fern' : 'bg-dust'}`} />}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export default async function FriendsPage({ searchParams }: { searchParams: Promise<{ joined?: string; error?: string }> }) {
   const { joined, error } = await searchParams;
@@ -70,9 +88,10 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
                   <div className="flex gap-4">
                     <div className="h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-paper">{l.item_image && <img src={l.item_image} alt="" className="h-full w-full object-contain" />}</div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2"><div className="truncate text-sm font-medium">{l.item_name}</div><Badge tone="pine">{STATUS[l.status] ?? l.status}</Badge></div>
+                      <div className="truncate text-sm font-medium">{l.item_name}</div>
                       <div className="mt-0.5 text-xs text-ink-2">{isOwner ? `${l.borrower_name} asked` : `From ${l.owner_name}`}{l.event_name ? ` · ${l.event_name}` : ''}{l.needed_on ? ` · needed ${l.needed_on}` : ''}{l.due_back ? ` · back ${l.due_back}` : ''}</div>
-                      {l.message && <div className="mt-2 text-sm text-ink-2">“{l.message}”</div>}
+                      <div className="mt-2"><LoanSteps status={l.status} /></div>
+                      {l.message && <div className="mt-2 rounded-2xl rounded-tl-sm bg-paper px-3 py-2 text-sm text-ink-2">“{l.message}”<div className="mt-0.5 text-[10px] text-ink-3">{isOwner ? l.borrower_name : 'You'}</div></div>}
                       <div className="mt-3"><LoanActions loanId={l.id} status={l.status} isOwner={isOwner} itemName={l.item_name} ownerName={l.owner_name} borrowerName={l.borrower_name} dueBack={l.due_back} /></div>
                     </div>
                   </div>

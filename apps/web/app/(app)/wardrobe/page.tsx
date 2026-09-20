@@ -74,10 +74,10 @@ export default async function WardrobePage({ searchParams }: { searchParams: Pro
         <TapeRule />
         <Barcode seed={user.id} label={`CLOSET NO. ${closetNo(user.id)}`} />
       </PrintedTape>
-
-      <div className="mt-7">
-        <WardrobeFilters q={qParam.trim()} sort={sort} returnable={!!retOnly} view={view} count={visible.length} />
       </div>
+
+      <div className="mt-2">
+        <WardrobeFilters q={qParam.trim()} sort={sort} returnable={!!retOnly} view={view} count={visible.length} />
       </div>
 
       {visible.length === 0 ? (
